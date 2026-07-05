@@ -1,0 +1,57 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: #e8e8e8;
+}
+
+.wrap {
+  text-align: center;
+  padding: 24px;
+}
+
+header h1 {
+  font-size: 2rem;
+  margin-bottom: 8px;
+  letter-spacing: 0.04em;
+}
+
+.hint {
+  font-size: 0.95rem;
+  color: #a8b2d1;
+  margin-bottom: 16px;
+}
+
+kbd {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #2a2a4a;
+  border: 1px solid #4a4a6a;
+  font-family: inherit;
+  font-size: 0.85em;
+}
+
+#game {
+  display: block;
+  margin: 0 auto;
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  background: #87ceeb;
+}
+
+.status {
+  margin-top: 14px;
+  font-size: 1rem;
+  color: #ccd6f6;
+  min-height: 1.5em;
+}
