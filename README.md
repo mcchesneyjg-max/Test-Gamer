@@ -15,3 +15,5 @@ A simple browser game: move around, pick up blocks, and drop them somewhere new.
 - `index.html` — page shell
 - `style.css` — layout and colors
 - `game.js` — game logic and rendering
+
+Cloud agent test passed.
