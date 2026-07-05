@@ -1,0 +1,10 @@
+This is a simple browser game (HTML + JavaScript + CSS).
+
+How to run: open index.html in a browser, or run: npx --yes serve . -p 3000
+
+When you finish a task:
+- Keep changes small (one feature at a time)
+- Open a Pull Request on GitHub
+- Include a screenshot of the game running
+
+Do not rewrite the whole project unless asked.
