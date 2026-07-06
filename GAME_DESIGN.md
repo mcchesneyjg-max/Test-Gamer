@@ -2,6 +2,8 @@
 
 **Pitch:** Build a pixel city and its supply chains, then survive massive siege waves when the enemy arrives.
 
+**Map:** 250×250 tile grid, 32×32 pixel tiles.
+
 ## Two-phase loop
 
 1. **Build phase** — Expand your settlement, connect producers to consumers, stockpile food and materials, and prepare defenses while time still allows.
