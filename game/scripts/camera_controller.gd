@@ -1,9 +1,14 @@
 extends Camera2D
 
-const PAN_SPEED := 400.0
-const ZOOM_MIN := 0.5
+const PAN_SPEED := 500.0
+const ZOOM_MIN := 0.08
 const ZOOM_MAX := 2.5
-const ZOOM_STEP := 0.1
+const ZOOM_STEP := 0.08
+const MAP_SIZE_TILES := Vector2i(250, 250)
+const TILE_SIZE := 32
+
+func _ready() -> void:
+	position = Vector2(MAP_SIZE_TILES) * TILE_SIZE * 0.5
 
 func _process(delta: float) -> void:
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
