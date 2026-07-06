@@ -1,10 +1,15 @@
-This is a simple browser game (HTML + JavaScript + CSS).
+Godot 4 pixel city builder in game/ (250x250 tile grid, 32x32 pixel tiles).
 
-How to run: open index.html in a browser, or run: npx --yes serve . -p 3000
+Current focus: Timber Economy v1.0 — see SUPPLY_CHAIN.md for build order. Implement ONE tier/task per PR only.
+
+Logistics: goods sit in building input/output storage. Hauler Stations employ haulers who roam the map and auto-haul ready goods to valid destinations (no manual routes in v1).
+
+How to run: open game/project.godot in Godot 4.3+, press F5.
 
 When you finish a task:
-- Keep changes small (one feature at a time)
+- Keep changes small (one SUPPLY_CHAIN task at a time)
 - Open a Pull Request on GitHub
-- Include a screenshot of the game running
+- Include screenshot of the running game
+- Note which SUPPLY_CHAIN task number you completed
 
-Do not rewrite the whole project unless asked.
+Do not rewrite the whole project unless asked. Do not add siege/combat until wood Tier 2 is done.
