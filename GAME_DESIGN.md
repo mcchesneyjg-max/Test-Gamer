@@ -4,6 +4,8 @@
 
 Build a pixel city on a **250×250** map, run **Song of Syx–style supply chains**, stockpile goods, then survive **They Are Billions–style siege waves** that test whether your economy and defenses were ready.
 
+**Map:** 250×250 tile grid, 32×32 pixel tiles.
+
 ## Two phases
 
 ### Phase A — Build & supply
@@ -17,9 +19,13 @@ Build a pixel city on a **250×250** map, run **Song of Syx–style supply chain
 ### Phase B — Siege
 
 - Player triggers waves (or calendar events)
-- Enemies path toward the city
+- Enemies path toward the city from the map edge
 - Towers, walls, and gear consume what Phase A produced
+- Your economy must keep feeding the fight while defenses hold the line
 - Damage carries back into Phase A (repair, rebuild, rebalance)
+
+**Win:** Survive the siege with your city intact.  
+**Lose:** Critical buildings fall or population is wiped out.
 
 ## Current scope
 

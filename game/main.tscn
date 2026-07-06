@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3 uid="uid://citysiege-main"]
+
+[ext_resource type="Script" path="res://scripts/camera_controller.gd" id="1_camera"]
+[ext_resource type="Script" path="res://scripts/map_grid.gd" id="2_map"]
+[ext_resource type="TileSet" path="res://tilesets/terrain.tres" id="3_tileset"]
+
+[node name="Main" type="Node2D"]
+
+[node name="TileMap" type="TileMap" parent="."]
+tile_set = ExtResource("3_tileset")
+format = 2
+script = ExtResource("2_map")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(4000, 4000)
+script = ExtResource("1_camera")
