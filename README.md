@@ -1,19 +1,23 @@
-# Block Pickup Game
+# City Siege
 
-A simple browser game: move around, pick up blocks, and drop them somewhere new.
+A Godot 4 pixel strategy game: build a city and supply chains, then defend against siege waves.
 
-## How to play
+See [GAME_DESIGN.md](GAME_DESIGN.md) for the pitch and two-phase gameplay loop.
 
-1. Open `index.html` in your browser (double-click the file).
-2. Use **A/D** or **arrow keys** to move.
-3. Press **Space** to jump.
-4. Walk near a block and press **E** to pick it up.
-5. Press **E** again to drop the block.
+## Open the Godot project
 
-## Files
+1. Install [Godot 4.3+](https://godotengine.org/download).
+2. Launch Godot and choose **Import**.
+3. Select `game/project.godot` in this repository.
+4. Click **Import & Edit**, then press **F5** (or the Play button) to run the main scene.
 
-- `index.html` — page shell
-- `style.css` — layout and colors
-- `game.js` — game logic and rendering
+### Controls (current setup)
 
-Cloud agent test passed.
+- **W/A/S/D** — pan the camera
+- **Mouse wheel** — zoom in and out
+
+## Project layout
+
+- `game/` — Godot 4 project (main scene, scripts, tilesets)
+- `GAME_DESIGN.md` — design notes
+- `legacy/` — archived browser prototype (`index.html`, `game.js`, `style.css`)
