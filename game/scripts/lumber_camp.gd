@@ -38,6 +38,15 @@ func _try_chop_nearby_tree() -> void:
 
 	_storage.output.try_add(harvested)
 
+func has_output_ready() -> bool:
+	return not _storage.output.is_empty()
+
+func take_from_output(amount: int = 1) -> int:
+	return _storage.output.try_remove(amount)
+
+func deposit_to_output(amount: int) -> int:
+	return _storage.output.try_add(amount)
+
 func _find_nearest_tree() -> Node2D:
 	var camp_tile := _tilemap.local_to_map(position)
 	var nearest: Node2D = null

@@ -13,6 +13,8 @@ func _ready() -> void:
 		call_deferred("_capture_task5")
 	elif "--screenshot-task6" in OS.get_cmdline_args():
 		call_deferred("_capture_task6")
+	elif "--screenshot-task7" in OS.get_cmdline_args():
+		call_deferred("_capture_task7")
 
 func _capture_task2() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
@@ -147,5 +149,40 @@ func _capture_task6() -> void:
 	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
 	DirAccess.make_dir_absolute(output_dir)
 	var output_path := output_dir.path_join("task6-hauler-station.png")
+	get_viewport().get_texture().get_image().save_png(output_path)
+	get_tree().quit()
+
+func _capture_task7() -> void:
+	var tilemap: TileMap = get_parent().get_node("TileMap")
+	var camera: Camera2D = get_parent().get_node("Camera2D")
+	camera.position = Vector2(125, 124) * 32
+	camera.zoom = Vector2(3, 3)
+
+	var camp_scene := preload("res://scenes/lumber_camp.tscn")
+	var camp = camp_scene.instantiate()
+	camp.position = tilemap.map_to_local(Vector2i(118, 124))
+	tilemap.add_child(camp)
+	await get_tree().process_frame
+	camp.deposit_to_output(4)
+
+	var warehouse_scene := preload("res://scenes/warehouse_building.tscn")
+	var warehouse = warehouse_scene.instantiate()
+	warehouse.position = tilemap.map_to_local(Vector2i(132, 124))
+	tilemap.add_child(warehouse)
+
+	var station_scene := preload("res://scenes/hauler_station.tscn")
+	var station = station_scene.instantiate()
+	station.position = tilemap.map_to_local(Vector2i(125, 127))
+	station.hauler_count = 1
+	tilemap.add_child(station)
+
+	await get_tree().create_timer(0.3).timeout
+	for worker in get_tree().get_nodes_in_group("hauler_worker"):
+		worker.move_speed = 220.0
+
+	await get_tree().create_timer(1.1).timeout
+	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
+	DirAccess.make_dir_absolute(output_dir)
+	var output_path := output_dir.path_join("task7-hauler-ai.png")
 	get_viewport().get_texture().get_image().save_png(output_path)
 	get_tree().quit()
