@@ -23,6 +23,7 @@ The playable map is a **250×250 tile grid** with **32×32 pixel tiles** (8000×
 - **Shift + Right click** — place a warehouse on the map (Task 5)
 - **Ctrl + Right click** — place a hauler station on the map (Task 6)
 - **Alt + Right click** — place a forester lodge on the map (Task 8; spawns saplings that grow into mature trees in ~8s — Task 9)
+- **Tier 1 closed loop (Task 10):** lodge → saplings → trees → lumber camp → haulers → warehouse (no manual trees needed)
 - Haulers from stations **auto-haul** lumber camp logs to warehouse input storage (Task 7)
 - Buildings and workers use **cozy forest pixel art v3** (`game/assets/sprites/`, process with `python3 game/tools/process_v3_sprites.py` or regenerate v2 with `python3 game/tools/generate_sprites.py`)
 - Lumber camps show **output storage** (`Out: X/Y`) and a small log pile beside the building (Task 4)
