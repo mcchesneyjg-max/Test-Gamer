@@ -7,7 +7,7 @@
 script = ExtResource("1_worker")
 
 [node name="Body" type="AnimatedSprite2D" parent="."]
-scale = Vector2(1.2, 1.2)
+scale = Vector2(1.0, 1.0)
 texture_filter = 0
 
 [node name="Cargo" type="Sprite2D" parent="."]

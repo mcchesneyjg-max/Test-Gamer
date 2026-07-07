@@ -19,6 +19,8 @@ func _ready() -> void:
 		call_deferred("_capture_art_pass")
 	elif "--screenshot-art-pass-v2" in OS.get_cmdline_args():
 		call_deferred("_capture_art_pass_v2")
+	elif "--screenshot-art-pass-v3" in OS.get_cmdline_args():
+		call_deferred("_capture_art_pass_v3")
 
 func _capture_task2() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
@@ -270,5 +272,46 @@ func _capture_art_pass_v2() -> void:
 	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
 	DirAccess.make_dir_absolute(output_dir)
 	var output_path := output_dir.path_join("art-pass-v2-after.png")
+	get_viewport().get_texture().get_image().save_png(output_path)
+	get_tree().quit()
+
+func _capture_art_pass_v3() -> void:
+	var tilemap: TileMap = get_parent().get_node("TileMap")
+	var camera: Camera2D = get_parent().get_node("Camera2D")
+	camera.position = Vector2(125, 124) * 32
+	camera.zoom = Vector2(3, 3)
+
+	var tree_coords := [Vector2i(116, 122), Vector2i(117, 125), Vector2i(119, 121)]
+	for coords in tree_coords:
+		var tree := MATURE_TREE_SCENE.instantiate()
+		tree.position = tilemap.map_to_local(coords)
+		tilemap.add_child(tree)
+
+	var camp_scene := preload("res://scenes/lumber_camp.tscn")
+	var camp = camp_scene.instantiate()
+	camp.position = tilemap.map_to_local(Vector2i(118, 124))
+	tilemap.add_child(camp)
+	await get_tree().process_frame
+	camp.deposit_to_output(3)
+
+	var warehouse_scene := preload("res://scenes/warehouse_building.tscn")
+	var warehouse = warehouse_scene.instantiate()
+	warehouse.position = tilemap.map_to_local(Vector2i(132, 124))
+	tilemap.add_child(warehouse)
+
+	var station_scene := preload("res://scenes/hauler_station.tscn")
+	var station = station_scene.instantiate()
+	station.position = tilemap.map_to_local(Vector2i(125, 127))
+	station.hauler_count = 1
+	tilemap.add_child(station)
+
+	await get_tree().create_timer(0.3).timeout
+	for worker in get_tree().get_nodes_in_group("hauler_worker"):
+		worker.move_speed = 220.0
+
+	await get_tree().create_timer(1.0).timeout
+	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
+	DirAccess.make_dir_absolute(output_dir)
+	var output_path := output_dir.path_join("art-pass-v3-after.png")
 	get_viewport().get_texture().get_image().save_png(output_path)
 	get_tree().quit()

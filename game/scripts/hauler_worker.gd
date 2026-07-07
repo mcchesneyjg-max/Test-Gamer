@@ -4,7 +4,7 @@ enum State { IDLE, TO_SOURCE, TO_DEST }
 
 const ARRIVE_DISTANCE := 8.0
 const WALK_SHEET := preload("res://assets/sprites/hauler_worker_walk.png")
-const FRAME_SIZE := 24
+const FRAME_SIZE := 32
 const WALK_FRAMES := 4
 
 @export var move_speed: float = 90.0
