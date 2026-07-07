@@ -5,6 +5,7 @@ const SAPLING_SCENE := preload("res://scenes/sapling.tscn")
 @export var spawn_interval: float = 4.0
 @export var spawn_radius_tiles: int = 5
 @export var max_saplings: int = 6
+@export var sapling_grow_time: float = 8.0
 
 @onready var _tilemap: TileMap = get_parent() as TileMap
 @onready var _spawn_label: Label = $SpawnLabel
@@ -40,6 +41,7 @@ func _try_spawn_sapling() -> void:
 		return
 
 	var sapling := SAPLING_SCENE.instantiate()
+	sapling.grow_time = sapling_grow_time
 	sapling.position = _tilemap.map_to_local(tile_coords)
 	_tilemap.add_child(sapling)
 	_spawned_saplings.append(sapling)
