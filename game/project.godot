@@ -21,6 +21,7 @@ config/icon="res://icon.svg"
 Warehouse="*res://scripts/warehouse.gd"
 TreeRegistry="*res://scripts/tree_registry.gd"
 CampRegistry="*res://scripts/camp_registry.gd"
+WarehouseRegistry="*res://scripts/warehouse_registry.gd"
 
 [display]
 
