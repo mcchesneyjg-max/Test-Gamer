@@ -9,6 +9,8 @@ func _ready() -> void:
 		call_deferred("_capture_task3")
 	elif "--screenshot-task4" in OS.get_cmdline_args():
 		call_deferred("_capture_task4")
+	elif "--screenshot-task5" in OS.get_cmdline_args():
+		call_deferred("_capture_task5")
 
 func _capture_task2() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
@@ -104,5 +106,25 @@ func _capture_task4() -> void:
 	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
 	DirAccess.make_dir_absolute(output_dir)
 	var output_path := output_dir.path_join("task4-building-storage.png")
+	get_viewport().get_texture().get_image().save_png(output_path)
+	get_tree().quit()
+
+func _capture_task5() -> void:
+	var tilemap: TileMap = get_parent().get_node("TileMap")
+	var camera: Camera2D = get_parent().get_node("Camera2D")
+	camera.position = Vector2(125, 125) * 32
+	camera.zoom = Vector2(3, 3)
+
+	var warehouse_scene := preload("res://scenes/warehouse_building.tscn")
+	var warehouse = warehouse_scene.instantiate()
+	warehouse.position = tilemap.map_to_local(Vector2i(124, 124))
+	tilemap.add_child(warehouse)
+	await get_tree().process_frame
+	warehouse.deposit_logs(12)
+
+	await get_tree().create_timer(0.5).timeout
+	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
+	DirAccess.make_dir_absolute(output_dir)
+	var output_path := output_dir.path_join("task5-warehouse.png")
 	get_viewport().get_texture().get_image().save_png(output_path)
 	get_tree().quit()
