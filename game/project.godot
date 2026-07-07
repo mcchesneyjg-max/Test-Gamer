@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 Warehouse="*res://scripts/warehouse.gd"
+TreeRegistry="*res://scripts/tree_registry.gd"
 
 [display]
 

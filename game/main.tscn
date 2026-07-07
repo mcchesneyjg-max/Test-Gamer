@@ -1,11 +1,19 @@
-[gd_scene load_steps=5 format=3 uid="uid://citysiege-main"]
+[gd_scene load_steps=6 format=3 uid="uid://citysiege-main"]
 
 [ext_resource type="Script" path="res://scripts/camera_controller.gd" id="1_camera"]
 [ext_resource type="Script" path="res://scripts/map_grid.gd" id="2_map"]
 [ext_resource type="TileSet" path="res://tilesets/terrain.tres" id="3_tileset"]
-[ext_resource type="PackedScene" uid="uid://wood-logs-hud" path="res://scenes/wood_logs_hud.tscn" id="4_hud"]
+[ext_resource type="Script" path="res://scripts/tree_placer.gd" id="4_placer"]
+[ext_resource type="PackedScene" uid="uid://game-hud" path="res://scenes/game_hud.tscn" id="5_hud"]
+[ext_resource type="Script" path="res://scripts/dev_screenshot.gd" id="6_screenshot"]
 
 [node name="Main" type="Node2D"]
+
+[node name="DevScreenshot" type="Node" parent="."]
+script = ExtResource("6_screenshot")
+
+[node name="TreePlacer" type="Node2D" parent="."]
+script = ExtResource("4_placer")
 
 [node name="TileMap" type="TileMap" parent="."]
 tile_set = ExtResource("3_tileset")
@@ -16,4 +24,4 @@ script = ExtResource("2_map")
 position = Vector2(4000, 4000)
 script = ExtResource("1_camera")
 
-[node name="WoodLogsHud" parent="." instance=ExtResource("4_hud")]
+[node name="GameHud" parent="." instance=ExtResource("5_hud")]
