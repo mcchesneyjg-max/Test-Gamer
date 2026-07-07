@@ -20,6 +20,7 @@ The playable map is a **250×250 tile grid** with **32×32 pixel tiles** (8000×
 - **T** — debug: add 1 wood log to the warehouse (Task 1 test)
 - **Left click** — place a mature tree on the map (Task 2)
 - **Right click** — place a lumber camp on the map (Task 3)
+- Lumber camps show **output storage** (`Out: X/Y`) and a small log pile beside the building (Task 4)
 
 ## Project layout
 
