@@ -22,6 +22,7 @@ Warehouse="*res://scripts/warehouse.gd"
 TreeRegistry="*res://scripts/tree_registry.gd"
 CampRegistry="*res://scripts/camp_registry.gd"
 WarehouseRegistry="*res://scripts/warehouse_registry.gd"
+HaulerStationRegistry="*res://scripts/hauler_station_registry.gd"
 
 [display]
 
