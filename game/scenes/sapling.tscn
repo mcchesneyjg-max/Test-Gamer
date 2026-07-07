@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://sapling"]
+
+[ext_resource type="Script" path="res://scripts/sapling.gd" id="1_sapling"]
+[ext_resource type="Texture2D" path="res://assets/sprites/sapling.png" id="2_sprite"]
+
+[node name="Sapling" type="Node2D"]
+script = ExtResource("1_sapling")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+position = Vector2(-10, -40)
+texture_filter = 0
+centered = false
+texture = ExtResource("2_sprite")

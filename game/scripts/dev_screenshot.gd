@@ -21,6 +21,8 @@ func _ready() -> void:
 		call_deferred("_capture_art_pass_v2")
 	elif "--screenshot-art-pass-v3" in OS.get_cmdline_args():
 		call_deferred("_capture_art_pass_v3")
+	elif "--screenshot-task8" in OS.get_cmdline_args():
+		call_deferred("_capture_task8")
 
 func _capture_task2() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
@@ -313,5 +315,24 @@ func _capture_art_pass_v3() -> void:
 	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
 	DirAccess.make_dir_absolute(output_dir)
 	var output_path := output_dir.path_join("art-pass-v3-after.png")
+	get_viewport().get_texture().get_image().save_png(output_path)
+	get_tree().quit()
+
+func _capture_task8() -> void:
+	var tilemap: TileMap = get_parent().get_node("TileMap")
+	var camera: Camera2D = get_parent().get_node("Camera2D")
+	camera.position = Vector2(125, 124) * 32
+	camera.zoom = Vector2(3, 3)
+
+	var lodge_scene := preload("res://scenes/forester_lodge.tscn")
+	var lodge = lodge_scene.instantiate()
+	lodge.position = tilemap.map_to_local(Vector2i(124, 124))
+	lodge.spawn_interval = 1.0
+	tilemap.add_child(lodge)
+
+	await get_tree().create_timer(5.0).timeout
+	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
+	DirAccess.make_dir_absolute(output_dir)
+	var output_path := output_dir.path_join("task8-forester-lodge.png")
 	get_viewport().get_texture().get_image().save_png(output_path)
 	get_tree().quit()
