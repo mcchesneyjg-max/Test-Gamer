@@ -4,7 +4,7 @@ Current focus: Timber Economy v1.0 — see SUPPLY_CHAIN.md for build order. Impl
 
 Logistics: goods sit in building input/output storage. Hauler Stations employ haulers who roam the map and auto-haul ready goods to valid destinations (no manual routes in v1).
 
-How to run: open game/project.godot in Godot 4.3+, press F5.
+How to run: open game/project.godot in Godot 4.7 (4.3+), press F5.
 
 When you finish a task:
 - Keep changes small (one SUPPLY_CHAIN task at a time)
