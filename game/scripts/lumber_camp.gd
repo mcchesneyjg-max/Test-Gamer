@@ -1,42 +1,32 @@
 extends Node2D
 
+const LUMBERJACK_WORKER_SCENE := preload("res://scenes/lumberjack_worker.tscn")
+
 @export var chop_interval: float = 2.0
 @export var chop_radius_tiles: int = 4
 
 @onready var _storage = $StorageAreas
 @onready var _tilemap: TileMap = get_parent() as TileMap
 
-var _chop_timer: float = 0.0
+var _worker: Node2D
 
 func _ready() -> void:
 	CampRegistry.register_camp(self)
+	call_deferred("_spawn_worker")
 
 func _exit_tree() -> void:
+	if is_instance_valid(_worker):
+		_worker.queue_free()
 	CampRegistry.unregister_camp(self)
 
-func _process(delta: float) -> void:
-	if _storage.output_is_full():
-		return
+func get_chop_duration() -> float:
+	return chop_interval
 
-	_chop_timer += delta
-	if _chop_timer < chop_interval:
-		return
-	_chop_timer = 0.0
-	_try_chop_nearby_tree()
+func output_is_full() -> bool:
+	return _storage.output_is_full()
 
-func _try_chop_nearby_tree() -> void:
-	if _storage.output_is_full():
-		return
-
-	var tree := _find_nearest_tree()
-	if tree == null:
-		return
-
-	var harvested: int = tree.harvest(1)
-	if harvested <= 0:
-		return
-
-	_storage.output.try_add(harvested)
+func deposit_harvested_log(amount: int = 1) -> int:
+	return _storage.output.try_add(amount)
 
 func has_output_ready() -> bool:
 	return not _storage.output.is_empty()
@@ -47,7 +37,7 @@ func take_from_output(amount: int = 1) -> int:
 func deposit_to_output(amount: int) -> int:
 	return _storage.output.try_add(amount)
 
-func _find_nearest_tree() -> Node2D:
+func find_nearest_tree() -> Node2D:
 	var camp_tile := _tilemap.local_to_map(position)
 	var nearest: Node2D = null
 	var nearest_distance := chop_radius_tiles + 1
@@ -62,3 +52,12 @@ func _find_nearest_tree() -> Node2D:
 			nearest = tree
 
 	return nearest
+
+func _spawn_worker() -> void:
+	if _tilemap == null:
+		return
+
+	_worker = LUMBERJACK_WORKER_SCENE.instantiate()
+	_worker.setup(self)
+	_worker.position = position + Vector2(10, 38)
+	_tilemap.add_child(_worker)

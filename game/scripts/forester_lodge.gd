@@ -1,8 +1,8 @@
 extends Node2D
 
 const SAPLING_SCENE := preload("res://scenes/sapling.tscn")
+const FORESTER_WORKER_SCENE := preload("res://scenes/forester_worker.tscn")
 
-@export var spawn_interval: float = 4.0
 @export var spawn_radius_tiles: int = 5
 @export var max_saplings: int = 6
 @export var sapling_grow_time: float = 8.0
@@ -10,42 +10,56 @@ const SAPLING_SCENE := preload("res://scenes/sapling.tscn")
 @onready var _tilemap: TileMap = get_parent() as TileMap
 @onready var _spawn_label: Label = $SpawnLabel
 
-var _spawn_timer: float = 0.0
 var _spawned_saplings: Array[Node2D] = []
+var _worker: Node2D
 
 func _ready() -> void:
 	ForesterLodgeRegistry.register_lodge(self)
 	_update_spawn_label()
+	call_deferred("_spawn_worker")
 
 func _exit_tree() -> void:
+	if is_instance_valid(_worker):
+		_worker.queue_free()
 	ForesterLodgeRegistry.unregister_lodge(self)
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	_prune_invalid_saplings()
-	if _spawned_saplings.size() >= max_saplings:
-		return
-
-	_spawn_timer += delta
-	if _spawn_timer < spawn_interval:
-		return
-	_spawn_timer = 0.0
-	_try_spawn_sapling()
 
 func get_active_sapling_count() -> int:
 	_prune_invalid_saplings()
 	return _spawned_saplings.size()
 
-func _try_spawn_sapling() -> void:
+func can_plant_sapling() -> bool:
+	_prune_invalid_saplings()
+	return _spawned_saplings.size() < max_saplings
+
+func find_plant_site() -> Vector2:
 	var tile_coords := _find_spawn_tile()
 	if tile_coords.x < 0:
-		return
+		return Vector2.ZERO
+	return _tilemap.map_to_local(tile_coords)
+
+func plant_sapling_at_world_pos(world_pos: Vector2) -> bool:
+	if not can_plant_sapling():
+		return false
 
 	var sapling := SAPLING_SCENE.instantiate()
 	sapling.grow_time = sapling_grow_time
-	sapling.position = _tilemap.map_to_local(tile_coords)
+	sapling.position = world_pos
 	_tilemap.add_child(sapling)
 	_spawned_saplings.append(sapling)
 	_update_spawn_label()
+	return true
+
+func _spawn_worker() -> void:
+	if _tilemap == null:
+		return
+
+	_worker = FORESTER_WORKER_SCENE.instantiate()
+	_worker.setup(self)
+	_worker.position = position + Vector2(10, 38)
+	_tilemap.add_child(_worker)
 
 func _find_spawn_tile() -> Vector2i:
 	var lodge_tile := _tilemap.local_to_map(position)

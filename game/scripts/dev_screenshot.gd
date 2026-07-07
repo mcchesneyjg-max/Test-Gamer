@@ -27,6 +27,8 @@ func _ready() -> void:
 		call_deferred("_capture_task9")
 	elif "--screenshot-task10" in OS.get_cmdline_args():
 		call_deferred("_capture_task10")
+	elif "--screenshot-workers" in OS.get_cmdline_args():
+		call_deferred("_capture_workers")
 
 func _capture_task2() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
@@ -331,10 +333,14 @@ func _capture_task8() -> void:
 	var lodge_scene := preload("res://scenes/forester_lodge.tscn")
 	var lodge = lodge_scene.instantiate()
 	lodge.position = tilemap.map_to_local(Vector2i(124, 124))
-	lodge.spawn_interval = 1.0
+	lodge.sapling_grow_time = 2.0
 	tilemap.add_child(lodge)
 
-	await get_tree().create_timer(5.0).timeout
+	await get_tree().create_timer(0.3).timeout
+	for worker in get_tree().get_nodes_in_group("forester_worker"):
+		worker.move_speed = 160.0
+
+	await get_tree().create_timer(8.0).timeout
 	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
 	DirAccess.make_dir_absolute(output_dir)
 	var output_path := output_dir.path_join("task8-forester-lodge.png")
@@ -350,12 +356,15 @@ func _capture_task9() -> void:
 	var lodge_scene := preload("res://scenes/forester_lodge.tscn")
 	var lodge = lodge_scene.instantiate()
 	lodge.position = tilemap.map_to_local(Vector2i(124, 124))
-	lodge.spawn_interval = 1.0
 	lodge.sapling_grow_time = 2.0
 	lodge.max_saplings = 4
 	tilemap.add_child(lodge)
 
-	await get_tree().create_timer(6.0).timeout
+	await get_tree().create_timer(0.3).timeout
+	for worker in get_tree().get_nodes_in_group("forester_worker"):
+		worker.move_speed = 160.0
+
+	await get_tree().create_timer(8.0).timeout
 	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
 	DirAccess.make_dir_absolute(output_dir)
 	var output_path := output_dir.path_join("task9-sapling-growth.png")
@@ -371,7 +380,6 @@ func _capture_task10() -> void:
 	var lodge_scene := preload("res://scenes/forester_lodge.tscn")
 	var lodge = lodge_scene.instantiate()
 	lodge.position = tilemap.map_to_local(Vector2i(120, 124))
-	lodge.spawn_interval = 2.0
 	lodge.sapling_grow_time = 4.0
 	lodge.max_saplings = 6
 	tilemap.add_child(lodge)
@@ -397,14 +405,50 @@ func _capture_task10() -> void:
 	await get_tree().create_timer(0.3).timeout
 	for worker in get_tree().get_nodes_in_group("hauler_worker"):
 		worker.move_speed = 180.0
+	for worker in get_tree().get_nodes_in_group("forester_worker"):
+		worker.move_speed = 150.0
+	for worker in get_tree().get_nodes_in_group("lumberjack_worker"):
+		worker.move_speed = 150.0
 
-	await get_tree().create_timer(28.0).timeout
+	await get_tree().create_timer(35.0).timeout
 
 	if Warehouse.wood_logs <= 0:
-		push_error("Closed loop verification failed: warehouse has no logs after 28s")
+		push_error("Closed loop verification failed: warehouse has no logs after 35s")
 
 	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
 	DirAccess.make_dir_absolute(output_dir)
 	var output_path := output_dir.path_join("task10-closed-loop.png")
+	get_viewport().get_texture().get_image().save_png(output_path)
+	get_tree().quit()
+
+func _capture_workers() -> void:
+	var tilemap: TileMap = get_parent().get_node("TileMap")
+	var camera: Camera2D = get_parent().get_node("Camera2D")
+	camera.position = Vector2(125, 124) * 32
+	camera.zoom = Vector2(3, 3)
+
+	var lodge_scene := preload("res://scenes/forester_lodge.tscn")
+	var lodge = lodge_scene.instantiate()
+	lodge.position = tilemap.map_to_local(Vector2i(118, 124))
+	lodge.sapling_grow_time = 6.0
+	tilemap.add_child(lodge)
+
+	var camp_scene := preload("res://scenes/lumber_camp.tscn")
+	var camp = camp_scene.instantiate()
+	camp.position = tilemap.map_to_local(Vector2i(126, 124))
+	camp.chop_interval = 0.8
+	camp.chop_radius_tiles = 6
+	tilemap.add_child(camp)
+
+	await get_tree().create_timer(0.3).timeout
+	for worker in get_tree().get_nodes_in_group("forester_worker"):
+		worker.move_speed = 120.0
+	for worker in get_tree().get_nodes_in_group("lumberjack_worker"):
+		worker.move_speed = 120.0
+
+	await get_tree().create_timer(12.0).timeout
+	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
+	DirAccess.make_dir_absolute(output_dir)
+	var output_path := output_dir.path_join("workers-forester-lumberjack.png")
 	get_viewport().get_texture().get_image().save_png(output_path)
 	get_tree().quit()
