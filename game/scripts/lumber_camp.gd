@@ -34,6 +34,12 @@ func has_output_ready() -> bool:
 func take_from_output(amount: int = 1) -> int:
 	return _storage.output.try_remove(amount)
 
+func get_log_pickup_position() -> Vector2:
+	var pile := _storage.get_node_or_null("OutputPile") as Node2D
+	if pile:
+		return position + pile.position
+	return position
+
 func deposit_to_output(amount: int) -> int:
 	return _storage.output.try_add(amount)
 

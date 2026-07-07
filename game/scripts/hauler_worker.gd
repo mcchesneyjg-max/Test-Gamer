@@ -2,7 +2,7 @@ extends Node2D
 
 enum State { IDLE, TO_SOURCE, TO_DEST }
 
-const ARRIVE_DISTANCE := 8.0
+const ARRIVE_DISTANCE := 10.0
 const WALK_SHEET := preload("res://assets/sprites/hauler_worker_walk.png")
 const FRAME_SIZE := 32
 const WALK_FRAMES := 4
@@ -87,33 +87,44 @@ func _process_to_source(delta: float) -> void:
 		_return_idle()
 		return
 
-	_move_toward(_source.position, delta)
-	if position.distance_to(_source.position) <= ARRIVE_DISTANCE:
+	var pickup_position := _get_source_position(_source)
+	_move_toward(pickup_position, delta)
+	if position.distance_to(pickup_position) <= ARRIVE_DISTANCE:
 		_pickup_cargo()
 
 func _process_to_dest(delta: float) -> void:
+	if _cargo_amount <= 0:
+		_return_idle()
+		return
+
 	if not _is_destination_valid():
 		_return_idle()
 		return
 
-	_move_toward(_destination.position, delta)
-	if position.distance_to(_destination.position) <= ARRIVE_DISTANCE:
+	var delivery_position := _get_destination_position(_destination)
+	_move_toward(delivery_position, delta)
+	if position.distance_to(delivery_position) <= ARRIVE_DISTANCE:
 		_deliver_cargo()
 
 func _try_start_job() -> bool:
 	if _cargo_amount > 0:
-		return false
+		var destination := _find_best_destination()
+		if destination == null:
+			return false
+		_destination = destination
+		_state = State.TO_DEST
+		return true
 
 	var source := _find_best_source()
 	if source == null:
 		return false
 
-	var destination := _find_best_destination()
-	if destination == null:
+	var dest := _find_best_destination()
+	if dest == null:
 		return false
 
 	_source = source
-	_destination = destination
+	_destination = dest
 	_state = State.TO_SOURCE
 	return true
 
@@ -124,7 +135,7 @@ func _find_best_source() -> Node2D:
 	for camp in CampRegistry.get_active_camps():
 		if not camp.has_method("has_output_ready") or not camp.has_output_ready():
 			continue
-		var distance := position.distance_to(camp.position)
+		var distance := position.distance_to(_get_source_position(camp))
 		if distance < best_distance:
 			best_distance = distance
 			best = camp
@@ -138,7 +149,7 @@ func _find_best_destination() -> Node2D:
 	for warehouse in WarehouseRegistry.get_active_warehouses():
 		if not warehouse.has_method("can_accept_logs") or not warehouse.can_accept_logs():
 			continue
-		var distance := position.distance_to(warehouse.position)
+		var distance := position.distance_to(_get_destination_position(warehouse))
 		if distance < best_distance:
 			best_distance = distance
 			best = warehouse
@@ -170,13 +181,27 @@ func _deliver_cargo() -> void:
 
 	if _cargo_amount <= 0:
 		_cargo.visible = false
-	_return_idle()
+		_return_idle()
+	elif _find_best_destination() != null:
+		_state = State.TO_DEST
+	else:
+		_idle_timer = 0.2
 
 func _return_idle() -> void:
 	_source = null
 	_destination = null
 	_state = State.IDLE
 	_idle_timer = 0.2
+
+func _get_source_position(source: Node2D) -> Vector2:
+	if source.has_method("get_log_pickup_position"):
+		return source.get_log_pickup_position()
+	return source.position
+
+func _get_destination_position(destination: Node2D) -> Vector2:
+	if destination.has_method("get_delivery_position"):
+		return destination.get_delivery_position()
+	return destination.position
 
 func _move_toward(target_position: Vector2, delta: float) -> void:
 	var offset := target_position - position
@@ -185,7 +210,17 @@ func _move_toward(target_position: Vector2, delta: float) -> void:
 	position += offset.normalized() * move_speed * delta
 
 func _is_source_valid() -> bool:
-	return _source != null and is_instance_valid(_source) and _source.has_method("has_output_ready")
+	return (
+		_source != null
+		and is_instance_valid(_source)
+		and _source.has_method("has_output_ready")
+		and _source.has_output_ready()
+	)
 
 func _is_destination_valid() -> bool:
-	return _destination != null and is_instance_valid(_destination) and _destination.has_method("can_accept_logs")
+	return (
+		_destination != null
+		and is_instance_valid(_destination)
+		and _destination.has_method("can_accept_logs")
+		and _destination.can_accept_logs()
+	)
