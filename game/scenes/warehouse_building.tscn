@@ -1,36 +1,16 @@
-[gd_scene load_steps=3 format=3 uid="uid://warehouse-building"]
+[gd_scene load_steps=4 format=3 uid="uid://warehouse-building"]
 
 [ext_resource type="Script" path="res://scripts/warehouse_building.gd" id="1_warehouse"]
 [ext_resource type="Script" path="res://scripts/building_storage_areas.gd" id="2_storage"]
+[ext_resource type="Texture2D" path="res://assets/sprites/warehouse.png" id="3_sprite"]
 
 [node name="WarehouseBuilding" type="Node2D"]
 script = ExtResource("1_warehouse")
 
-[node name="Foundation" type="ColorRect" parent="."]
-offset_right = 32.0
-offset_bottom = 32.0
-color = Color(0.42, 0.42, 0.48, 1)
-
-[node name="Roof" type="ColorRect" parent="."]
-offset_left = 1.0
-offset_top = 1.0
-offset_right = 31.0
-offset_bottom = 10.0
-color = Color(0.28, 0.3, 0.38, 1)
-
-[node name="Door" type="ColorRect" parent="."]
-offset_left = 13.0
-offset_top = 10.0
-offset_right = 19.0
-offset_bottom = 28.0
-color = Color(0.18, 0.18, 0.22, 1)
-
-[node name="Crate" type="ColorRect" parent="."]
-offset_left = 4.0
-offset_top = 14.0
-offset_right = 12.0
-offset_bottom = 24.0
-color = Color(0.55, 0.35, 0.15, 1)
+[node name="Sprite" type="Sprite2D" parent="."]
+texture_filter = 0
+centered = false
+texture = ExtResource("3_sprite")
 
 [node name="StorageAreas" type="Node" parent="."]
 script = ExtResource("2_storage")

@@ -1,6 +1,7 @@
 extends Node
 
 const BuildingStorage := preload("res://scripts/building_storage.gd")
+const WOOD_LOG_TEXTURE := preload("res://assets/sprites/wood_log.png")
 
 ## Reusable input/output storage for production buildings.
 signal input_changed(current_amount: int, capacity_amount: int)
@@ -21,8 +22,17 @@ func _ready() -> void:
 	output = BuildingStorage.new(output_capacity)
 	input.changed.connect(_on_input_changed)
 	output.changed.connect(_on_output_changed)
+	_setup_output_pile_textures()
 	_refresh_labels()
 	_refresh_output_pile()
+
+func _setup_output_pile_textures() -> void:
+	if _output_pile == null:
+		return
+	for child in _output_pile.get_children():
+		var slot := child as Sprite2D
+		if slot:
+			slot.texture = WOOD_LOG_TEXTURE
 
 func output_is_full() -> bool:
 	return output.is_full()
@@ -66,6 +76,6 @@ func _refresh_output_pile() -> void:
 	filled_slots = clampi(filled_slots, 0, slots)
 
 	for i in slots:
-		var slot := _output_pile.get_child(i) as ColorRect
+		var slot := _output_pile.get_child(i) as CanvasItem
 		if slot:
 			slot.visible = i < filled_slots

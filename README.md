@@ -23,6 +23,7 @@ The playable map is a **250×250 tile grid** with **32×32 pixel tiles** (8000×
 - **Shift + Right click** — place a warehouse on the map (Task 5)
 - **Ctrl + Right click** — place a hauler station on the map (Task 6)
 - Haulers from stations **auto-haul** lumber camp logs to warehouse input storage (Task 7)
+- Buildings and workers use **32×32 pixel art sprites** (`game/assets/sprites/`)
 - Lumber camps show **output storage** (`Out: X/Y`) and a small log pile beside the building (Task 4)
 
 ## Project layout
