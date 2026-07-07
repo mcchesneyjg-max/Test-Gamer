@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://lumber-camp"]
+[gd_scene load_steps=3 format=3 uid="uid://lumber-camp"]
 
 [ext_resource type="Script" path="res://scripts/lumber_camp.gd" id="1_camp"]
+[ext_resource type="Script" path="res://scripts/building_storage_areas.gd" id="2_storage"]
 
 [node name="LumberCamp" type="Node2D"]
 script = ExtResource("1_camp")
@@ -24,14 +25,69 @@ offset_right = 20.0
 offset_bottom = 28.0
 color = Color(0.2, 0.14, 0.08, 1)
 
-[node name="OutputLabel" type="Label" parent="."]
+[node name="StorageAreas" type="Node" parent="."]
+script = ExtResource("2_storage")
+output_capacity = 20
+
+[node name="InputLabel" type="Label" parent="StorageAreas"]
+visible = false
+offset_left = -4.0
+offset_top = -30.0
+offset_right = 36.0
+offset_bottom = -18.0
+theme_override_colors/font_color = Color(0.85, 0.9, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 10
+text = "In: 0/0"
+horizontal_alignment = 1
+
+[node name="OutputLabel" type="Label" parent="StorageAreas"]
 offset_left = -4.0
 offset_top = -18.0
 offset_right = 36.0
-offset_bottom = 2.0
+offset_bottom = -2.0
 theme_override_colors/font_color = Color(1, 0.95, 0.7, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_font_sizes/font_size = 10
 text = "Out: 0/20"
 horizontal_alignment = 1
+
+[node name="OutputPile" type="Node2D" parent="StorageAreas"]
+position = Vector2(34, 20)
+
+[node name="Slot1" type="ColorRect" parent="StorageAreas/OutputPile"]
+visible = false
+offset_right = 4.0
+offset_bottom = 4.0
+color = Color(0.55, 0.35, 0.15, 1)
+
+[node name="Slot2" type="ColorRect" parent="StorageAreas/OutputPile"]
+visible = false
+offset_left = 5.0
+offset_right = 9.0
+offset_bottom = 4.0
+color = Color(0.55, 0.35, 0.15, 1)
+
+[node name="Slot3" type="ColorRect" parent="StorageAreas/OutputPile"]
+visible = false
+offset_left = 10.0
+offset_right = 14.0
+offset_bottom = 4.0
+color = Color(0.55, 0.35, 0.15, 1)
+
+[node name="Slot4" type="ColorRect" parent="StorageAreas/OutputPile"]
+visible = false
+offset_top = 5.0
+offset_right = 4.0
+offset_bottom = 9.0
+color = Color(0.55, 0.35, 0.15, 1)
+
+[node name="Slot5" type="ColorRect" parent="StorageAreas/OutputPile"]
+visible = false
+offset_left = 5.0
+offset_top = 5.0
+offset_right = 9.0
+offset_bottom = 9.0
+color = Color(0.55, 0.35, 0.15, 1)
