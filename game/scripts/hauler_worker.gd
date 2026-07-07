@@ -4,6 +4,8 @@ enum State { IDLE, TO_SOURCE, TO_DEST }
 
 const ARRIVE_DISTANCE := 8.0
 const WALK_SHEET := preload("res://assets/sprites/hauler_worker_walk.png")
+const FRAME_SIZE := 24
+const WALK_FRAMES := 4
 
 @export var move_speed: float = 90.0
 
@@ -37,15 +39,15 @@ func _setup_walk_animation() -> void:
 	frames.set_animation_loop(&"idle", true)
 	frames.set_animation_speed(&"idle", 1.0)
 
-	for i in 2:
+	for i in WALK_FRAMES:
 		var atlas := AtlasTexture.new()
 		atlas.atlas = WALK_SHEET
-		atlas.region = Rect2(i * 16, 0, 16, 16)
+		atlas.region = Rect2(i * FRAME_SIZE, 0, FRAME_SIZE, FRAME_SIZE)
 		frames.add_frame(&"walk", atlas)
 
 	var idle_atlas := AtlasTexture.new()
 	idle_atlas.atlas = WALK_SHEET
-	idle_atlas.region = Rect2(0, 0, 16, 16)
+	idle_atlas.region = Rect2(0, 0, FRAME_SIZE, FRAME_SIZE)
 	frames.add_frame(&"idle", idle_atlas)
 
 	_body.sprite_frames = frames

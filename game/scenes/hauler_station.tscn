@@ -7,6 +7,7 @@
 script = ExtResource("1_station")
 
 [node name="Sprite" type="Sprite2D" parent="."]
+position = Vector2(-8, -16)
 texture_filter = 0
 centered = false
 texture = ExtResource("2_sprite")
