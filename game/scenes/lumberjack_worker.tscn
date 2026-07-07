@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3 uid="uid://lumberjack-worker"]
+
+[ext_resource type="Script" path="res://scripts/lumberjack_worker.gd" id="1_worker"]
+[ext_resource type="Texture2D" path="res://assets/sprites/wood_log.png" id="2_log"]
+
+[node name="LumberjackWorker" type="Node2D"]
+script = ExtResource("1_worker")
+
+[node name="Body" type="AnimatedSprite2D" parent="."]
+texture_filter = 0
+
+[node name="Cargo" type="Sprite2D" parent="."]
+visible = false
+texture_filter = 0
+position = Vector2(0, -12)
+scale = Vector2(0.9, 0.9)
+texture = ExtResource("2_log")
