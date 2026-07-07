@@ -3,6 +3,7 @@ extends Node2D
 enum State { IDLE, TO_SOURCE, TO_DEST }
 
 const ARRIVE_DISTANCE := 8.0
+const WALK_SHEET := preload("res://assets/sprites/hauler_worker_walk.png")
 
 @export var move_speed: float = 90.0
 
@@ -14,8 +15,8 @@ var _destination: Node2D
 var _cargo_amount: int = 0
 var _idle_timer: float = 0.0
 
-@onready var _body: ColorRect = $Body
-@onready var _cargo: ColorRect = $Cargo
+@onready var _body: AnimatedSprite2D = $Body
+@onready var _cargo: Sprite2D = $Cargo
 
 func setup(station: Node2D, body_color: Color) -> void:
 	_station = station
@@ -23,10 +24,35 @@ func setup(station: Node2D, body_color: Color) -> void:
 
 func _ready() -> void:
 	add_to_group("hauler_worker")
-	_body.color = _pending_color
+	_setup_walk_animation()
+	_body.modulate = _pending_color
 	_cargo.visible = false
 
+func _setup_walk_animation() -> void:
+	var frames := SpriteFrames.new()
+	frames.add_animation(&"walk")
+	frames.set_animation_loop(&"walk", true)
+	frames.set_animation_speed(&"walk", 6.0)
+	frames.add_animation(&"idle")
+	frames.set_animation_loop(&"idle", true)
+	frames.set_animation_speed(&"idle", 1.0)
+
+	for i in 2:
+		var atlas := AtlasTexture.new()
+		atlas.atlas = WALK_SHEET
+		atlas.region = Rect2(i * 16, 0, 16, 16)
+		frames.add_frame(&"walk", atlas)
+
+	var idle_atlas := AtlasTexture.new()
+	idle_atlas.atlas = WALK_SHEET
+	idle_atlas.region = Rect2(0, 0, 16, 16)
+	frames.add_frame(&"idle", idle_atlas)
+
+	_body.sprite_frames = frames
+	_body.play(&"idle")
+
 func _process(delta: float) -> void:
+	_update_animation()
 	match _state:
 		State.IDLE:
 			_process_idle(delta)
@@ -34,6 +60,14 @@ func _process(delta: float) -> void:
 			_process_to_source(delta)
 		State.TO_DEST:
 			_process_to_dest(delta)
+
+func _update_animation() -> void:
+	if _state == State.IDLE:
+		if _body.animation != &"idle":
+			_body.play(&"idle")
+	else:
+		if _body.animation != &"walk":
+			_body.play(&"walk")
 
 func _process_idle(delta: float) -> void:
 	if _station != null and is_instance_valid(_station):
