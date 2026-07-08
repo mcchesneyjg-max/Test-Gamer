@@ -62,7 +62,7 @@ func _refresh_panel_labels() -> void:
 		return
 	_zone_label.text = _selected_lodge.get_zone_status_text()
 	if _selected_lodge.has_plant_zone():
-		_status_label.text = "Workers plant inside the green zone."
+		_status_label.text = "Workers plant inside the drawn zone."
 	else:
 		_status_label.text = "Draw a zone (max %d tiles). Lodge must be inside." % _selected_lodge.max_zone_tiles
 
