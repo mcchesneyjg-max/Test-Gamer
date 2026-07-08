@@ -2,7 +2,7 @@ extends Node2D
 
 enum State { IDLE, TO_SOURCE, TO_DEST }
 
-const ARRIVE_DISTANCE := 10.0
+const ARRIVE_DISTANCE := 18.0
 const WALK_SHEET := preload("res://assets/sprites/hauler_worker_walk.png")
 const FRAME_SIZE := 32
 const WALK_FRAMES := 4
@@ -83,13 +83,13 @@ func _process_idle(delta: float) -> void:
 	_try_start_job()
 
 func _process_to_source(delta: float) -> void:
-	if not _is_source_valid():
+	if not _is_source_reachable():
 		_return_idle()
 		return
 
-	var pickup_position := _get_source_position(_source)
+	var pickup_position := _get_nearest_pickup_position(_source)
 	_move_toward(pickup_position, delta)
-	if position.distance_to(pickup_position) <= ARRIVE_DISTANCE:
+	if _is_near_pickup(_source):
 		_pickup_cargo()
 
 func _process_to_dest(delta: float) -> void:
@@ -135,7 +135,7 @@ func _find_best_source() -> Node2D:
 	for camp in CampRegistry.get_active_camps():
 		if not camp.has_method("has_output_ready") or not camp.has_output_ready():
 			continue
-		var distance := position.distance_to(_get_source_position(camp))
+		var distance := position.distance_to(_get_nearest_pickup_position(camp))
 		if distance < best_distance:
 			best_distance = distance
 			best = camp
@@ -157,7 +157,10 @@ func _find_best_destination() -> Node2D:
 	return best
 
 func _pickup_cargo() -> void:
-	if not _is_source_valid():
+	if not _is_source_reachable():
+		_return_idle()
+		return
+	if not _source.has_output_ready():
 		_return_idle()
 		return
 
@@ -193,10 +196,28 @@ func _return_idle() -> void:
 	_state = State.IDLE
 	_idle_timer = 0.2
 
-func _get_source_position(source: Node2D) -> Vector2:
+func _get_pickup_positions(source: Node2D) -> Array[Vector2]:
+	var points: Array[Vector2] = [source.position]
 	if source.has_method("get_log_pickup_position"):
-		return source.get_log_pickup_position()
-	return source.position
+		points.append(source.get_log_pickup_position())
+	return points
+
+func _get_nearest_pickup_position(source: Node2D) -> Vector2:
+	var points := _get_pickup_positions(source)
+	var best := points[0]
+	var best_distance := position.distance_to(best)
+	for i in range(1, points.size()):
+		var distance := position.distance_to(points[i])
+		if distance < best_distance:
+			best_distance = distance
+			best = points[i]
+	return best
+
+func _is_near_pickup(source: Node2D) -> bool:
+	for point in _get_pickup_positions(source):
+		if position.distance_to(point) <= ARRIVE_DISTANCE:
+			return true
+	return false
 
 func _get_destination_position(destination: Node2D) -> Vector2:
 	if destination.has_method("get_delivery_position"):
@@ -209,13 +230,8 @@ func _move_toward(target_position: Vector2, delta: float) -> void:
 		return
 	position += offset.normalized() * move_speed * delta
 
-func _is_source_valid() -> bool:
-	return (
-		_source != null
-		and is_instance_valid(_source)
-		and _source.has_method("has_output_ready")
-		and _source.has_output_ready()
-	)
+func _is_source_reachable() -> bool:
+	return _source != null and is_instance_valid(_source) and _source.has_method("take_from_output")
 
 func _is_destination_valid() -> bool:
 	return (
