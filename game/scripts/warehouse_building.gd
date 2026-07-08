@@ -24,6 +24,9 @@ func deposit_logs(amount: int) -> int:
 func can_accept_logs() -> bool:
 	return not _storage.input.is_full()
 
+func get_delivery_position() -> Vector2:
+	return position + Vector2(32, 44)
+
 func set_stored_logs(amount: int) -> void:
 	_storage.input.current = clampi(amount, 0, _storage.input.capacity)
 	_storage.input.changed.emit(_storage.input.current, _storage.input.capacity)
