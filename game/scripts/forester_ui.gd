@@ -7,6 +7,7 @@ const TILE_SIZE := 32
 @onready var _zone_label: Label = $Panel/Margin/VBox/ZoneLabel
 @onready var _status_label: Label = $Panel/Margin/VBox/StatusLabel
 @onready var _draw_button: Button = $Panel/Margin/VBox/DrawZoneButton
+@onready var _upgrade_button: Button = $Panel/Margin/VBox/UpgradeButton
 @onready var _close_button: Button = $Panel/Margin/VBox/CloseButton
 @onready var _hint_label: Label = $DrawHintLabel
 
@@ -48,8 +49,9 @@ func _try_select_lodge() -> bool:
 func _open_panel(lodge: Node2D) -> void:
 	_selected_lodge = lodge
 	_zone_overlay.clear_preview()
-	_title_label.text = "Forester Lodge"
+	_title_label.text = _selected_lodge.get_level_name()
 	_refresh_panel_labels()
+	_upgrade_button.disabled = not _selected_lodge.can_upgrade()
 	_panel.visible = true
 
 func _close_panel() -> void:
@@ -143,13 +145,17 @@ func _mouse_tile() -> Vector2i:
 func _lodge_at_mouse() -> Node2D:
 	var click_tile := _mouse_tile()
 	for lodge in ForesterLodgeRegistry.get_active_lodges():
-		var lodge_tile := _tilemap.local_to_map(lodge.position)
-		if _chebyshev_distance(click_tile, lodge_tile) <= 1:
+		if lodge.has_method("occupies_tile") and lodge.occupies_tile(click_tile):
 			return lodge
 	return null
 
-func _chebyshev_distance(a: Vector2i, b: Vector2i) -> int:
-	return maxi(absi(a.x - b.x), absi(a.y - b.y))
+func _on_upgrade_pressed() -> void:
+	if _selected_lodge == null or not is_instance_valid(_selected_lodge):
+		return
+	if _selected_lodge.upgrade_level():
+		_title_label.text = _selected_lodge.get_level_name()
+		_status_label.text = "Lodge upgraded! Same footprint, larger building."
+		_upgrade_button.disabled = not _selected_lodge.can_upgrade()
 
 func _on_close_pressed() -> void:
 	_close_panel()

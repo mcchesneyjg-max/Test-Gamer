@@ -67,15 +67,27 @@ func _try_place_hauler_station() -> void:
 	_tilemap.add_child(station)
 
 func _try_place_forester_lodge() -> void:
-	var tile_coords := _tilemap.local_to_map(_tilemap.get_global_mouse_position())
-	if not _is_valid_placement_tile(tile_coords):
+	var center_tile := _tilemap.local_to_map(_tilemap.get_global_mouse_position())
+	var top_left := center_tile - Vector2i(1, 1)
+	if not _is_valid_forester_footprint(top_left):
 		return
 
 	var lodge := FORESTER_LODGE_SCENE.instantiate()
-	lodge.position = _tilemap.map_to_local(tile_coords)
 	_tilemap.add_child(lodge)
+	lodge.initialize_placement(top_left)
 	if _forester_ui:
 		_forester_ui.register_new_lodge(lodge)
+
+func _is_valid_forester_footprint(top_left: Vector2i) -> bool:
+	var footprint_size: Vector2i = Vector2i(4, 4)
+	for y in range(footprint_size.y):
+		for x in range(footprint_size.x):
+			var tile_coords := top_left + Vector2i(x, y)
+			if not _is_valid_placement_tile(tile_coords):
+				return false
+			if _is_tile_occupied(tile_coords):
+				return false
+	return true
 
 func _is_valid_placement_tile(tile_coords: Vector2i) -> bool:
 	if tile_coords.x < 0 or tile_coords.y < 0:
@@ -100,7 +112,7 @@ func _is_tile_occupied(tile_coords: Vector2i) -> bool:
 		if _tilemap.local_to_map(station.position) == tile_coords:
 			return true
 	for lodge in ForesterLodgeRegistry.get_active_lodges():
-		if _tilemap.local_to_map(lodge.position) == tile_coords:
+		if lodge.has_method("occupies_tile") and lodge.occupies_tile(tile_coords):
 			return true
 	for sapling in SaplingRegistry.get_active_saplings():
 		if _tilemap.local_to_map(sapling.position) == tile_coords:
