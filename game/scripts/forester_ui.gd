@@ -62,7 +62,7 @@ func _refresh_panel_labels() -> void:
 		return
 	_zone_label.text = _selected_lodge.get_zone_status_text()
 	if _selected_lodge.has_plant_zone():
-		_status_label.text = "Workers plant inside the green zone."
+		_status_label.text = "Workers plant inside the drawn zone."
 	else:
 		_status_label.text = "Draw a zone (max %d tiles). Lodge must be inside." % _selected_lodge.max_zone_tiles
 
@@ -126,7 +126,7 @@ func _update_draw_preview() -> void:
 		return
 	var zone := _rect_from_tiles(_draw_anchor, _draw_current)
 	var tile_count := zone.size.x * zone.size.y
-	var within_limit := tile_count <= _selected_lodge.max_zone_tiles
+	var within_limit: bool = tile_count <= _selected_lodge.max_zone_tiles
 	_zone_overlay.set_preview_zone(zone, true, within_limit)
 
 func _rect_from_tiles(a: Vector2i, b: Vector2i) -> Rect2i:

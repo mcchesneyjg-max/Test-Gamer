@@ -32,12 +32,6 @@ func _draw() -> void:
 	if _tilemap == null:
 		return
 
-	for lodge in _tracked_lodges:
-		if not is_instance_valid(lodge):
-			continue
-		if lodge.has_method("has_plant_zone") and lodge.has_plant_zone():
-			_draw_zone(lodge.get_plant_zone(), Color(0.35, 0.78, 0.42, 0.18), Color(0.35, 0.78, 0.42, 0.75))
-
 	if _show_preview and _preview_zone.size != Vector2i.ZERO:
 		if _preview_within_limit:
 			_draw_zone(_preview_zone, Color(0.35, 0.78, 0.42, 0.2), Color(0.35, 0.78, 0.42, 0.9))
