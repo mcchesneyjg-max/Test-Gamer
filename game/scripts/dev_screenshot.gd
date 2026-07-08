@@ -33,12 +33,14 @@ func _ready() -> void:
 		call_deferred("_verify_hauler_pickup")
 	elif "--screenshot-forester-zone" in OS.get_cmdline_args():
 		call_deferred("_capture_forester_zone")
+	elif "--screenshot-forester-levels" in OS.get_cmdline_args():
+		call_deferred("_capture_forester_levels")
 
-func _spawn_lodge_with_zone(tilemap: TileMap, coords: Vector2i, half_size: int = 4):
+func _spawn_lodge_with_zone(tilemap: TileMap, center_coords: Vector2i, half_size: int = 4):
 	var lodge_scene := preload("res://scenes/forester_lodge.tscn")
 	var lodge = lodge_scene.instantiate()
-	lodge.position = tilemap.map_to_local(coords)
 	tilemap.add_child(lodge)
+	lodge.initialize_placement(center_coords - Vector2i(1, 1))
 	await get_tree().process_frame
 	lodge.assign_default_plant_zone(half_size)
 	return lodge
@@ -511,5 +513,23 @@ func _capture_forester_zone() -> void:
 	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
 	DirAccess.make_dir_absolute(output_dir)
 	var output_path := output_dir.path_join("forester-planting-zone.png")
+	get_viewport().get_texture().get_image().save_png(output_path)
+	get_tree().quit()
+
+func _capture_forester_levels() -> void:
+	var tilemap: TileMap = get_parent().get_node("TileMap")
+	var camera: Camera2D = get_parent().get_node("Camera2D")
+	camera.zoom = Vector2(2.5, 2.5)
+
+	var centers := [Vector2i(118, 124), Vector2i(128, 124), Vector2i(138, 124)]
+	for i in range(3):
+		var lodge = await _spawn_lodge_with_zone(tilemap, centers[i], 3)
+		lodge.level = i + 1
+
+	camera.position = Vector2(128, 124) * 32
+	await get_tree().create_timer(0.5).timeout
+	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
+	DirAccess.make_dir_absolute(output_dir)
+	var output_path := output_dir.path_join("forester-lodge-levels.png")
 	get_viewport().get_texture().get_image().save_png(output_path)
 	get_tree().quit()
