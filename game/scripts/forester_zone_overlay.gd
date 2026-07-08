@@ -5,14 +5,16 @@ const TILE_SIZE := 32
 var _tilemap: TileMap
 var _preview_zone: Rect2i = Rect2i()
 var _show_preview: bool = false
+var _preview_within_limit: bool = true
 var _tracked_lodges: Array[Node2D] = []
 
 func setup(tilemap: TileMap) -> void:
 	_tilemap = tilemap
 
-func set_preview_zone(zone: Rect2i, visible: bool) -> void:
+func set_preview_zone(zone: Rect2i, visible: bool, within_limit: bool = true) -> void:
 	_preview_zone = zone
 	_show_preview = visible
+	_preview_within_limit = within_limit
 	queue_redraw()
 
 func track_lodge(lodge: Node2D) -> void:
@@ -37,7 +39,10 @@ func _draw() -> void:
 			_draw_zone(lodge.get_plant_zone(), Color(0.35, 0.78, 0.42, 0.18), Color(0.35, 0.78, 0.42, 0.75))
 
 	if _show_preview and _preview_zone.size != Vector2i.ZERO:
-		_draw_zone(_preview_zone, Color(0.95, 0.85, 0.2, 0.2), Color(0.95, 0.85, 0.2, 0.9))
+		if _preview_within_limit:
+			_draw_zone(_preview_zone, Color(0.35, 0.78, 0.42, 0.2), Color(0.35, 0.78, 0.42, 0.9))
+		else:
+			_draw_zone(_preview_zone, Color(0.9, 0.25, 0.25, 0.2), Color(0.95, 0.2, 0.2, 0.95))
 
 func _draw_zone(zone: Rect2i, fill_color: Color, border_color: Color) -> void:
 	var pixel_rect := _tile_zone_to_rect(zone)

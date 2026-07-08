@@ -72,7 +72,7 @@ func _on_draw_zone_pressed() -> void:
 	_draw_mode = true
 	_draw_anchor = Vector2i(-999999, -999999)
 	_panel.visible = false
-	_hint_label.text = "Draw planting zone: click and drag (max %d tiles, must include lodge). Esc to cancel." % _selected_lodge.max_zone_tiles
+	_hint_label.text = "Draw planting zone: green = valid size, red = too large (max %d tiles). Lodge must be inside. Esc to cancel." % _selected_lodge.max_zone_tiles
 	_hint_label.visible = true
 
 func _cancel_draw_mode() -> void:
@@ -125,7 +125,9 @@ func _update_draw_preview() -> void:
 	if _draw_anchor.x < -999999:
 		return
 	var zone := _rect_from_tiles(_draw_anchor, _draw_current)
-	_zone_overlay.set_preview_zone(zone, true)
+	var tile_count := zone.size.x * zone.size.y
+	var within_limit := tile_count <= _selected_lodge.max_zone_tiles
+	_zone_overlay.set_preview_zone(zone, true, within_limit)
 
 func _rect_from_tiles(a: Vector2i, b: Vector2i) -> Rect2i:
 	var x0 := mini(a.x, b.x)
