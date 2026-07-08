@@ -13,6 +13,6 @@ texture_filter = 0
 [node name="Cargo" type="Sprite2D" parent="."]
 visible = false
 texture_filter = 0
-position = Vector2(0, -12)
-scale = Vector2(0.9, 0.9)
+position = Vector2(0, -14)
+scale = Vector2(0.52, 0.52)
 texture = ExtResource("2_log")
