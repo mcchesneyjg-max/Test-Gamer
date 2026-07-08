@@ -1,6 +1,7 @@
 extends Node2D
 
 @onready var _tilemap: TileMap = $"../TileMap"
+@onready var _forester_ui: CanvasLayer = $"../ForesterUi"
 
 const MATURE_TREE_SCENE := preload("res://scenes/mature_tree.tscn")
 const LUMBER_CAMP_SCENE := preload("res://scenes/lumber_camp.tscn")
@@ -9,6 +10,11 @@ const HAULER_STATION_SCENE := preload("res://scenes/hauler_station.tscn")
 const FORESTER_LODGE_SCENE := preload("res://scenes/forester_lodge.tscn")
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _forester_ui and _forester_ui.handle_input(event):
+		return
+	if _forester_ui and _forester_ui.is_blocking_placement():
+		return
+
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			_try_place_tree()
@@ -68,6 +74,8 @@ func _try_place_forester_lodge() -> void:
 	var lodge := FORESTER_LODGE_SCENE.instantiate()
 	lodge.position = _tilemap.map_to_local(tile_coords)
 	_tilemap.add_child(lodge)
+	if _forester_ui:
+		_forester_ui.register_new_lodge(lodge)
 
 func _is_valid_placement_tile(tile_coords: Vector2i) -> bool:
 	if tile_coords.x < 0 or tile_coords.y < 0:

@@ -31,6 +31,17 @@ func _ready() -> void:
 		call_deferred("_capture_workers")
 	elif "--verify-hauler-pickup" in OS.get_cmdline_args():
 		call_deferred("_verify_hauler_pickup")
+	elif "--screenshot-forester-zone" in OS.get_cmdline_args():
+		call_deferred("_capture_forester_zone")
+
+func _spawn_lodge_with_zone(tilemap: TileMap, coords: Vector2i, half_size: int = 4):
+	var lodge_scene := preload("res://scenes/forester_lodge.tscn")
+	var lodge = lodge_scene.instantiate()
+	lodge.position = tilemap.map_to_local(coords)
+	tilemap.add_child(lodge)
+	await get_tree().process_frame
+	lodge.assign_default_plant_zone(half_size)
+	return lodge
 
 func _capture_task2() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
@@ -332,11 +343,9 @@ func _capture_task8() -> void:
 	camera.position = Vector2(125, 124) * 32
 	camera.zoom = Vector2(3, 3)
 
-	var lodge_scene := preload("res://scenes/forester_lodge.tscn")
-	var lodge = lodge_scene.instantiate()
-	lodge.position = tilemap.map_to_local(Vector2i(124, 124))
+	var lodge = await _spawn_lodge_with_zone(tilemap, Vector2i(124, 124), 4)
 	lodge.sapling_grow_time = 2.0
-	tilemap.add_child(lodge)
+	lodge.max_saplings = 4
 
 	await get_tree().create_timer(0.3).timeout
 	for worker in get_tree().get_nodes_in_group("forester_worker"):
@@ -355,12 +364,9 @@ func _capture_task9() -> void:
 	camera.position = Vector2(125, 124) * 32
 	camera.zoom = Vector2(3, 3)
 
-	var lodge_scene := preload("res://scenes/forester_lodge.tscn")
-	var lodge = lodge_scene.instantiate()
-	lodge.position = tilemap.map_to_local(Vector2i(124, 124))
+	var lodge = await _spawn_lodge_with_zone(tilemap, Vector2i(124, 124), 4)
 	lodge.sapling_grow_time = 2.0
 	lodge.max_saplings = 4
-	tilemap.add_child(lodge)
 
 	await get_tree().create_timer(0.3).timeout
 	for worker in get_tree().get_nodes_in_group("forester_worker"):
@@ -379,19 +385,20 @@ func _capture_task10() -> void:
 	camera.position = Vector2(125, 124) * 32
 	camera.zoom = Vector2(3, 3)
 
-	var lodge_scene := preload("res://scenes/forester_lodge.tscn")
-	var lodge = lodge_scene.instantiate()
-	lodge.position = tilemap.map_to_local(Vector2i(120, 124))
+	var lodge = await _spawn_lodge_with_zone(tilemap, Vector2i(120, 124), 5)
 	lodge.sapling_grow_time = 4.0
 	lodge.max_saplings = 6
-	tilemap.add_child(lodge)
 
 	var camp_scene := preload("res://scenes/lumber_camp.tscn")
 	var camp = camp_scene.instantiate()
-	camp.position = tilemap.map_to_local(Vector2i(124, 124))
+	camp.position = tilemap.map_to_local(Vector2i(128, 124))
 	camp.chop_interval = 1.0
-	camp.chop_radius_tiles = 5
+	camp.chop_radius_tiles = 6
 	tilemap.add_child(camp)
+
+	var bootstrap_tree := MATURE_TREE_SCENE.instantiate()
+	bootstrap_tree.position = tilemap.map_to_local(Vector2i(125, 124))
+	tilemap.add_child(bootstrap_tree)
 
 	var warehouse_scene := preload("res://scenes/warehouse_building.tscn")
 	var warehouse = warehouse_scene.instantiate()
@@ -408,14 +415,14 @@ func _capture_task10() -> void:
 	for worker in get_tree().get_nodes_in_group("hauler_worker"):
 		worker.move_speed = 180.0
 	for worker in get_tree().get_nodes_in_group("forester_worker"):
-		worker.move_speed = 150.0
+		worker.move_speed = 200.0
 	for worker in get_tree().get_nodes_in_group("lumberjack_worker"):
 		worker.move_speed = 150.0
 
-	await get_tree().create_timer(35.0).timeout
+	await get_tree().create_timer(50.0).timeout
 
 	if Warehouse.wood_logs <= 0:
-		push_error("Closed loop verification failed: warehouse has no logs after 35s")
+		push_error("Closed loop verification failed: warehouse has no logs after 50s")
 
 	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
 	DirAccess.make_dir_absolute(output_dir)
@@ -429,11 +436,8 @@ func _capture_workers() -> void:
 	camera.position = Vector2(125, 124) * 32
 	camera.zoom = Vector2(3, 3)
 
-	var lodge_scene := preload("res://scenes/forester_lodge.tscn")
-	var lodge = lodge_scene.instantiate()
-	lodge.position = tilemap.map_to_local(Vector2i(118, 124))
+	var lodge = await _spawn_lodge_with_zone(tilemap, Vector2i(118, 124), 4)
 	lodge.sapling_grow_time = 6.0
-	tilemap.add_child(lodge)
 
 	var camp_scene := preload("res://scenes/lumber_camp.tscn")
 	var camp = camp_scene.instantiate()
@@ -487,4 +491,28 @@ func _verify_hauler_pickup() -> void:
 	if camp.get_output_log_count() >= 4:
 		push_error("Hauler pickup verification failed: camp still has %d logs" % camp.get_output_log_count())
 
+	get_tree().quit()
+
+func _capture_forester_zone() -> void:
+	var tilemap: TileMap = get_parent().get_node("TileMap")
+	var camera: Camera2D = get_parent().get_node("Camera2D")
+	camera.position = Vector2(125, 124) * 32
+	camera.zoom = Vector2(3, 3)
+
+	var lodge = await _spawn_lodge_with_zone(tilemap, Vector2i(124, 124), 5)
+	lodge.set_plant_zone(Rect2i(118, 118, 12, 12))
+	lodge.sapling_grow_time = 3.0
+
+	var overlay: Node2D = get_parent().get_node("ForesterZoneOverlay")
+	overlay.track_lodge(lodge)
+
+	await get_tree().create_timer(0.3).timeout
+	for worker in get_tree().get_nodes_in_group("forester_worker"):
+		worker.move_speed = 140.0
+
+	await get_tree().create_timer(10.0).timeout
+	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
+	DirAccess.make_dir_absolute(output_dir)
+	var output_path := output_dir.path_join("forester-planting-zone.png")
+	get_viewport().get_texture().get_image().save_png(output_path)
 	get_tree().quit()
