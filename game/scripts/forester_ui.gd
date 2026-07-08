@@ -47,7 +47,7 @@ func _try_select_lodge() -> bool:
 
 func _open_panel(lodge: Node2D) -> void:
 	_selected_lodge = lodge
-	_zone_overlay.track_lodge(lodge)
+	_zone_overlay.clear_preview()
 	_title_label.text = "Forester Lodge"
 	_refresh_panel_labels()
 	_panel.visible = true
@@ -79,7 +79,7 @@ func _cancel_draw_mode() -> void:
 	_draw_mode = false
 	_draw_anchor = Vector2i(-999999, -999999)
 	_hint_label.visible = false
-	_zone_overlay.set_preview_zone(Rect2i(), false)
+	_zone_overlay.clear_preview()
 	if _selected_lodge != null and is_instance_valid(_selected_lodge):
 		_panel.visible = true
 
@@ -112,6 +112,7 @@ func _commit_draw_zone(end_tile: Vector2i) -> void:
 		return
 
 	var zone := _rect_from_tiles(_draw_anchor, end_tile)
+	_zone_overlay.clear_preview()
 	var error: String = _selected_lodge.set_plant_zone(zone)
 	_cancel_draw_mode()
 	if error.is_empty():
@@ -153,6 +154,5 @@ func _chebyshev_distance(a: Vector2i, b: Vector2i) -> int:
 func _on_close_pressed() -> void:
 	_close_panel()
 
-func register_new_lodge(lodge: Node2D) -> void:
-	_zone_overlay.track_lodge(lodge)
-	lodge.tree_exited.connect(func(): _zone_overlay.untrack_lodge(lodge))
+func register_new_lodge(_lodge: Node2D) -> void:
+	pass
