@@ -22,7 +22,9 @@ The playable map is a **250×250 tile grid** with **32×32 pixel tiles** (8000×
 - **Right click** — place a lumber camp (lumberjack walks to trees, chops, drags logs back)
 - **Shift + Right click** — place a warehouse on the map (Task 5)
 - **Ctrl + Right click** — place a hauler station on the map (Task 6)
-- **Alt + Right click** — place a forester lodge (forester worker walks out to plant saplings)
+- **Alt + Right click** — place a forester lodge
+- **Left click forester lodge** — open menu → **Draw Planting Zone** (click-drag box, max 64 tiles, lodge must be inside)
+- Forester workers only plant inside the zone, with spacing from trees and buildings
 - **Tier 1 closed loop:** lodge → saplings → trees → lumber camp → haulers → warehouse
 - Haulers from stations **auto-haul** lumber camp logs to warehouse input storage (Task 7)
 - Buildings and workers use **cozy forest pixel art v3** (`game/assets/sprites/`, process with `python3 game/tools/process_v3_sprites.py` or regenerate v2 with `python3 game/tools/generate_sprites.py`)
