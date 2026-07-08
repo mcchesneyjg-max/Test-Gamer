@@ -43,34 +43,34 @@ text = "Out: 0/20"
 horizontal_alignment = 1
 
 [node name="OutputPile" type="Node2D" parent="StorageAreas"]
-position = Vector2(34, 20)
+position = Vector2(38, 18)
 
 [node name="Slot1" type="Sprite2D" parent="StorageAreas/OutputPile"]
 visible = false
 texture_filter = 0
 position = Vector2(2, 2)
-scale = Vector2(0.5, 0.5)
+scale = Vector2(0.55, 0.55)
 
 [node name="Slot2" type="Sprite2D" parent="StorageAreas/OutputPile"]
 visible = false
 texture_filter = 0
 position = Vector2(7, 2)
-scale = Vector2(0.5, 0.5)
+scale = Vector2(0.55, 0.55)
 
 [node name="Slot3" type="Sprite2D" parent="StorageAreas/OutputPile"]
 visible = false
 texture_filter = 0
 position = Vector2(12, 2)
-scale = Vector2(0.5, 0.5)
+scale = Vector2(0.55, 0.55)
 
 [node name="Slot4" type="Sprite2D" parent="StorageAreas/OutputPile"]
 visible = false
 texture_filter = 0
 position = Vector2(2, 7)
-scale = Vector2(0.5, 0.5)
+scale = Vector2(0.55, 0.55)
 
 [node name="Slot5" type="Sprite2D" parent="StorageAreas/OutputPile"]
 visible = false
 texture_filter = 0
 position = Vector2(7, 7)
-scale = Vector2(0.5, 0.5)
+scale = Vector2(0.55, 0.55)
