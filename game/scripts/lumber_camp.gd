@@ -29,13 +29,18 @@ func deposit_harvested_log(amount: int = 1) -> int:
 	return _storage.output.try_add(amount)
 
 func has_output_ready() -> bool:
-	return not _storage.output.is_empty()
+	return get_output_log_count() > 0
+
+func get_output_log_count() -> int:
+	return _storage.output.current
 
 func take_from_output(amount: int = 1) -> int:
 	return _storage.output.try_remove(amount)
 
 func get_log_pickup_position() -> Vector2:
 	var pile := _storage.get_node_or_null("OutputPile") as Node2D
+	if pile and _tilemap:
+		return _tilemap.to_local(pile.global_position)
 	if pile:
 		return position + pile.position
 	return position

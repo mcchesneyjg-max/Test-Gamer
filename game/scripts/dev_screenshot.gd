@@ -29,6 +29,8 @@ func _ready() -> void:
 		call_deferred("_capture_task10")
 	elif "--screenshot-workers" in OS.get_cmdline_args():
 		call_deferred("_capture_workers")
+	elif "--verify-hauler-pickup" in OS.get_cmdline_args():
+		call_deferred("_verify_hauler_pickup")
 
 func _capture_task2() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
@@ -451,4 +453,38 @@ func _capture_workers() -> void:
 	DirAccess.make_dir_absolute(output_dir)
 	var output_path := output_dir.path_join("workers-forester-lumberjack.png")
 	get_viewport().get_texture().get_image().save_png(output_path)
+	get_tree().quit()
+
+func _verify_hauler_pickup() -> void:
+	var tilemap: TileMap = get_parent().get_node("TileMap")
+
+	var camp_scene := preload("res://scenes/lumber_camp.tscn")
+	var camp = camp_scene.instantiate()
+	camp.position = tilemap.map_to_local(Vector2i(124, 124))
+	tilemap.add_child(camp)
+	await get_tree().process_frame
+	camp.deposit_to_output(4)
+
+	var warehouse_scene := preload("res://scenes/warehouse_building.tscn")
+	var warehouse = warehouse_scene.instantiate()
+	warehouse.position = tilemap.map_to_local(Vector2i(132, 124))
+	tilemap.add_child(warehouse)
+
+	var station_scene := preload("res://scenes/hauler_station.tscn")
+	var station = station_scene.instantiate()
+	station.position = tilemap.map_to_local(Vector2i(126, 127))
+	station.hauler_count = 1
+	tilemap.add_child(station)
+
+	await get_tree().create_timer(0.3).timeout
+	for worker in get_tree().get_nodes_in_group("hauler_worker"):
+		worker.move_speed = 200.0
+
+	await get_tree().create_timer(8.0).timeout
+
+	if Warehouse.wood_logs <= 0:
+		push_error("Hauler pickup verification failed: camp had 4 logs but warehouse is empty")
+	if camp.get_output_log_count() >= 4:
+		push_error("Hauler pickup verification failed: camp still has %d logs" % camp.get_output_log_count())
+
 	get_tree().quit()

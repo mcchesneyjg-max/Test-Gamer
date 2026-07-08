@@ -25,6 +25,9 @@ func can_accept_logs() -> bool:
 	return not _storage.input.is_full()
 
 func get_delivery_position() -> Vector2:
+	var tilemap := get_parent() as TileMap
+	if tilemap:
+		return tilemap.to_local(global_position + Vector2(32, 44))
 	return position + Vector2(32, 44)
 
 func set_stored_logs(amount: int) -> void:

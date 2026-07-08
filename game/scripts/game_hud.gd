@@ -3,14 +3,25 @@ extends CanvasLayer
 @onready var _wood_label: Label = $MarginContainer/VBoxContainer/WoodLogsLabel
 @onready var _tree_label: Label = $MarginContainer/VBoxContainer/TreesLabel
 @onready var _sapling_label: Label = $MarginContainer/VBoxContainer/SaplingsLabel
+@onready var _camp_logs_label: Label = $MarginContainer/VBoxContainer/CampLogsLabel
+
+var _refresh_timer: float = 0.0
 
 func _ready() -> void:
 	_update_wood_label()
 	_update_tree_label()
 	_update_sapling_label()
+	_update_camp_logs_label()
 	Warehouse.wood_logs_changed.connect(func(_v): _update_wood_label())
 	TreeRegistry.tree_count_changed.connect(func(_c): _update_tree_label())
 	SaplingRegistry.sapling_count_changed.connect(func(_c): _update_sapling_label())
+
+func _process(delta: float) -> void:
+	_refresh_timer += delta
+	if _refresh_timer < 0.5:
+		return
+	_refresh_timer = 0.0
+	_update_camp_logs_label()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_T:
@@ -24,3 +35,10 @@ func _update_tree_label() -> void:
 
 func _update_sapling_label() -> void:
 	_sapling_label.text = "Saplings: %d" % SaplingRegistry.get_sapling_count()
+
+func _update_camp_logs_label() -> void:
+	var waiting := 0
+	for camp in CampRegistry.get_active_camps():
+		if camp.has_method("get_output_log_count"):
+			waiting += camp.get_output_log_count()
+	_camp_logs_label.text = "Camp Logs (waiting): %d" % waiting
