@@ -6,7 +6,6 @@ var _tilemap: TileMap
 var _preview_zone: Rect2i = Rect2i()
 var _show_preview: bool = false
 var _preview_within_limit: bool = true
-var _tracked_lodges: Array[Node2D] = []
 
 func setup(tilemap: TileMap) -> void:
 	_tilemap = tilemap
@@ -17,15 +16,9 @@ func set_preview_zone(zone: Rect2i, visible: bool, within_limit: bool = true) ->
 	_preview_within_limit = within_limit
 	queue_redraw()
 
-func track_lodge(lodge: Node2D) -> void:
-	if lodge not in _tracked_lodges:
-		_tracked_lodges.append(lodge)
-		if lodge.has_signal("plant_zone_changed"):
-			lodge.plant_zone_changed.connect(func(_z): queue_redraw())
-	queue_redraw()
-
-func untrack_lodge(lodge: Node2D) -> void:
-	_tracked_lodges.erase(lodge)
+func clear_preview() -> void:
+	_preview_zone = Rect2i()
+	_show_preview = false
 	queue_redraw()
 
 func _draw() -> void:

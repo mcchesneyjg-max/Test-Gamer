@@ -503,9 +503,6 @@ func _capture_forester_zone() -> void:
 	lodge.set_plant_zone(Rect2i(118, 118, 12, 12))
 	lodge.sapling_grow_time = 3.0
 
-	var overlay: Node2D = get_parent().get_node("ForesterZoneOverlay")
-	overlay.track_lodge(lodge)
-
 	await get_tree().create_timer(0.3).timeout
 	for worker in get_tree().get_nodes_in_group("forester_worker"):
 		worker.move_speed = 140.0
