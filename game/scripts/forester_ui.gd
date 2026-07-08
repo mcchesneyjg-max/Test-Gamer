@@ -126,7 +126,7 @@ func _update_draw_preview() -> void:
 		return
 	var zone := _rect_from_tiles(_draw_anchor, _draw_current)
 	var tile_count := zone.size.x * zone.size.y
-	var within_limit := tile_count <= _selected_lodge.max_zone_tiles
+	var within_limit: bool = tile_count <= _selected_lodge.max_zone_tiles
 	_zone_overlay.set_preview_zone(zone, true, within_limit)
 
 func _rect_from_tiles(a: Vector2i, b: Vector2i) -> Rect2i:
