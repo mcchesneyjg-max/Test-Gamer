@@ -15,8 +15,8 @@ The playable map is a **250×250 tile grid** with **32×32 pixel tiles** (8000×
 
 ### Controls (current setup)
 
-- **W/A/S/D** — pan the camera
-- **Mouse wheel** — zoom in and out
+- **W/A/S/D** — move the player (strict 8 directions: N, NE, E, SE, S, SW, W, NW)
+- **Mouse wheel** — zoom in and out (camera follows the player)
 - **T** — debug: add 1 wood log to warehouse input storage
 - **Left click** — place a mature tree on the map (disabled once a Forester Lodge exists)
 - **Right click** — place a lumber camp (lumberjack walks to trees, chops, drags logs back)

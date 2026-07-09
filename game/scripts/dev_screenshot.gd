@@ -2,6 +2,13 @@ extends Node
 
 const MATURE_TREE_SCENE := preload("res://scenes/mature_tree.tscn")
 
+func _frame_view(world_position: Vector2, zoom_level: Vector2 = Vector2(3, 3)) -> void:
+	var player: Node2D = get_parent().get_node("Player")
+	player.position = world_position
+	var camera: Camera2D = player.get_node("Camera2D")
+	camera.position = Vector2.ZERO
+	camera.zoom = zoom_level
+
 func _ready() -> void:
 	if "--screenshot-task2" in OS.get_cmdline_args():
 		call_deferred("_capture_task2")
@@ -47,9 +54,7 @@ func _spawn_lodge_with_zone(tilemap: TileMap, center_coords: Vector2i, half_size
 
 func _capture_task2() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
-	var camera: Camera2D = get_parent().get_node("Camera2D")
-	camera.position = Vector2(125, 125) * 32
-	camera.zoom = Vector2(3, 3)
+	_frame_view(Vector2(125, 125) * 32)
 
 	var tree_coords := [
 		Vector2i(120, 122),
@@ -76,9 +81,7 @@ func _capture_task2() -> void:
 
 func _capture_task3() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
-	var camera: Camera2D = get_parent().get_node("Camera2D")
-	camera.position = Vector2(125, 125) * 32
-	camera.zoom = Vector2(3, 3)
+	_frame_view(Vector2(125, 125) * 32)
 
 	var camp_coords := Vector2i(124, 124)
 	var tree_coords := [
@@ -110,9 +113,7 @@ func _capture_task3() -> void:
 
 func _capture_task4() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
-	var camera: Camera2D = get_parent().get_node("Camera2D")
-	camera.position = Vector2(125, 125) * 32
-	camera.zoom = Vector2(3, 3)
+	_frame_view(Vector2(125, 125) * 32)
 
 	var camp_coords := Vector2i(124, 124)
 	var tree_coords := [
@@ -144,9 +145,7 @@ func _capture_task4() -> void:
 
 func _capture_task5() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
-	var camera: Camera2D = get_parent().get_node("Camera2D")
-	camera.position = Vector2(125, 125) * 32
-	camera.zoom = Vector2(3, 3)
+	_frame_view(Vector2(125, 125) * 32)
 
 	var warehouse_scene := preload("res://scenes/warehouse_building.tscn")
 	var warehouse = warehouse_scene.instantiate()
@@ -164,9 +163,7 @@ func _capture_task5() -> void:
 
 func _capture_task6() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
-	var camera: Camera2D = get_parent().get_node("Camera2D")
-	camera.position = Vector2(125, 125) * 32
-	camera.zoom = Vector2(3, 3)
+	_frame_view(Vector2(125, 125) * 32)
 
 	var station_scene := preload("res://scenes/hauler_station.tscn")
 	var station = station_scene.instantiate()
@@ -183,9 +180,7 @@ func _capture_task6() -> void:
 
 func _capture_task7() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
-	var camera: Camera2D = get_parent().get_node("Camera2D")
-	camera.position = Vector2(125, 124) * 32
-	camera.zoom = Vector2(3, 3)
+	_frame_view(Vector2(125, 124) * 32)
 
 	var camp_scene := preload("res://scenes/lumber_camp.tscn")
 	var camp = camp_scene.instantiate()
@@ -218,9 +213,7 @@ func _capture_task7() -> void:
 
 func _capture_art_pass() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
-	var camera: Camera2D = get_parent().get_node("Camera2D")
-	camera.position = Vector2(125, 124) * 32
-	camera.zoom = Vector2(3, 3)
+	_frame_view(Vector2(125, 124) * 32)
 
 	var tree_coords := [Vector2i(116, 122), Vector2i(117, 125), Vector2i(119, 121)]
 	for coords in tree_coords:
@@ -259,9 +252,7 @@ func _capture_art_pass() -> void:
 
 func _capture_art_pass_v2() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
-	var camera: Camera2D = get_parent().get_node("Camera2D")
-	camera.position = Vector2(125, 124) * 32
-	camera.zoom = Vector2(3, 3)
+	_frame_view(Vector2(125, 124) * 32)
 
 	var tree_coords := [Vector2i(116, 122), Vector2i(117, 125), Vector2i(119, 121)]
 	for coords in tree_coords:
@@ -300,9 +291,7 @@ func _capture_art_pass_v2() -> void:
 
 func _capture_art_pass_v3() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
-	var camera: Camera2D = get_parent().get_node("Camera2D")
-	camera.position = Vector2(125, 124) * 32
-	camera.zoom = Vector2(3, 3)
+	_frame_view(Vector2(125, 124) * 32)
 
 	var tree_coords := [Vector2i(116, 122), Vector2i(117, 125), Vector2i(119, 121)]
 	for coords in tree_coords:
@@ -341,9 +330,7 @@ func _capture_art_pass_v3() -> void:
 
 func _capture_task8() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
-	var camera: Camera2D = get_parent().get_node("Camera2D")
-	camera.position = Vector2(125, 124) * 32
-	camera.zoom = Vector2(3, 3)
+	_frame_view(Vector2(125, 124) * 32)
 
 	var lodge = await _spawn_lodge_with_zone(tilemap, Vector2i(124, 124), 4)
 	lodge.sapling_grow_time = 2.0
@@ -362,9 +349,7 @@ func _capture_task8() -> void:
 
 func _capture_task9() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
-	var camera: Camera2D = get_parent().get_node("Camera2D")
-	camera.position = Vector2(125, 124) * 32
-	camera.zoom = Vector2(3, 3)
+	_frame_view(Vector2(125, 124) * 32)
 
 	var lodge = await _spawn_lodge_with_zone(tilemap, Vector2i(124, 124), 4)
 	lodge.sapling_grow_time = 2.0
@@ -383,9 +368,7 @@ func _capture_task9() -> void:
 
 func _capture_task10() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
-	var camera: Camera2D = get_parent().get_node("Camera2D")
-	camera.position = Vector2(125, 124) * 32
-	camera.zoom = Vector2(3, 3)
+	_frame_view(Vector2(125, 124) * 32)
 
 	var lodge = await _spawn_lodge_with_zone(tilemap, Vector2i(120, 124), 5)
 	lodge.sapling_grow_time = 4.0
@@ -434,9 +417,7 @@ func _capture_task10() -> void:
 
 func _capture_workers() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
-	var camera: Camera2D = get_parent().get_node("Camera2D")
-	camera.position = Vector2(125, 124) * 32
-	camera.zoom = Vector2(3, 3)
+	_frame_view(Vector2(125, 124) * 32)
 
 	var lodge = await _spawn_lodge_with_zone(tilemap, Vector2i(118, 124), 4)
 	lodge.sapling_grow_time = 6.0
@@ -497,9 +478,7 @@ func _verify_hauler_pickup() -> void:
 
 func _capture_forester_zone() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
-	var camera: Camera2D = get_parent().get_node("Camera2D")
-	camera.position = Vector2(125, 124) * 32
-	camera.zoom = Vector2(3, 3)
+	_frame_view(Vector2(125, 124) * 32)
 
 	var lodge = await _spawn_lodge_with_zone(tilemap, Vector2i(124, 124), 5)
 	lodge.set_plant_zone(Rect2i(118, 118, 12, 12))
@@ -518,15 +497,13 @@ func _capture_forester_zone() -> void:
 
 func _capture_forester_levels() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
-	var camera: Camera2D = get_parent().get_node("Camera2D")
-	camera.zoom = Vector2(2.5, 2.5)
+	_frame_view(Vector2(128, 124) * 32, Vector2(2.5, 2.5))
 
 	var centers := [Vector2i(118, 124), Vector2i(128, 124), Vector2i(138, 124)]
 	for i in range(3):
 		var lodge = await _spawn_lodge_with_zone(tilemap, centers[i], 3)
 		lodge.level = i + 1
 
-	camera.position = Vector2(128, 124) * 32
 	await get_tree().create_timer(0.5).timeout
 	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
 	DirAccess.make_dir_absolute(output_dir)
