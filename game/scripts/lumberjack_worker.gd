@@ -4,7 +4,7 @@ enum State { IDLE, TO_TREE, CHOPPING, TO_CAMP }
 
 const ARRIVE_DISTANCE := 8.0
 
-@export var move_speed: float = 85.0
+@export var move_speed: float = 72.25
 
 var _camp: Node2D
 var _state: State = State.IDLE
