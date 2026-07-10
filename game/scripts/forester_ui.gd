@@ -133,14 +133,10 @@ func _update_draw_preview() -> void:
 	_zone_overlay.set_preview_zone(zone, true, within_limit)
 
 func _rect_from_tiles(a: Vector2i, b: Vector2i) -> Rect2i:
-	var x0 := mini(a.x, b.x)
-	var y0 := mini(a.y, b.y)
-	var x1 := maxi(a.x, b.x)
-	var y1 := maxi(a.y, b.y)
-	return Rect2i(x0, y0, x1 - x0 + 1, y1 - y0 + 1)
+	return GridPlacement.cardinal_rect_from_tiles(a, b)
 
 func _mouse_tile() -> Vector2i:
-	return _tilemap.local_to_map(_tilemap.get_global_mouse_position())
+	return GridPlacement.mouse_tile_coords(_tilemap)
 
 func _lodge_at_mouse() -> Node2D:
 	var click_tile := _mouse_tile()
