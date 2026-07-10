@@ -3,7 +3,7 @@ extends Node2D
 const MAP_SIZE_TILES := Vector2i(250, 250)
 const TILE_SIZE := 32
 
-@export var move_speed: float = 140.0
+@export var move_speed: float = 119.0
 
 var _move_direction := Vector2.ZERO
 
