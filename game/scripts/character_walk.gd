@@ -4,13 +4,13 @@ extends RefCounted
 const WALK_ANIMATIONS_ROOT := "res://assets/sprites/walking_animations"
 const DIRECTION_TO_FOLDER := {
 	"n": "walk_north",
-	"ne": "walk_northeast",
+	"ne": "walk_north_east",
 	"e": "walk_east",
-	"se": "walk_southeast",
+	"se": "walk_south_east",
 	"s": "walk_south",
-	"sw": "walk_southwest",
+	"sw": "walk_south_west",
 	"w": "walk_west",
-	"nw": "walk_northwest",
+	"nw": "walk_north_west",
 }
 const ANGLE_INDEX_TO_DIRECTION := ["e", "se", "s", "sw", "w", "nw", "n", "ne"]
 
