@@ -12,6 +12,7 @@ var _state: State = State.IDLE
 var _plant_site: Vector2 = Vector2.ZERO
 var _idle_timer: float = 0.0
 var _action_timer: float = 0.0
+var _move_direction := Vector2.ZERO
 var _last_move_offset := Vector2.ZERO
 
 @onready var _body: AnimatedSprite2D = $Body
@@ -64,6 +65,7 @@ func _process_planting(delta: float) -> void:
 	if _is_lodge_valid():
 		_lodge.plant_sapling_at_world_pos(_plant_site)
 	_state = State.TO_HOME
+	_move_direction = Vector2.ZERO
 
 func _process_to_home(delta: float) -> void:
 	if not _is_lodge_valid():
@@ -86,19 +88,23 @@ func _try_start_job() -> void:
 
 	_plant_site = site
 	_state = State.TO_SITE
+	_move_direction = Vector2.ZERO
 
 func _return_idle() -> void:
 	_plant_site = Vector2.ZERO
 	_state = State.IDLE
 	_idle_timer = 0.25
+	_move_direction = Vector2.ZERO
 
 func _move_toward(target_position: Vector2, delta: float) -> void:
-	var step := GridMovement.step_toward(position, target_position, move_speed, delta)
-	if step == Vector2.ZERO:
+	var movement := GridMovement.step_toward(position, target_position, move_speed, delta, _move_direction)
+	_move_direction = movement.direction
+	if movement.step == Vector2.ZERO:
+		_move_direction = Vector2.ZERO
 		_last_move_offset = Vector2.ZERO
 		return
-	position += step
-	_last_move_offset = step
+	position += movement.step
+	_last_move_offset = movement.step
 
 func _is_lodge_valid() -> bool:
 	return _lodge != null and is_instance_valid(_lodge) and _lodge.has_method("can_plant_sapling")

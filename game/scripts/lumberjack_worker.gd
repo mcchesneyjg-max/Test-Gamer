@@ -12,6 +12,7 @@ var _target_tree: Node2D
 var _cargo_amount: int = 0
 var _idle_timer: float = 0.0
 var _chop_timer: float = 0.0
+var _move_direction := Vector2.ZERO
 var _last_move_offset := Vector2.ZERO
 
 @onready var _body: AnimatedSprite2D = $Body
@@ -80,6 +81,7 @@ func _process_chopping(delta: float) -> void:
 	_cargo.visible = true
 	_target_tree = null
 	_state = State.TO_CAMP
+	_move_direction = Vector2.ZERO
 
 func _process_to_camp(delta: float) -> void:
 	if not _is_camp_valid():
@@ -103,6 +105,7 @@ func _try_start_job() -> void:
 		return
 
 	_state = State.TO_TREE
+	_move_direction = Vector2.ZERO
 
 func _deliver_log() -> void:
 	if _cargo_amount <= 0:
@@ -121,14 +124,17 @@ func _return_idle() -> void:
 	_target_tree = null
 	_state = State.IDLE
 	_idle_timer = 0.25
+	_move_direction = Vector2.ZERO
 
 func _move_toward(target_position: Vector2, delta: float) -> void:
-	var step := GridMovement.step_toward(position, target_position, move_speed, delta)
-	if step == Vector2.ZERO:
+	var movement := GridMovement.step_toward(position, target_position, move_speed, delta, _move_direction)
+	_move_direction = movement.direction
+	if movement.step == Vector2.ZERO:
+		_move_direction = Vector2.ZERO
 		_last_move_offset = Vector2.ZERO
 		return
-	position += step
-	_last_move_offset = step
+	position += movement.step
+	_last_move_offset = movement.step
 
 func _is_camp_valid() -> bool:
 	return _camp != null and is_instance_valid(_camp) and _camp.has_method("find_nearest_tree")

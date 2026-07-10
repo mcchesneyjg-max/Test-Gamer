@@ -12,6 +12,7 @@ var _source: Node2D
 var _destination: Node2D
 var _cargo_amount: int = 0
 var _idle_timer: float = 0.0
+var _move_direction := Vector2.ZERO
 var _last_move_offset := Vector2.ZERO
 
 @onready var _body: AnimatedSprite2D = $Body
@@ -82,6 +83,7 @@ func _try_start_job() -> bool:
 			return false
 		_destination = destination
 		_state = State.TO_DEST
+		_move_direction = Vector2.ZERO
 		return true
 
 	var source := _find_best_source()
@@ -95,6 +97,7 @@ func _try_start_job() -> bool:
 	_source = source
 	_destination = dest
 	_state = State.TO_SOURCE
+	_move_direction = Vector2.ZERO
 	return true
 
 func _find_best_source() -> Node2D:
@@ -141,6 +144,7 @@ func _pickup_cargo() -> void:
 	_cargo_amount = taken
 	_cargo.visible = true
 	_state = State.TO_DEST
+	_move_direction = Vector2.ZERO
 
 func _deliver_cargo() -> void:
 	if _cargo_amount <= 0:
@@ -156,6 +160,7 @@ func _deliver_cargo() -> void:
 		_return_idle()
 	elif _find_best_destination() != null:
 		_state = State.TO_DEST
+		_move_direction = Vector2.ZERO
 	else:
 		_idle_timer = 0.2
 
@@ -164,6 +169,7 @@ func _return_idle() -> void:
 	_destination = null
 	_state = State.IDLE
 	_idle_timer = 0.2
+	_move_direction = Vector2.ZERO
 
 func _get_pickup_positions(source: Node2D) -> Array[Vector2]:
 	var points: Array[Vector2] = [source.position]
@@ -194,12 +200,14 @@ func _get_destination_position(destination: Node2D) -> Vector2:
 	return destination.position
 
 func _move_toward(target_position: Vector2, delta: float) -> void:
-	var step := GridMovement.step_toward(position, target_position, move_speed, delta)
-	if step == Vector2.ZERO:
+	var movement := GridMovement.step_toward(position, target_position, move_speed, delta, _move_direction)
+	_move_direction = movement.direction
+	if movement.step == Vector2.ZERO:
+		_move_direction = Vector2.ZERO
 		_last_move_offset = Vector2.ZERO
 		return
-	position += step
-	_last_move_offset = step
+	position += movement.step
+	_last_move_offset = movement.step
 
 func _is_source_reachable() -> bool:
 	return _source != null and is_instance_valid(_source) and _source.has_method("take_from_output")
