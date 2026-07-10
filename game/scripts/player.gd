@@ -1,6 +1,5 @@
 extends Node2D
 
-const WALK_SHEET := preload("res://assets/sprites/player_walk.png")
 const MAP_SIZE_TILES := Vector2i(250, 250)
 const TILE_SIZE := 32
 
@@ -13,7 +12,7 @@ var _move_direction := Vector2.ZERO
 func _ready() -> void:
 	add_to_group("player")
 	position = Vector2(MAP_SIZE_TILES) * TILE_SIZE * 0.5
-	CharacterWalk.apply(_body, WALK_SHEET, 8.0)
+	CharacterWalk.apply_shared(_body, 10.0)
 
 func _process(delta: float) -> void:
 	_move_direction = _get_input_direction()

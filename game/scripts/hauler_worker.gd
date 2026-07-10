@@ -3,12 +3,10 @@ extends Node2D
 enum State { IDLE, TO_SOURCE, TO_DEST }
 
 const ARRIVE_DISTANCE := 18.0
-const WALK_SHEET := preload("res://assets/sprites/hauler_worker_walk.png")
 
 @export var move_speed: float = 90.0
 
 var _station: Node2D
-var _pending_color: Color = Color(0.9, 0.55, 0.25, 1)
 var _state: State = State.IDLE
 var _source: Node2D
 var _destination: Node2D
@@ -19,14 +17,12 @@ var _last_move_offset := Vector2.ZERO
 @onready var _body: AnimatedSprite2D = $Body
 @onready var _cargo: Sprite2D = $Cargo
 
-func setup(station: Node2D, body_color: Color) -> void:
+func setup(station: Node2D, _body_color: Color = Color.WHITE) -> void:
 	_station = station
-	_pending_color = body_color
 
 func _ready() -> void:
 	add_to_group("hauler_worker")
-	CharacterWalk.apply(_body, WALK_SHEET)
-	_body.modulate = _pending_color
+	CharacterWalk.apply_shared(_body, 10.0)
 	_cargo.visible = false
 
 func _process(delta: float) -> void:

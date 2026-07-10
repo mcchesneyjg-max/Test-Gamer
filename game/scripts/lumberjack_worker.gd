@@ -3,7 +3,6 @@ extends Node2D
 enum State { IDLE, TO_TREE, CHOPPING, TO_CAMP }
 
 const ARRIVE_DISTANCE := 8.0
-const WALK_SHEET := preload("res://assets/sprites/lumberjack_worker_walk.png")
 
 @export var move_speed: float = 85.0
 
@@ -23,7 +22,7 @@ func setup(camp: Node2D) -> void:
 
 func _ready() -> void:
 	add_to_group("lumberjack_worker")
-	CharacterWalk.apply(_body, WALK_SHEET)
+	CharacterWalk.apply_shared(_body, 10.0)
 	_cargo.visible = false
 
 func _process(delta: float) -> void:
