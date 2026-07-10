@@ -43,8 +43,24 @@ Each PNG is one full frame (not a sprite sheet). Use a **transparent background*
 
 ## After adding files
 
-1. Save PNGs in the matching folder
-2. Godot: **Project → Reload Current Project**
-3. Press **F5** to test
+1. Save PNGs in the matching folder (the `.png` files must be present — `.import` files alone are not enough)
+2. Commit the PNGs to git:
+   ```cmd
+   git add game/assets/sprites/walking_animations/walk_south_east/*.png
+   git add game/assets/sprites/walking_animations/walk_south_west/*.png
+   git commit -m "Add south east and south west walk frames"
+   git push
+   ```
+3. Godot: **Project → Reload Current Project**
+4. Press **F5** to test
+
+Validate locally:
+
+```cmd
+python game/tools/validate_walk_animations.py
+```
+
+When the game starts, the Godot output log should show lines like:
+`CharacterWalk: loaded 10 frames for walk_south_east`
 
 All characters (player, lumberjack, forester, hauler) use these same animations.
