@@ -19,6 +19,7 @@ DIRECTION_FOLDERS = [
 ]
 
 EXPECTED_EXAMPLE = {
+    "walk_south": "walk_south_1.png … walk_south_10.png",
     "walk_south_east": "walk_south_east_1.png … walk_south_east_10.png",
     "walk_south_west": "walk_south_west_1.png … walk_south_west_10.png",
 }
