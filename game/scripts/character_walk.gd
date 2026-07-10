@@ -28,6 +28,16 @@ const ALL_DIRECTION_FOLDERS: Array[String] = [
 	"walk_south_west",
 	"walk_west",
 ]
+const FOLDER_FILENAME_PREFIXES := {
+	"walk_north": ["walk_north"],
+	"walk_north_east": ["walk_north_east", "walknortheast"],
+	"walk_north_west": ["walk_north_west", "walknorthwest"],
+	"walk_east": ["walk_east"],
+	"walk_south": ["walk_south"],
+	"walk_south_east": ["walk_south_east", "walk_southeast", "walksoutheast"],
+	"walk_south_west": ["walk_south_west", "walk_southwest", "walksouthwest"],
+	"walk_west": ["walk_west"],
+}
 const ANGLE_INDEX_TO_DIRECTION := ["e", "se", "s", "sw", "w", "nw", "n", "ne"]
 
 static func apply_shared(sprite: AnimatedSprite2D, walk_speed: float = 10.0) -> void:
@@ -141,15 +151,25 @@ static func _load_frame_folder(folder_path: String, folder_name: String) -> Arra
 	return textures
 
 static func _file_matches_folder(basename: String, folder_name: String) -> bool:
-	var expected_prefix := "%s_" % folder_name
-	if not basename.begins_with(expected_prefix):
+	var prefixes: Array = FOLDER_FILENAME_PREFIXES.get(folder_name, [folder_name])
+	var matched_prefix := ""
+
+	for prefix in prefixes:
+		if basename.begins_with("%s_" % prefix):
+			matched_prefix = prefix
+			break
+
+	if matched_prefix.is_empty():
 		return false
 
 	for other_folder in ALL_DIRECTION_FOLDERS:
 		if other_folder == folder_name:
 			continue
-		if other_folder.begins_with(expected_prefix) and basename.begins_with("%s_" % other_folder):
-			return false
+		if not other_folder.begins_with("%s_" % folder_name):
+			continue
+		for other_prefix in FOLDER_FILENAME_PREFIXES.get(other_folder, [other_folder]):
+			if basename.begins_with("%s_" % other_prefix):
+				return false
 
 	return true
 

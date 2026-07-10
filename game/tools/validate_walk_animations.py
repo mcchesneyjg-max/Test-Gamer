@@ -36,6 +36,18 @@ EXPECTED_EXAMPLE = {
 }
 
 
+FOLDER_FILENAME_PREFIXES = {
+    "walk_north": ["walk_north"],
+    "walk_north_east": ["walk_north_east", "walknortheast"],
+    "walk_north_west": ["walk_north_west", "walknorthwest"],
+    "walk_east": ["walk_east"],
+    "walk_south": ["walk_south"],
+    "walk_south_east": ["walk_south_east", "walk_southeast", "walksoutheast"],
+    "walk_south_west": ["walk_south_west", "walk_southwest", "walksouthwest"],
+    "walk_west": ["walk_west"],
+}
+
+
 def frame_sort_key(path: Path) -> int:
     stem = path.stem
     digits = ""
@@ -48,14 +60,26 @@ def frame_sort_key(path: Path) -> int:
 
 
 def file_matches_folder(basename: str, folder_name: str) -> bool:
-    expected_prefix = f"{folder_name}_"
-    if not basename.startswith(expected_prefix):
+    prefixes = FOLDER_FILENAME_PREFIXES.get(folder_name, [folder_name])
+    matched_prefix = ""
+
+    for prefix in prefixes:
+        if basename.startswith(f"{prefix}_"):
+            matched_prefix = prefix
+            break
+
+    if not matched_prefix:
         return False
+
     for other_folder in ALL_DIRECTION_FOLDERS:
         if other_folder == folder_name:
             continue
-        if other_folder.startswith(expected_prefix) and basename.startswith(f"{other_folder}_"):
-            return False
+        if not other_folder.startswith(f"{folder_name}_"):
+            continue
+        for other_prefix in FOLDER_FILENAME_PREFIXES.get(other_folder, [other_folder]):
+            if basename.startswith(f"{other_prefix}_"):
+                return False
+
     return True
 
 
