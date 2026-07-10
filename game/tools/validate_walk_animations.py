@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+"""Check that walk animation PNG frames exist for each direction folder."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent / "assets" / "sprites" / "walking_animations"
+
+DIRECTION_FOLDERS = [
+    "walk_north",
+    "walk_north_east",
+    "walk_north_west",
+    "walk_east",
+    "walk_south_east",
+    "walk_south",
+    "walk_south_west",
+    "walk_west",
+]
+
+EXPECTED_EXAMPLE = {
+    "walk_south_east": "walk_south_east_1.png … walk_south_east_10.png",
+    "walk_south_west": "walk_south_west_1.png … walk_south_west_10.png",
+}
+
+
+def frame_sort_key(path: Path) -> int:
+    stem = path.stem
+    digits = ""
+    for ch in reversed(stem):
+        if ch.isdigit():
+            digits = ch + digits
+        elif digits:
+            break
+    return int(digits) if digits else 0
+
+
+def main() -> None:
+    print("Walk animation check:", ROOT)
+    missing_any = False
+
+    for folder_name in DIRECTION_FOLDERS:
+        folder = ROOT / folder_name
+        if not folder.exists():
+            print(f"  [skip] {folder_name}/ folder not present")
+            continue
+
+        pngs = sorted(
+            [p for p in folder.iterdir() if p.suffix.lower() == ".png"],
+            key=frame_sort_key,
+        )
+        if not pngs:
+            missing_any = True
+            print(f"  [MISSING] {folder_name}/ has no PNG files")
+            if folder_name in EXPECTED_EXAMPLE:
+                print(f"            expected: {EXPECTED_EXAMPLE[folder_name]}")
+            continue
+
+        print(f"  [ok] {folder_name}/ -> {len(pngs)} frames")
+        for png in pngs[:3]:
+            print(f"       - {png.name}")
+        if len(pngs) > 3:
+            print(f"       - ... ({len(pngs) - 3} more)")
+
+    if missing_any:
+        print("\nAdd your PNG files, then commit them to git:")
+        print("  git add game/assets/sprites/walking_animations/")
+        print("  git commit -m \"Add walk animation PNG frames\"")
+        raise SystemExit(1)
+
+    print("\nAll present folders have PNG frames.")
+
+
+if __name__ == "__main__":
+    main()
