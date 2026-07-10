@@ -18,6 +18,16 @@ const FOLDER_ALIASES := {
 	"walk_south_east": ["walk_southeast"],
 	"walk_south_west": ["walk_southwest"],
 }
+const ALL_DIRECTION_FOLDERS: Array[String] = [
+	"walk_north",
+	"walk_north_east",
+	"walk_north_west",
+	"walk_east",
+	"walk_south",
+	"walk_south_east",
+	"walk_south_west",
+	"walk_west",
+]
 const ANGLE_INDEX_TO_DIRECTION := ["e", "se", "s", "sw", "w", "nw", "n", "ne"]
 
 static func apply_shared(sprite: AnimatedSprite2D, walk_speed: float = 10.0) -> void:
@@ -69,7 +79,7 @@ static func update_motion(sprite: AnimatedSprite2D, is_walking: bool, move_offse
 
 static func _load_direction_frames(folder_name: String) -> Array[Texture2D]:
 	for candidate in _folder_candidates(folder_name):
-		var frame_textures := _load_frame_folder("%s/%s" % [WALK_ANIMATIONS_ROOT, candidate])
+		var frame_textures := _load_frame_folder("%s/%s" % [WALK_ANIMATIONS_ROOT, candidate], candidate)
 		if not frame_textures.is_empty():
 			return frame_textures
 	return []
@@ -94,7 +104,7 @@ static func _add_idle_animation(frames: SpriteFrames) -> void:
 	if fallback != StringName() and frames.get_frame_count(fallback) > 0:
 		frames.add_frame(&"idle", frames.get_frame_texture(fallback, 0))
 
-static func _load_frame_folder(folder_path: String) -> Array[Texture2D]:
+static func _load_frame_folder(folder_path: String, folder_name: String) -> Array[Texture2D]:
 	var textures: Array[Texture2D] = []
 	var dir := DirAccess.open(folder_path)
 	if dir == null:
@@ -105,7 +115,8 @@ static func _load_frame_folder(folder_path: String) -> Array[Texture2D]:
 	var file_name := dir.get_next()
 	while file_name != "":
 		if not dir.current_is_dir() and file_name.to_lower().ends_with(".png"):
-			file_names.append(file_name)
+			if _file_matches_folder(file_name.get_basename(), folder_name):
+				file_names.append(file_name)
 		file_name = dir.get_next()
 	dir.list_dir_end()
 
@@ -128,6 +139,19 @@ static func _load_frame_folder(folder_path: String) -> Array[Texture2D]:
 			push_warning("CharacterWalk: failed to load %s" % texture_path)
 
 	return textures
+
+static func _file_matches_folder(basename: String, folder_name: String) -> bool:
+	var expected_prefix := "%s_" % folder_name
+	if not basename.begins_with(expected_prefix):
+		return false
+
+	for other_folder in ALL_DIRECTION_FOLDERS:
+		if other_folder == folder_name:
+			continue
+		if other_folder.begins_with(expected_prefix) and basename.begins_with("%s_" % other_folder):
+			return false
+
+	return true
 
 static func _frame_sort_key(filename: String) -> int:
 	var base := filename.get_basename()
