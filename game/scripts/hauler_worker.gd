@@ -4,8 +4,6 @@ enum State { IDLE, TO_SOURCE, TO_DEST }
 
 const ARRIVE_DISTANCE := 18.0
 const WALK_SHEET := preload("res://assets/sprites/hauler_worker_walk.png")
-const FRAME_SIZE := 32
-const WALK_FRAMES := 4
 
 @export var move_speed: float = 90.0
 
@@ -16,6 +14,7 @@ var _source: Node2D
 var _destination: Node2D
 var _cargo_amount: int = 0
 var _idle_timer: float = 0.0
+var _last_move_offset := Vector2.ZERO
 
 @onready var _body: AnimatedSprite2D = $Body
 @onready var _cargo: Sprite2D = $Cargo
@@ -26,35 +25,12 @@ func setup(station: Node2D, body_color: Color) -> void:
 
 func _ready() -> void:
 	add_to_group("hauler_worker")
-	_setup_walk_animation()
+	CharacterWalk.apply(_body, WALK_SHEET)
 	_body.modulate = _pending_color
 	_cargo.visible = false
 
-func _setup_walk_animation() -> void:
-	var frames := SpriteFrames.new()
-	frames.add_animation(&"walk")
-	frames.set_animation_loop(&"walk", true)
-	frames.set_animation_speed(&"walk", 6.0)
-	frames.add_animation(&"idle")
-	frames.set_animation_loop(&"idle", true)
-	frames.set_animation_speed(&"idle", 1.0)
-
-	for i in WALK_FRAMES:
-		var atlas := AtlasTexture.new()
-		atlas.atlas = WALK_SHEET
-		atlas.region = Rect2(i * FRAME_SIZE, 0, FRAME_SIZE, FRAME_SIZE)
-		frames.add_frame(&"walk", atlas)
-
-	var idle_atlas := AtlasTexture.new()
-	idle_atlas.atlas = WALK_SHEET
-	idle_atlas.region = Rect2(0, 0, FRAME_SIZE, FRAME_SIZE)
-	frames.add_frame(&"idle", idle_atlas)
-
-	_body.sprite_frames = frames
-	_body.play(&"idle")
-
 func _process(delta: float) -> void:
-	_update_animation()
+	_last_move_offset = Vector2.ZERO
 	match _state:
 		State.IDLE:
 			_process_idle(delta)
@@ -62,14 +38,11 @@ func _process(delta: float) -> void:
 			_process_to_source(delta)
 		State.TO_DEST:
 			_process_to_dest(delta)
+	_update_animation()
 
 func _update_animation() -> void:
-	if _state == State.IDLE:
-		if _body.animation != &"idle":
-			_body.play(&"idle")
-	else:
-		if _body.animation != &"walk":
-			_body.play(&"walk")
+	var is_walking := _last_move_offset.length_squared() > 0.001
+	CharacterWalk.update_motion(_body, is_walking, _last_move_offset)
 
 func _process_idle(delta: float) -> void:
 	if _station != null and is_instance_valid(_station):
@@ -227,8 +200,11 @@ func _get_destination_position(destination: Node2D) -> Vector2:
 func _move_toward(target_position: Vector2, delta: float) -> void:
 	var offset := target_position - position
 	if offset.length_squared() <= 0.001:
+		_last_move_offset = Vector2.ZERO
 		return
-	position += offset.normalized() * move_speed * delta
+	var step := offset.normalized() * move_speed * delta
+	position += step
+	_last_move_offset = step
 
 func _is_source_reachable() -> bool:
 	return _source != null and is_instance_valid(_source) and _source.has_method("take_from_output")
