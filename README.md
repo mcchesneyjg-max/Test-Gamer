@@ -29,7 +29,7 @@ The playable map is a **250×250 tile grid** with **32×32 pixel tiles** (8000×
 - **Tier 1 closed loop:** lodge → saplings → trees → lumber camp → haulers → warehouse
 - Haulers from stations **auto-haul** lumber camp logs to warehouse input storage (Task 7)
 - Buildings and workers use **cozy forest pixel art v3** (`game/assets/sprites/`, process with `python3 game/tools/process_v3_sprites.py` or regenerate v2 with `python3 game/tools/generate_sprites.py`)
-- **Character walk art:** upload frame PNGs to `game/assets/sprites/walking_animations/` — start with `walk_north/` (10 frames). See that folder's `README.md`.
+- **Character walk art:** frame PNGs in `game/assets/sprites/walking_animations/` — e.g. `walk_north/walk_north_1.png` … `walk_north_10.png`. See that folder's `README.md`.
 - Forester lodge levels use **v3-style detailed art** (`game/assets/sources/`, process with `python3 game/tools/process_forester_sprites.py`)
 - Raw logs: **48×24 px** modern cozy pixel art (`python3 game/tools/generate_raw_log_sprites.py`) — soft shading, growth rings, warm browns
 - Lumber camps show **output storage** (`Out: X/Y`) and a small log pile beside the building (Task 4)

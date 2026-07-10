@@ -20,7 +20,7 @@ static func apply_shared(sprite: AnimatedSprite2D, walk_speed: float = 10.0) -> 
 
 	for direction_key in DIRECTION_TO_FOLDER.keys():
 		var folder_name: String = DIRECTION_TO_FOLDER[direction_key]
-		var frame_textures := _load_frame_folder("%s/%s" % [WALK_ANIMATIONS_ROOT, folder_name])
+		var frame_textures := _load_frame_folder("%s/%s" % [WALK_ANIMATIONS_ROOT, folder_name], folder_name)
 		if frame_textures.is_empty():
 			continue
 
@@ -73,18 +73,20 @@ static func _add_idle_animation(frames: SpriteFrames) -> void:
 	if fallback != StringName() and frames.get_frame_count(fallback) > 0:
 		frames.add_frame(&"idle", frames.get_frame_texture(fallback, 0))
 
-static func _load_frame_folder(folder_path: String) -> Array[Texture2D]:
+static func _load_frame_folder(folder_path: String, folder_name: String = "") -> Array[Texture2D]:
 	var textures: Array[Texture2D] = []
 	var dir := DirAccess.open(folder_path)
 	if dir == null:
 		return textures
 
+	var file_prefix := "%s_" % folder_name if not folder_name.is_empty() else ""
 	var file_names: Array[String] = []
 	dir.list_dir_begin()
 	var file_name := dir.get_next()
 	while file_name != "":
 		if not dir.current_is_dir() and file_name.to_lower().ends_with(".png"):
-			file_names.append(file_name)
+			if file_prefix.is_empty() or file_name.get_basename().begins_with(file_prefix):
+				file_names.append(file_name)
 		file_name = dir.get_next()
 	dir.list_dir_end()
 
