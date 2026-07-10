@@ -43,6 +43,11 @@ walking_animations/
 
 Each PNG is one full frame (not a sprite sheet). Use a **transparent background**.
 
+**Important:** Put files in the matching folder only.
+- `walk_south/walk_south_1.png` … `walk_south_10.png` for walking **south**
+- `walk_south_east/walk_south_east_1.png` … for walking **south east**
+- Do not put `walk_south_east_*.png` files inside the `walk_south` folder
+
 ## After adding files
 
 1. Save PNGs in the matching folder (the `.png` files must be present — `.import` files alone are not enough)

@@ -12,8 +12,19 @@ DIRECTION_FOLDERS = [
     "walk_north_east",
     "walk_north_west",
     "walk_east",
-    "walk_south_east",
     "walk_south",
+    "walk_south_east",
+    "walk_south_west",
+    "walk_west",
+]
+
+ALL_DIRECTION_FOLDERS = [
+    "walk_north",
+    "walk_north_east",
+    "walk_north_west",
+    "walk_east",
+    "walk_south",
+    "walk_south_east",
     "walk_south_west",
     "walk_west",
 ]
@@ -36,6 +47,18 @@ def frame_sort_key(path: Path) -> int:
     return int(digits) if digits else 0
 
 
+def file_matches_folder(basename: str, folder_name: str) -> bool:
+    expected_prefix = f"{folder_name}_"
+    if not basename.startswith(expected_prefix):
+        return False
+    for other_folder in ALL_DIRECTION_FOLDERS:
+        if other_folder == folder_name:
+            continue
+        if other_folder.startswith(expected_prefix) and basename.startswith(f"{other_folder}_"):
+            return False
+    return True
+
+
 def main() -> None:
     print("Walk animation check:", ROOT)
     missing_any = False
@@ -47,7 +70,11 @@ def main() -> None:
             continue
 
         pngs = sorted(
-            [p for p in folder.iterdir() if p.suffix.lower() == ".png"],
+            [
+                p
+                for p in folder.iterdir()
+                if p.suffix.lower() == ".png" and file_matches_folder(p.stem, folder_name)
+            ],
             key=frame_sort_key,
         )
         if not pngs:
