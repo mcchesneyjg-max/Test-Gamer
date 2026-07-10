@@ -31,6 +31,7 @@ The playable map is a **250×250 tile grid** with **32×32 pixel tiles** (8000×
 - Buildings and workers use **cozy forest pixel art v3** (`game/assets/sprites/`, process with `python3 game/tools/process_v3_sprites.py` or regenerate v2 with `python3 game/tools/generate_sprites.py`)
 - Forester lodge levels use **v3-style detailed art** (`game/assets/sources/`, process with `python3 game/tools/process_forester_sprites.py`)
 - Raw logs: **48×24 px** modern cozy pixel art (`python3 game/tools/generate_raw_log_sprites.py`) — soft shading, growth rings, warm browns
+- **Character walk art:** upload your Aseprite PNGs to `game/assets/sprites/characters/` — see that folder's `README.md` for filenames (`walk_n.png`, `walk_ne.png`, … per character)
 - Lumber camps show **output storage** (`Out: X/Y`) and a small log pile beside the building (Task 4)
 
 ## Project layout
