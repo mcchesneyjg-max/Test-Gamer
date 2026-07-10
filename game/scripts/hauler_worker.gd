@@ -194,11 +194,10 @@ func _get_destination_position(destination: Node2D) -> Vector2:
 	return destination.position
 
 func _move_toward(target_position: Vector2, delta: float) -> void:
-	var offset := target_position - position
-	if offset.length_squared() <= 0.001:
+	var step := GridMovement.step_toward(position, target_position, move_speed, delta)
+	if step == Vector2.ZERO:
 		_last_move_offset = Vector2.ZERO
 		return
-	var step := offset.normalized() * move_speed * delta
 	position += step
 	_last_move_offset = step
 

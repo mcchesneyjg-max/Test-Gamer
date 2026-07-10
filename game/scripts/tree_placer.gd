@@ -31,43 +31,43 @@ func _unhandled_input(event: InputEvent) -> void:
 func _try_place_tree() -> void:
 	if ForesterLodgeRegistry.get_lodge_count() > 0:
 		return
-	var tile_coords := _tilemap.local_to_map(_tilemap.get_global_mouse_position())
+	var tile_coords := GridPlacement.mouse_tile_coords(_tilemap)
 	if not _is_valid_placement_tile(tile_coords):
 		return
 
 	var tree := MATURE_TREE_SCENE.instantiate()
-	tree.position = _tilemap.map_to_local(tile_coords)
+	tree.position = GridPlacement.tile_to_world(_tilemap, tile_coords)
 	_tilemap.add_child(tree)
 
 func _try_place_lumber_camp() -> void:
-	var tile_coords := _tilemap.local_to_map(_tilemap.get_global_mouse_position())
+	var tile_coords := GridPlacement.mouse_tile_coords(_tilemap)
 	if not _is_valid_placement_tile(tile_coords):
 		return
 
 	var camp := LUMBER_CAMP_SCENE.instantiate()
-	camp.position = _tilemap.map_to_local(tile_coords)
+	camp.position = GridPlacement.tile_to_world(_tilemap, tile_coords)
 	_tilemap.add_child(camp)
 
 func _try_place_warehouse() -> void:
-	var tile_coords := _tilemap.local_to_map(_tilemap.get_global_mouse_position())
+	var tile_coords := GridPlacement.mouse_tile_coords(_tilemap)
 	if not _is_valid_placement_tile(tile_coords):
 		return
 
 	var warehouse := WAREHOUSE_SCENE.instantiate()
-	warehouse.position = _tilemap.map_to_local(tile_coords)
+	warehouse.position = GridPlacement.tile_to_world(_tilemap, tile_coords)
 	_tilemap.add_child(warehouse)
 
 func _try_place_hauler_station() -> void:
-	var tile_coords := _tilemap.local_to_map(_tilemap.get_global_mouse_position())
+	var tile_coords := GridPlacement.mouse_tile_coords(_tilemap)
 	if not _is_valid_placement_tile(tile_coords):
 		return
 
 	var station := HAULER_STATION_SCENE.instantiate()
-	station.position = _tilemap.map_to_local(tile_coords)
+	station.position = GridPlacement.tile_to_world(_tilemap, tile_coords)
 	_tilemap.add_child(station)
 
 func _try_place_forester_lodge() -> void:
-	var center_tile := _tilemap.local_to_map(_tilemap.get_global_mouse_position())
+	var center_tile := GridPlacement.mouse_tile_coords(_tilemap)
 	var top_left := center_tile - Vector2i(1, 1)
 	if not _is_valid_forester_footprint(top_left):
 		return
@@ -80,19 +80,15 @@ func _try_place_forester_lodge() -> void:
 
 func _is_valid_forester_footprint(top_left: Vector2i) -> bool:
 	var footprint_size: Vector2i = Vector2i(4, 4)
-	for y in range(footprint_size.y):
-		for x in range(footprint_size.x):
-			var tile_coords := top_left + Vector2i(x, y)
-			if not _is_valid_placement_tile(tile_coords):
-				return false
-			if _is_tile_occupied(tile_coords):
-				return false
+	for tile_coords in GridPlacement.footprint_tiles(top_left, footprint_size):
+		if not _is_valid_placement_tile(tile_coords):
+			return false
+		if _is_tile_occupied(tile_coords):
+			return false
 	return true
 
 func _is_valid_placement_tile(tile_coords: Vector2i) -> bool:
-	if tile_coords.x < 0 or tile_coords.y < 0:
-		return false
-	if tile_coords.x >= 250 or tile_coords.y >= 250:
+	if not GridPlacement.is_cardinal_tile_in_bounds(tile_coords):
 		return false
 	if _tilemap.get_cell_source_id(0, tile_coords) == -1:
 		return false

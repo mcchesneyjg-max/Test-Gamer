@@ -11,7 +11,8 @@ var _move_direction := Vector2.ZERO
 
 func _ready() -> void:
 	add_to_group("player")
-	position = Vector2(MAP_SIZE_TILES) * TILE_SIZE * 0.5
+	var center_tile := MAP_SIZE_TILES / 2
+	position = Vector2(center_tile) * TILE_SIZE + Vector2(TILE_SIZE, TILE_SIZE) * 0.5
 	CharacterWalk.apply_shared(_body, 10.0)
 
 func _process(delta: float) -> void:
@@ -24,7 +25,4 @@ func _process(delta: float) -> void:
 
 func _get_input_direction() -> Vector2:
 	var raw := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	if raw.length_squared() < 0.01:
-		return Vector2.ZERO
-	var angle := snappedf(raw.angle(), PI / 4.0)
-	return Vector2.from_angle(angle)
+	return GridMovement.snap_eight_directions(raw)
