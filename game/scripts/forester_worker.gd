@@ -4,7 +4,6 @@ enum State { IDLE, TO_SITE, PLANTING, TO_HOME }
 
 const ARRIVE_DISTANCE := 8.0
 const PLANT_DURATION := 0.9
-const WALK_SHEET := preload("res://assets/sprites/forester_worker_walk.png")
 
 @export var move_speed: float = 85.0
 
@@ -22,7 +21,7 @@ func setup(lodge: Node2D) -> void:
 
 func _ready() -> void:
 	add_to_group("forester_worker")
-	CharacterWalk.apply(_body, WALK_SHEET)
+	CharacterWalk.apply_shared(_body, 10.0)
 
 func _process(delta: float) -> void:
 	_last_move_offset = Vector2.ZERO
