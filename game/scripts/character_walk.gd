@@ -4,6 +4,8 @@ extends RefCounted
 const WALK_ANIMATIONS_ROOT := "res://assets/sprites/walking_animations"
 const WAITING_ANIMATIONS_ROOT := "res://assets/sprites/waiting_animation"
 const WAITING_PREFIX := "waiting_animation"
+const WOOD_CUTTING_ROOT := "res://assets/sprites/wood_cutting_animation"
+const WOOD_CUTTING_PREFIX := "wood_cutting_animation"
 const WAIT_HOLD_SECONDS := 4.0
 const META_WAS_WALKING := "character_walk_was_walking"
 const META_WAIT_PHASE := "character_walk_wait_phase"
@@ -77,6 +79,16 @@ static func apply_shared(sprite: AnimatedSprite2D, walk_speed: float = 10.0) -> 
 		_add_waiting_animation(frames, waiting_frames, walk_speed)
 		print("CharacterWalk: loaded %d waiting frames" % waiting_frames.size())
 
+	var wood_cutting_frames := _load_wood_cutting_frames()
+	if wood_cutting_frames.is_empty():
+		push_warning(
+			"CharacterWalk: no wood cutting frames found in %s"
+			% WOOD_CUTTING_ROOT
+		)
+	else:
+		_add_wood_cutting_animation(frames, wood_cutting_frames, walk_speed)
+		print("CharacterWalk: loaded %d wood cutting frames" % wood_cutting_frames.size())
+
 	sprite.sprite_frames = frames
 	sprite.flip_h = false
 	sprite.set_meta(META_PLAY_SPEED, walk_speed)
@@ -106,6 +118,18 @@ static func update_motion(
 	if sprite.animation != animation_name:
 		sprite.play(animation_name)
 
+static func update_chopping(sprite: AnimatedSprite2D, _delta: float = 0.0) -> void:
+	sprite.flip_h = false
+	if sprite.sprite_frames == null:
+		return
+
+	if not sprite.sprite_frames.has_animation(&"wood_cutting"):
+		_update_waiting(sprite, _delta)
+		return
+
+	if sprite.animation != &"wood_cutting":
+		sprite.play(&"wood_cutting")
+
 static func _load_direction_frames(folder_name: String) -> Array[Texture2D]:
 	for candidate in _folder_candidates(folder_name):
 		var frame_textures := _load_frame_folder("%s/%s" % [WALK_ANIMATIONS_ROOT, candidate], candidate)
@@ -131,6 +155,17 @@ static func _add_waiting_animation(
 	for texture in waiting_frames:
 		frames.add_frame(&"waiting", texture)
 
+static func _add_wood_cutting_animation(
+	frames: SpriteFrames,
+	wood_cutting_frames: Array[Texture2D],
+	walk_speed: float
+) -> void:
+	frames.add_animation(&"wood_cutting")
+	frames.set_animation_loop(&"wood_cutting", true)
+	frames.set_animation_speed(&"wood_cutting", walk_speed)
+	for texture in wood_cutting_frames:
+		frames.add_frame(&"wood_cutting", texture)
+
 static func _add_idle_fallback_animation(frames: SpriteFrames) -> void:
 	frames.add_animation(&"idle")
 	frames.set_animation_loop(&"idle", true)
@@ -145,8 +180,14 @@ static func _add_idle_fallback_animation(frames: SpriteFrames) -> void:
 		frames.add_frame(&"idle", frames.get_frame_texture(fallback, 0))
 
 static func _load_waiting_frames() -> Array[Texture2D]:
+	return _load_png_sequence(WAITING_ANIMATIONS_ROOT, WAITING_PREFIX)
+
+static func _load_wood_cutting_frames() -> Array[Texture2D]:
+	return _load_png_sequence(WOOD_CUTTING_ROOT, WOOD_CUTTING_PREFIX)
+
+static func _load_png_sequence(folder_root: String, file_prefix: String) -> Array[Texture2D]:
 	var textures: Array[Texture2D] = []
-	var dir := DirAccess.open(WAITING_ANIMATIONS_ROOT)
+	var dir := DirAccess.open(folder_root)
 	if dir == null:
 		return textures
 
@@ -156,7 +197,7 @@ static func _load_waiting_frames() -> Array[Texture2D]:
 	while file_name != "":
 		if not dir.current_is_dir() and file_name.to_lower().ends_with(".png"):
 			var basename := file_name.get_basename()
-			if basename == WAITING_PREFIX or basename.begins_with("%s_" % WAITING_PREFIX):
+			if basename == file_prefix or basename.begins_with("%s_" % file_prefix):
 				file_names.append(file_name)
 		file_name = dir.get_next()
 	dir.list_dir_end()
@@ -169,17 +210,25 @@ static func _load_waiting_frames() -> Array[Texture2D]:
 	)
 
 	for png_name in file_names:
-		var texture_path := "%s/%s" % [WAITING_ANIMATIONS_ROOT, png_name]
-		if not ResourceLoader.exists(texture_path):
-			push_warning("CharacterWalk: missing texture %s" % texture_path)
-			continue
-		var texture: Texture2D = load(texture_path)
+		var texture_path := "%s/%s" % [folder_root, png_name]
+		var texture := _load_texture(texture_path)
 		if texture != null:
 			textures.append(texture)
-		else:
-			push_warning("CharacterWalk: failed to load %s" % texture_path)
 
 	return textures
+
+static func _load_texture(texture_path: String) -> Texture2D:
+	var texture: Texture2D = load(texture_path) as Texture2D
+	if texture != null:
+		return texture
+
+	var global_path := ProjectSettings.globalize_path(texture_path)
+	var image := Image.new()
+	if image.load_from_file(global_path) == OK:
+		return ImageTexture.create_from_image(image)
+
+	push_warning("CharacterWalk: failed to load %s" % texture_path)
+	return null
 
 static func _update_waiting(sprite: AnimatedSprite2D, delta: float) -> void:
 	if sprite.sprite_frames == null:
