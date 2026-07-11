@@ -15,6 +15,7 @@ var _chop_timer: float = 0.0
 var _chop_position := Vector2.ZERO
 var _move_direction := Vector2.ZERO
 var _last_move_offset := Vector2.ZERO
+var _waiting_for_tree_fall: bool = false
 
 @onready var _body: AnimatedSprite2D = $Body
 @onready var _cargo: Sprite2D = $Cargo
@@ -77,6 +78,12 @@ func _process_to_tree(delta: float) -> void:
 
 func _process_chopping(delta: float) -> void:
 	position = _chop_position
+
+	if _waiting_for_tree_fall:
+		if not _is_tree_valid():
+			_complete_chop_after_fall()
+		return
+
 	_chop_timer -= delta
 	if _chop_timer > 0.0:
 		return
@@ -88,6 +95,13 @@ func _process_chopping(delta: float) -> void:
 	var harvested: int = _target_tree.harvest(1, self)
 	if harvested <= 0:
 		_return_idle()
+		return
+
+	if _target_tree.has_method("is_falling") and _target_tree.is_falling():
+		_waiting_for_tree_fall = true
+		_cargo_amount = harvested
+		if _target_tree.has_signal("fall_animation_finished"):
+			_target_tree.fall_animation_finished.connect(_on_tree_fall_finished, CONNECT_ONE_SHOT)
 		return
 
 	_end_tree_axe_strike()
@@ -139,7 +153,20 @@ func _end_tree_axe_strike() -> void:
 	if _is_tree_valid() and _target_tree.has_method("end_axe_strike"):
 		_target_tree.end_axe_strike()
 
+func _on_tree_fall_finished() -> void:
+	_complete_chop_after_fall()
+
+func _complete_chop_after_fall() -> void:
+	_waiting_for_tree_fall = false
+	_release_tree_reservation()
+	_target_tree = null
+	if _cargo_amount > 0:
+		_cargo.visible = true
+	_state = State.TO_CAMP
+	_move_direction = Vector2.ZERO
+
 func _return_idle() -> void:
+	_waiting_for_tree_fall = false
 	_end_tree_axe_strike()
 	_release_tree_reservation()
 	_target_tree = null
