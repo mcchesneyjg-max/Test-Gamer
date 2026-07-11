@@ -8,9 +8,11 @@ extends Node2D
 var _chopper: Node = null
 
 @onready var _sprite: Sprite2D = $Sprite
+@onready var _foreground_sprite: Sprite2D = $ForegroundSprite
 
 func _ready() -> void:
 	TreeRegistry.register_tree(self)
+	_setup_chop_foreground_sprite()
 
 func _exit_tree() -> void:
 	_chopper = null
@@ -27,11 +29,13 @@ func try_reserve(chopper: Node) -> bool:
 	if _chopper != null and _chopper != chopper:
 		return false
 	_chopper = chopper
+	_update_chop_foreground()
 	return true
 
 func release_reservation(chopper: Node) -> void:
 	if _chopper == chopper:
 		_chopper = null
+		_update_chop_foreground()
 
 func get_chop_position() -> Vector2:
 	var texture_size := Vector2.ZERO
@@ -58,3 +62,17 @@ func harvest(amount: int = 1, chopper: Node = null) -> int:
 func _clear_stale_chopper() -> void:
 	if _chopper != null and not is_instance_valid(_chopper):
 		_chopper = null
+		_update_chop_foreground()
+
+func _setup_chop_foreground_sprite() -> void:
+	_foreground_sprite.texture = _sprite.texture
+	_foreground_sprite.position = _sprite.position
+	_foreground_sprite.centered = _sprite.centered
+	_foreground_sprite.texture_filter = _sprite.texture_filter
+	_foreground_sprite.z_as_relative = false
+	_foreground_sprite.z_index = 4
+	_foreground_sprite.visible = false
+
+func _update_chop_foreground() -> void:
+	_clear_stale_chopper()
+	_foreground_sprite.visible = _chopper != null
