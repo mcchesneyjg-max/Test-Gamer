@@ -82,13 +82,14 @@ func _process_chopping(delta: float) -> void:
 		_return_idle()
 		return
 
-	var harvested: int = _target_tree.harvest(1)
+	var harvested: int = _target_tree.harvest(1, self)
 	if harvested <= 0:
 		_return_idle()
 		return
 
 	_cargo_amount = harvested
 	_cargo.visible = true
+	_release_tree_reservation()
 	_target_tree = null
 	_state = State.TO_CAMP
 	_move_direction = Vector2.ZERO
@@ -110,7 +111,7 @@ func _try_start_job() -> void:
 	if _camp.output_is_full():
 		return
 
-	_target_tree = _camp.find_nearest_tree()
+	_target_tree = _camp.find_nearest_tree(self)
 	if _target_tree == null:
 		return
 
@@ -131,11 +132,16 @@ func _deliver_log() -> void:
 	_return_idle()
 
 func _return_idle() -> void:
+	_release_tree_reservation()
 	_target_tree = null
 	_state = State.IDLE
 	_idle_timer = 0.25
 	_move_direction = Vector2.ZERO
 	_chop_position = Vector2.ZERO
+
+func _release_tree_reservation() -> void:
+	if _target_tree != null and is_instance_valid(_target_tree) and _target_tree.has_method("release_reservation"):
+		_target_tree.release_reservation(self)
 
 func _get_chop_position() -> Vector2:
 	if _is_tree_valid() and _target_tree.has_method("get_chop_position"):
@@ -153,6 +159,9 @@ func _move_toward(target_position: Vector2, delta: float) -> void:
 		return
 	position += movement.step
 	_last_move_offset = movement.direction
+
+func _exit_tree() -> void:
+	_release_tree_reservation()
 
 func _is_camp_valid() -> bool:
 	return _camp != null and is_instance_valid(_camp) and _camp.has_method("find_nearest_tree")
