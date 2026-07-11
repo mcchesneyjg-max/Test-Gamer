@@ -85,7 +85,7 @@ func get_chop_position() -> Vector2:
 	if _sprite.texture:
 		texture_size = _sprite.texture.get_size()
 
-	var trunk_base := position + _sprite.position + Vector2(texture_size.x * 0.5, texture_size.y)
+	var trunk_base := position + _sprite.position + Vector2(0.0, texture_size.y * 0.5)
 	return trunk_base + Vector2(chop_stand_distance, chop_stand_north_offset)
 
 func is_depleted() -> bool:

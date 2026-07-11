@@ -7,14 +7,12 @@
 script = ExtResource("1_tree")
 
 [node name="Sprite" type="Sprite2D" parent="."]
-position = Vector2(-20, -72)
 texture_filter = 0
-centered = false
+centered = true
 texture = ExtResource("2_sprite")
 
 [node name="ForegroundSprite" type="Sprite2D" parent="."]
 visible = false
-position = Vector2(-20, -72)
 texture_filter = 0
-centered = false
+centered = true
 texture = ExtResource("2_sprite")
