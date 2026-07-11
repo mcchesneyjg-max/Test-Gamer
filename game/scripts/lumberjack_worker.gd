@@ -15,7 +15,6 @@ var _chop_timer: float = 0.0
 var _chop_position := Vector2.ZERO
 var _move_direction := Vector2.ZERO
 var _last_move_offset := Vector2.ZERO
-var _default_z_index: int = 0
 
 @onready var _body: AnimatedSprite2D = $Body
 @onready var _cargo: Sprite2D = $Cargo
@@ -25,7 +24,6 @@ func setup(camp: Node2D) -> void:
 
 func _ready() -> void:
 	add_to_group("lumberjack_worker")
-	_default_z_index = z_index
 	CharacterWalk.apply_shared(_body, 10.0)
 	_cargo.visible = false
 
@@ -71,14 +69,12 @@ func _process_to_tree(delta: float) -> void:
 		position = chop_position
 		_chop_position = chop_position
 		CharacterWalk.reset_chopping(_body)
-		_apply_chopping_draw_order()
 		_state = State.CHOPPING
 		_chop_timer = _camp.get_chop_duration() if _is_camp_valid() else 6.0
 		_move_direction = Vector2.ZERO
 
 func _process_chopping(delta: float) -> void:
 	position = _chop_position
-	_apply_chopping_draw_order()
 	_chop_timer -= delta
 	if _chop_timer > 0.0:
 		return
@@ -96,7 +92,6 @@ func _process_chopping(delta: float) -> void:
 	_cargo.visible = true
 	_release_tree_reservation()
 	_target_tree = null
-	_restore_draw_order()
 	_state = State.TO_CAMP
 	_move_direction = Vector2.ZERO
 
@@ -139,7 +134,6 @@ func _deliver_log() -> void:
 
 func _return_idle() -> void:
 	_release_tree_reservation()
-	_restore_draw_order()
 	_target_tree = null
 	_state = State.IDLE
 	_idle_timer = 0.25
@@ -169,14 +163,6 @@ func _move_toward(target_position: Vector2, delta: float) -> void:
 
 func _exit_tree() -> void:
 	_release_tree_reservation()
-	_restore_draw_order()
-
-func _apply_chopping_draw_order() -> void:
-	if _is_tree_valid():
-		z_index = _target_tree.z_index - 1
-
-func _restore_draw_order() -> void:
-	z_index = _default_z_index
 
 func _is_camp_valid() -> bool:
 	return _camp != null and is_instance_valid(_camp) and _camp.has_method("find_nearest_tree")
