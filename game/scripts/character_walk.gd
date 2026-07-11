@@ -137,13 +137,37 @@ static func poll_axe_strike_trigger(sprite: AnimatedSprite2D) -> bool:
 		return false
 	if sprite.get_meta(META_CHOP_AXE_TRIGGERED, false):
 		return false
-	if sprite.frame != CHOP_AXE_STRIKE_TRIGGER_FRAME:
+	if sprite.frame < CHOP_AXE_STRIKE_TRIGGER_FRAME:
 		return false
 	sprite.set_meta(META_CHOP_AXE_TRIGGERED, true)
 	return true
 
 static func load_png_sequence(folder_root: String, file_prefix: String) -> Array[Texture2D]:
 	return _load_png_sequence(folder_root, file_prefix)
+
+static func load_png_sequence_from_candidates(
+	folder_roots: Array[String],
+	file_prefixes: Array[String],
+	fallback_any_png: bool = false
+) -> Array[Texture2D]:
+	for folder_root in folder_roots:
+		for file_prefix in file_prefixes:
+			var frames := _load_png_sequence(folder_root, file_prefix)
+			if not frames.is_empty():
+				print(
+					"CharacterWalk: loaded %d frames from %s (prefix %s)"
+					% [frames.size(), folder_root, file_prefix]
+				)
+				return frames
+		if fallback_any_png:
+			var frames := _load_all_pngs_in_folder(folder_root)
+			if not frames.is_empty():
+				print(
+					"CharacterWalk: loaded %d frames from %s (all pngs)"
+					% [frames.size(), folder_root]
+				)
+				return frames
+	return []
 
 static func update_chopping(sprite: AnimatedSprite2D, delta: float = 0.0) -> void:
 	sprite.flip_h = false
@@ -258,6 +282,36 @@ static func _load_png_sequence(folder_root: String, file_prefix: String) -> Arra
 			var basename := file_name.get_basename()
 			if basename == file_prefix or basename.begins_with("%s_" % file_prefix):
 				file_names.append(file_name)
+		file_name = dir.get_next()
+	dir.list_dir_end()
+
+	if file_names.is_empty():
+		return textures
+
+	file_names.sort_custom(func(a: String, b: String) -> bool:
+		return _frame_sort_key(a) < _frame_sort_key(b)
+	)
+
+	for png_name in file_names:
+		var texture_path := "%s/%s" % [folder_root, png_name]
+		var texture := _load_texture(texture_path)
+		if texture != null:
+			textures.append(texture)
+
+	return textures
+
+static func _load_all_pngs_in_folder(folder_root: String) -> Array[Texture2D]:
+	var textures: Array[Texture2D] = []
+	var dir := DirAccess.open(folder_root)
+	if dir == null:
+		return textures
+
+	var file_names: Array[String] = []
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir() and file_name.to_lower().ends_with(".png"):
+			file_names.append(file_name)
 		file_name = dir.get_next()
 	dir.list_dir_end()
 

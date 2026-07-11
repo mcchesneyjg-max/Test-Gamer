@@ -4,8 +4,10 @@ Animated summer tree variants for chopping and other seasonal effects.
 
 ## Folder layout
 
+Your folder may be named `summer_tree_animation` or `Summer_tree_animation` — both work on Windows.
+
 ```
-summer_tree_animation/
+Summer_tree_animation/
   summer_tree_1/
     axe_strike_animation/   ← tree reacts while lumberjack chops
     (other animation folders)
@@ -17,31 +19,49 @@ summer_tree_animation/
 
 Drop your Aseprite frame exports into:
 
-`game/assets/sprites/summer_tree_animation/summer_tree_1/axe_strike_animation/`
+`game/assets/sprites/Summer_tree_animation/summer_tree_1/axe_strike_animation/`
 
 ### File naming
+
+Any numbered PNGs work. These prefixes are recognized automatically:
 
 ```
 axe_strike_1.png
 axe_strike_2.png
-...
 ```
 
-Also accepted: `axe_strike_animation_1.png`, etc.
+Also accepted:
+
+- `axe_strike_animation_1.png`
+- `summer_tree_axe_frame_2.png` (and higher numbers)
+- Any other numbered `.png` in the folder (fallback)
 
 ### Playback
 
-1. Lumberjack plays the wood cutting animation (frames 1–11, then loops 4–11)
-2. When the lumberjack reaches **frame 7 for the first time** in a chop, the tree starts its axe strike animation
-3. The tree loops through all axe strike frames until the log is gathered
-4. The tree returns to the static `summer_tree_axe_frame_1.png` when chopping ends
+1. The mature tree shows `summer_tree_axe_frame_1.png` by default.
+2. Lumberjack plays the wood cutting animation (frames 1–11, then loops 4–11).
+3. When the lumberjack reaches **wood cutting frame 7 for the first time**, the tree **replaces** its sprite with the axe strike PNG sequence.
+4. Both the main tree sprite and the foreground trunk overlay use the same axe strike frames.
+5. The tree loops through all axe strike frames until the log is gathered.
+6. The tree returns to `summer_tree_axe_frame_1.png` when chopping ends.
+
+### Troubleshooting
+
+After adding PNGs, reload the Godot project (**Project → Reload Current Project**).
+
+Check the Godot Output panel for:
+
+- `CharacterWalk: loaded N frames from ...`
+- `MatureTree: started axe strike animation (N frames)`
+
+If you see `no axe strike frames found`, the PNG path or filenames do not match.
 
 ## Upload your PNGs
 
 Paste files into the folder first, then:
 
 ```cmd
-git add game\assets\sprites\summer_tree_animation\summer_tree_1\axe_strike_animation\*.png
+git add game\assets\sprites\Summer_tree_animation\summer_tree_1\axe_strike_animation\*.png
 git commit -m "Add summer tree axe strike animation frames"
 git push
 ```
