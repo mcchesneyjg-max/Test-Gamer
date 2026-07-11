@@ -68,6 +68,7 @@ func _process_to_tree(delta: float) -> void:
 	if position.distance_to(chop_position) <= ARRIVE_DISTANCE:
 		position = chop_position
 		_chop_position = chop_position
+		CharacterWalk.reset_chopping(_body)
 		_state = State.CHOPPING
 		_chop_timer = _camp.get_chop_duration() if _is_camp_valid() else 1.5
 		_move_direction = Vector2.ZERO
