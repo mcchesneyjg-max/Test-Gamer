@@ -37,11 +37,11 @@ func _process(delta: float) -> void:
 			_process_chopping(delta)
 		State.TO_CAMP:
 			_process_to_camp(delta)
-	_update_animation()
+	_update_animation(delta)
 
-func _update_animation() -> void:
+func _update_animation(delta: float) -> void:
 	var is_walking := _last_move_offset.length_squared() > 0.001
-	CharacterWalk.update_motion(_body, is_walking, _last_move_offset)
+	CharacterWalk.update_motion(_body, is_walking, _last_move_offset, delta)
 
 func _process_idle(delta: float) -> void:
 	if _is_camp_valid() and position.distance_to(_camp.position) > 14.0:

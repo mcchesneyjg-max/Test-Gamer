@@ -36,11 +36,11 @@ func _process(delta: float) -> void:
 			_process_to_source(delta)
 		State.TO_DEST:
 			_process_to_dest(delta)
-	_update_animation()
+	_update_animation(delta)
 
-func _update_animation() -> void:
+func _update_animation(delta: float) -> void:
 	var is_walking := _last_move_offset.length_squared() > 0.001
-	CharacterWalk.update_motion(_body, is_walking, _last_move_offset)
+	CharacterWalk.update_motion(_body, is_walking, _last_move_offset, delta)
 
 func _process_idle(delta: float) -> void:
 	if _station != null and is_instance_valid(_station):
