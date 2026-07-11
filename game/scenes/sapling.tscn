@@ -7,7 +7,6 @@
 script = ExtResource("1_sapling")
 
 [node name="Sprite" type="Sprite2D" parent="."]
-position = Vector2(-10, -40)
 texture_filter = 0
-centered = false
+centered = true
 texture = ExtResource("2_sprite")
