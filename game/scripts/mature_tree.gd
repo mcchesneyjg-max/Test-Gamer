@@ -29,7 +29,6 @@ var _axe_strike_elapsed: float = 0.0
 func _ready() -> void:
 	TreeRegistry.register_tree(self)
 	_load_axe_strike_frames()
-	_apply_idle_texture()
 	_setup_chop_foreground_sprite()
 
 func _process(delta: float) -> void:
@@ -65,8 +64,7 @@ func release_reservation(chopper: Node) -> void:
 		_update_chop_foreground()
 
 func begin_axe_strike() -> void:
-	if _axe_strike_frames.is_empty():
-		_load_axe_strike_frames()
+	_load_axe_strike_frames()
 	if _axe_strike_frames.is_empty():
 		push_warning("MatureTree: cannot play axe strike — no frames loaded")
 		return
@@ -115,13 +113,12 @@ func _load_axe_strike_frames() -> void:
 			"MatureTree: no axe strike frames found. Checked: %s"
 			% ", ".join(AXE_STRIKE_ROOT_CANDIDATES)
 		)
-
-func _apply_idle_texture() -> void:
-	if not _axe_strike_frames.is_empty():
-		_static_texture = _axe_strike_frames[0]
-	else:
 		_static_texture = _sprite.texture
-	_set_tree_texture(_static_texture)
+		return
+
+	_static_texture = _axe_strike_frames[0]
+	if not _axe_strike_active:
+		_set_tree_texture(_static_texture)
 
 func _clear_stale_chopper() -> void:
 	if _chopper != null and not is_instance_valid(_chopper):
