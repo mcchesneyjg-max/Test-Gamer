@@ -48,12 +48,15 @@ func get_log_pickup_position() -> Vector2:
 func deposit_to_output(amount: int) -> int:
 	return _storage.output.try_add(amount)
 
-func find_nearest_tree() -> Node2D:
+func find_nearest_tree(for_worker: Node = null) -> Node2D:
 	var camp_tile := _tilemap.local_to_map(position)
 	var nearest: Node2D = null
 	var nearest_distance := chop_radius_tiles + 1
 
 	for tree in TreeRegistry.get_active_trees():
+		if for_worker != null and tree.has_method("is_available_to"):
+			if not tree.is_available_to(for_worker):
+				continue
 		var tree_tile := _tilemap.local_to_map(tree.position)
 		var distance := camp_tile.distance_to(tree_tile)
 		if distance > chop_radius_tiles:
@@ -61,6 +64,10 @@ func find_nearest_tree() -> Node2D:
 		if distance < nearest_distance:
 			nearest_distance = distance
 			nearest = tree
+
+	if nearest != null and for_worker != null and nearest.has_method("try_reserve"):
+		if not nearest.try_reserve(for_worker):
+			return null
 
 	return nearest
 
