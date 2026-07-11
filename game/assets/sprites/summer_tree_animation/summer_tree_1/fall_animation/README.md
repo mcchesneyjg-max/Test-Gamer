@@ -20,6 +20,8 @@ Also accepted:
 
 ## Playback
 
+Frames are aligned by the trunk base (bottom-center of the tree art), so the standing tree and fall animation start in the same spot. Each fall frame shifts only as much as your art moves the trunk.
+
 1. Lumberjack chops until the tree's final log is gathered.
 2. The tree plays through all fall animation frames once (no loop).
 3. The lumberjack keeps swinging through the full fall sequence.
