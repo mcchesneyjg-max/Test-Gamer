@@ -5,8 +5,16 @@ extends Node2D
 @export var chop_stand_distance: float = 20.0
 @export var chop_stand_north_offset: float = -32.0
 
-const AXE_STRIKE_ROOT := "res://assets/sprites/summer_tree_animation/summer_tree_1/axe_strike_animation"
-const AXE_STRIKE_PREFIX := "axe_strike"
+const AXE_STRIKE_ROOT_CANDIDATES: Array[String] = [
+	"res://assets/sprites/summer_tree_animation/summer_tree_1/axe_strike_animation",
+	"res://assets/sprites/Summer_tree_animation/summer_tree_1/axe_strike_animation",
+]
+const AXE_STRIKE_PREFIXES: Array[String] = [
+	"axe_strike",
+	"axe_strike_animation",
+	"summer_tree_axe_frame",
+	"summer_tree_axe",
+]
 const AXE_STRIKE_PLAY_SPEED := 10.0
 
 var _chopper: Node = null
@@ -21,12 +29,7 @@ var _axe_strike_elapsed: float = 0.0
 func _ready() -> void:
 	TreeRegistry.register_tree(self)
 	_static_texture = _sprite.texture
-	_axe_strike_frames = CharacterWalk.load_png_sequence(AXE_STRIKE_ROOT, AXE_STRIKE_PREFIX)
-	if _axe_strike_frames.is_empty():
-		push_warning(
-			"MatureTree: no axe strike frames found in %s"
-			% AXE_STRIKE_ROOT
-		)
+	_load_axe_strike_frames()
 	_setup_chop_foreground_sprite()
 
 func _process(delta: float) -> void:
@@ -63,10 +66,14 @@ func release_reservation(chopper: Node) -> void:
 
 func begin_axe_strike() -> void:
 	if _axe_strike_frames.is_empty():
+		_load_axe_strike_frames()
+	if _axe_strike_frames.is_empty():
+		push_warning("MatureTree: cannot play axe strike — no frames loaded")
 		return
 	_axe_strike_active = true
 	_axe_strike_elapsed = 0.0
 	_set_tree_texture(_axe_strike_frames[0])
+	print("MatureTree: started axe strike animation (%d frames)" % _axe_strike_frames.size())
 
 func end_axe_strike() -> void:
 	if not _axe_strike_active:
@@ -96,6 +103,18 @@ func harvest(amount: int = 1, chopper: Node = null) -> int:
 	if harvest_remaining <= 0:
 		queue_free()
 	return taken
+
+func _load_axe_strike_frames() -> void:
+	_axe_strike_frames = CharacterWalk.load_png_sequence_from_candidates(
+		AXE_STRIKE_ROOT_CANDIDATES,
+		AXE_STRIKE_PREFIXES,
+		true
+	)
+	if _axe_strike_frames.is_empty():
+		push_warning(
+			"MatureTree: no axe strike frames found. Checked: %s"
+			% ", ".join(AXE_STRIKE_ROOT_CANDIDATES)
+		)
 
 func _clear_stale_chopper() -> void:
 	if _chopper != null and not is_instance_valid(_chopper):
