@@ -58,14 +58,18 @@ Check the Godot Output panel for:
 
 If you see `no axe strike frames found`, the PNG path or filenames do not match.
 
-## Upload your PNGs
+### After updating PNGs
 
-Paste files into the folder first, then:
+1. Paste your new files into this folder (replace the old ones).
+2. Push them to git:
 
 ```cmd
 git add game\assets\sprites\Summer_tree_animation\summer_tree_1\axe_strike_animation\*.png
-git commit -m "Add summer tree axe strike animation frames"
+git commit -m "Update summer tree axe strike animation frames"
 git push
 ```
 
-Reload the Godot project after pushing so new textures are picked up.
+3. Reload the Godot project (**Project → Reload Current Project**).
+4. Run the game (**F5**).
+
+The game reloads PNGs directly from this folder each time a tree loads and when chopping starts, so updated art is picked up after a project reload.

@@ -331,14 +331,15 @@ static func _load_all_pngs_in_folder(folder_root: String) -> Array[Texture2D]:
 	return textures
 
 static func _load_texture(texture_path: String) -> Texture2D:
+	var global_path := ProjectSettings.globalize_path(texture_path)
+	if FileAccess.file_exists(global_path):
+		var loaded_image: Image = Image.load_from_file(global_path)
+		if loaded_image != null:
+			return ImageTexture.create_from_image(loaded_image)
+
 	var texture: Texture2D = load(texture_path) as Texture2D
 	if texture != null:
 		return texture
-
-	var global_path := ProjectSettings.globalize_path(texture_path)
-	var loaded_image: Image = Image.load_from_file(global_path)
-	if loaded_image != null:
-		return ImageTexture.create_from_image(loaded_image)
 
 	push_warning("CharacterWalk: failed to load %s" % texture_path)
 	return null
