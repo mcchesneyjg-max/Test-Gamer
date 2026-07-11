@@ -35,11 +35,11 @@ func _process(delta: float) -> void:
 			_process_planting(delta)
 		State.TO_HOME:
 			_process_to_home(delta)
-	_update_animation()
+	_update_animation(delta)
 
-func _update_animation() -> void:
+func _update_animation(delta: float) -> void:
 	var is_walking := _last_move_offset.length_squared() > 0.001
-	CharacterWalk.update_motion(_body, is_walking, _last_move_offset)
+	CharacterWalk.update_motion(_body, is_walking, _last_move_offset, delta)
 
 func _process_idle(delta: float) -> void:
 	if _is_lodge_valid() and position.distance_to(_lodge.position) > 14.0:

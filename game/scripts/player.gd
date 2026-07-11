@@ -19,9 +19,9 @@ func _process(delta: float) -> void:
 	_move_direction = _get_input_direction()
 	if _move_direction != Vector2.ZERO:
 		position += _move_direction * move_speed * delta
-		CharacterWalk.update_motion(_body, true, _move_direction)
+		CharacterWalk.update_motion(_body, true, _move_direction, delta)
 	else:
-		CharacterWalk.update_motion(_body, false, Vector2.ZERO)
+		CharacterWalk.update_motion(_body, false, Vector2.ZERO, delta)
 
 func _get_input_direction() -> Vector2:
 	var raw := Input.get_vector("move_left", "move_right", "move_up", "move_down")

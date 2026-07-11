@@ -2,6 +2,13 @@ class_name CharacterWalk
 extends RefCounted
 
 const WALK_ANIMATIONS_ROOT := "res://assets/sprites/walking_animations"
+const WAITING_ANIMATIONS_ROOT := "res://assets/sprites/waiting_animation"
+const WAITING_PREFIX := "waiting_animation"
+const WAIT_HOLD_SECONDS := 4.0
+const META_WAS_WALKING := "character_walk_was_walking"
+const META_WAIT_PHASE := "character_walk_wait_phase"
+const META_WAIT_ELAPSED := "character_walk_wait_elapsed"
+const META_PLAY_SPEED := "character_walk_play_speed"
 const DIRECTION_TO_FOLDER := {
 	"n": "walk_north",
 	"ne": "walk_north_east",
@@ -63,25 +70,37 @@ static func apply_shared(sprite: AnimatedSprite2D, walk_speed: float = 10.0) -> 
 		push_warning("CharacterWalk: no walk animations found under %s" % WALK_ANIMATIONS_ROOT)
 		return
 
-	_add_idle_animation(frames)
+	var waiting_frames := _load_waiting_frames()
+	if waiting_frames.is_empty():
+		_add_idle_fallback_animation(frames)
+	else:
+		_add_waiting_animation(frames, waiting_frames, walk_speed)
+		print("CharacterWalk: loaded %d waiting frames" % waiting_frames.size())
 
 	sprite.sprite_frames = frames
 	sprite.flip_h = false
-	sprite.play(&"idle")
+	sprite.set_meta(META_PLAY_SPEED, walk_speed)
+	_reset_waiting_state(sprite)
+	_start_waiting(sprite)
 
-static func update_motion(sprite: AnimatedSprite2D, is_walking: bool, move_offset: Vector2) -> void:
+static func update_motion(
+	sprite: AnimatedSprite2D,
+	is_walking: bool,
+	move_offset: Vector2,
+	delta: float = 0.0
+) -> void:
 	sprite.flip_h = false
 	if not is_walking or move_offset.length_squared() <= 0.001:
-		if sprite.animation != &"idle":
-			sprite.play(&"idle")
+		_update_waiting(sprite, delta)
 		return
+
+	sprite.set_meta(META_WAS_WALKING, true)
 
 	var direction := _direction_suffix_from_offset(move_offset)
 	var folder_name: String = DIRECTION_TO_FOLDER.get(direction, "")
 	var animation_name := StringName(folder_name)
 	if folder_name.is_empty() or not sprite.sprite_frames.has_animation(animation_name):
-		if sprite.animation != &"idle":
-			sprite.play(&"idle")
+		_update_waiting(sprite, delta)
 		return
 
 	if sprite.animation != animation_name:
@@ -101,7 +120,18 @@ static func _folder_candidates(folder_name: String) -> Array[String]:
 			candidates.append(alias)
 	return candidates
 
-static func _add_idle_animation(frames: SpriteFrames) -> void:
+static func _add_waiting_animation(
+	frames: SpriteFrames,
+	waiting_frames: Array[Texture2D],
+	walk_speed: float
+) -> void:
+	frames.add_animation(&"waiting")
+	frames.set_animation_loop(&"waiting", false)
+	frames.set_animation_speed(&"waiting", walk_speed)
+	for texture in waiting_frames:
+		frames.add_frame(&"waiting", texture)
+
+static func _add_idle_fallback_animation(frames: SpriteFrames) -> void:
 	frames.add_animation(&"idle")
 	frames.set_animation_loop(&"idle", true)
 	frames.set_animation_speed(&"idle", 1.0)
@@ -113,6 +143,105 @@ static func _add_idle_animation(frames: SpriteFrames) -> void:
 	var fallback := _first_walk_animation(frames)
 	if fallback != StringName() and frames.get_frame_count(fallback) > 0:
 		frames.add_frame(&"idle", frames.get_frame_texture(fallback, 0))
+
+static func _load_waiting_frames() -> Array[Texture2D]:
+	var textures: Array[Texture2D] = []
+	var dir := DirAccess.open(WAITING_ANIMATIONS_ROOT)
+	if dir == null:
+		return textures
+
+	var file_names: Array[String] = []
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir() and file_name.to_lower().ends_with(".png"):
+			var basename := file_name.get_basename()
+			if basename == WAITING_PREFIX or basename.begins_with("%s_" % WAITING_PREFIX):
+				file_names.append(file_name)
+		file_name = dir.get_next()
+	dir.list_dir_end()
+
+	if file_names.is_empty():
+		return textures
+
+	file_names.sort_custom(func(a: String, b: String) -> bool:
+		return _frame_sort_key(a) < _frame_sort_key(b)
+	)
+
+	for png_name in file_names:
+		var texture_path := "%s/%s" % [WAITING_ANIMATIONS_ROOT, png_name]
+		if not ResourceLoader.exists(texture_path):
+			push_warning("CharacterWalk: missing texture %s" % texture_path)
+			continue
+		var texture: Texture2D = load(texture_path)
+		if texture != null:
+			textures.append(texture)
+		else:
+			push_warning("CharacterWalk: failed to load %s" % texture_path)
+
+	return textures
+
+static func _update_waiting(sprite: AnimatedSprite2D, delta: float) -> void:
+	if sprite.sprite_frames == null:
+		return
+
+	if sprite.get_meta(META_WAS_WALKING, false):
+		_reset_waiting_state(sprite)
+	sprite.set_meta(META_WAS_WALKING, false)
+
+	if sprite.sprite_frames.has_animation(&"waiting"):
+		_advance_waiting(sprite, delta)
+		return
+
+	if sprite.sprite_frames.has_animation(&"idle"):
+		if sprite.animation != &"idle":
+			sprite.play(&"idle")
+
+static func _advance_waiting(sprite: AnimatedSprite2D, delta: float) -> void:
+	if sprite.animation != &"waiting":
+		sprite.play(&"waiting")
+	sprite.pause()
+
+	var frame_count := sprite.sprite_frames.get_frame_count(&"waiting")
+	if frame_count <= 0:
+		return
+
+	var phase: String = sprite.get_meta(META_WAIT_PHASE, "hold")
+	var elapsed: float = float(sprite.get_meta(META_WAIT_ELAPSED, 0.0)) + delta
+	var play_speed: float = float(sprite.get_meta(META_PLAY_SPEED, 10.0))
+
+	if phase == "hold":
+		sprite.frame = 0
+		if elapsed >= WAIT_HOLD_SECONDS:
+			if frame_count <= 1:
+				elapsed = 0.0
+			else:
+				phase = "cycle"
+				elapsed = 0.0
+	elif phase == "cycle":
+		var frame_index := 1 + int(elapsed * play_speed)
+		if frame_index >= frame_count:
+			phase = "hold"
+			elapsed = 0.0
+			sprite.frame = 0
+		else:
+			sprite.frame = frame_index
+
+	sprite.set_meta(META_WAIT_PHASE, phase)
+	sprite.set_meta(META_WAIT_ELAPSED, elapsed)
+
+static func _reset_waiting_state(sprite: AnimatedSprite2D) -> void:
+	sprite.set_meta(META_WAS_WALKING, false)
+	sprite.set_meta(META_WAIT_PHASE, "hold")
+	sprite.set_meta(META_WAIT_ELAPSED, 0.0)
+
+static func _start_waiting(sprite: AnimatedSprite2D) -> void:
+	if sprite.sprite_frames.has_animation(&"waiting"):
+		sprite.play(&"waiting")
+		sprite.pause()
+		sprite.frame = 0
+	elif sprite.sprite_frames.has_animation(&"idle"):
+		sprite.play(&"idle")
 
 static func _load_frame_folder(folder_path: String, folder_name: String) -> Array[Texture2D]:
 	var textures: Array[Texture2D] = []
