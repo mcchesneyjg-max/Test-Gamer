@@ -38,12 +38,14 @@ Also accepted:
 
 ### Playback
 
-1. The mature tree shows `summer_tree_axe_frame_1.png` by default.
+1. The mature tree shows `summer_tree_axe_frame_1.png` from this folder when idle (not being chopped).
 2. Lumberjack plays the wood cutting animation (frames 1–11, then loops 4–11).
-3. When the lumberjack reaches **wood cutting frame 7 for the first time**, the tree **replaces** its sprite with the axe strike PNG sequence.
+3. When the lumberjack reaches **wood cutting frame 7 for the first time**, the tree plays through the full axe strike sequence.
 4. Both the main tree sprite and the foreground trunk overlay use the same axe strike frames.
 5. The tree loops through all axe strike frames until the log is gathered.
-6. The tree returns to `summer_tree_axe_frame_1.png` when chopping ends.
+6. The tree returns to `summer_tree_axe_frame_1.png` from this folder when chopping ends.
+
+The copy in `game/assets/sprites/summer_tree_axe_frame_1.png` is no longer used.
 
 ### Troubleshooting
 
