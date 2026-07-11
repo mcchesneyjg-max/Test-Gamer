@@ -14,6 +14,7 @@ var _cargo_amount: int = 0
 var _idle_timer: float = 0.0
 var _move_direction := Vector2.ZERO
 var _last_move_offset := Vector2.ZERO
+var _travel_target := Vector2.ZERO
 
 @onready var _body: AnimatedSprite2D = $Body
 @onready var _cargo: Sprite2D = $Cargo
@@ -57,7 +58,10 @@ func _process_to_source(delta: float) -> void:
 		_return_idle()
 		return
 
-	var pickup_position := _get_nearest_pickup_position(_source)
+	var pickup_position := _travel_target
+	if pickup_position == Vector2.ZERO:
+		pickup_position = _get_nearest_pickup_position(_source)
+		_travel_target = pickup_position
 	_move_toward(pickup_position, delta)
 	if _is_near_pickup(_source):
 		_pickup_cargo()
@@ -71,7 +75,10 @@ func _process_to_dest(delta: float) -> void:
 		_return_idle()
 		return
 
-	var delivery_position := _get_destination_position(_destination)
+	var delivery_position := _travel_target
+	if delivery_position == Vector2.ZERO:
+		delivery_position = _get_destination_position(_destination)
+		_travel_target = delivery_position
 	_move_toward(delivery_position, delta)
 	if position.distance_to(delivery_position) <= ARRIVE_DISTANCE:
 		_deliver_cargo()
@@ -84,6 +91,7 @@ func _try_start_job() -> bool:
 		_destination = destination
 		_state = State.TO_DEST
 		_move_direction = Vector2.ZERO
+		_travel_target = _get_destination_position(destination)
 		return true
 
 	var source := _find_best_source()
@@ -98,6 +106,7 @@ func _try_start_job() -> bool:
 	_destination = dest
 	_state = State.TO_SOURCE
 	_move_direction = Vector2.ZERO
+	_travel_target = _get_nearest_pickup_position(source)
 	return true
 
 func _find_best_source() -> Node2D:
@@ -145,6 +154,7 @@ func _pickup_cargo() -> void:
 	_cargo.visible = true
 	_state = State.TO_DEST
 	_move_direction = Vector2.ZERO
+	_travel_target = _get_destination_position(_destination)
 
 func _deliver_cargo() -> void:
 	if _cargo_amount <= 0:
@@ -161,6 +171,7 @@ func _deliver_cargo() -> void:
 	elif _find_best_destination() != null:
 		_state = State.TO_DEST
 		_move_direction = Vector2.ZERO
+		_travel_target = _get_destination_position(_destination)
 	else:
 		_idle_timer = 0.2
 
@@ -170,6 +181,7 @@ func _return_idle() -> void:
 	_state = State.IDLE
 	_idle_timer = 0.2
 	_move_direction = Vector2.ZERO
+	_travel_target = Vector2.ZERO
 
 func _get_pickup_positions(source: Node2D) -> Array[Vector2]:
 	var points: Array[Vector2] = [source.position]
@@ -207,7 +219,7 @@ func _move_toward(target_position: Vector2, delta: float) -> void:
 		_last_move_offset = Vector2.ZERO
 		return
 	position += movement.step
-	_last_move_offset = movement.step
+	_last_move_offset = movement.direction
 
 func _is_source_reachable() -> bool:
 	return _source != null and is_instance_valid(_source) and _source.has_method("take_from_output")

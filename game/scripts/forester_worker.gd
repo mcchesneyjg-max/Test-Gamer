@@ -104,7 +104,7 @@ func _move_toward(target_position: Vector2, delta: float) -> void:
 		_last_move_offset = Vector2.ZERO
 		return
 	position += movement.step
-	_last_move_offset = movement.step
+	_last_move_offset = movement.direction
 
 func _is_lodge_valid() -> bool:
 	return _lodge != null and is_instance_valid(_lodge) and _lodge.has_method("can_plant_sapling")

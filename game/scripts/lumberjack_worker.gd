@@ -134,7 +134,7 @@ func _move_toward(target_position: Vector2, delta: float) -> void:
 		_last_move_offset = Vector2.ZERO
 		return
 	position += movement.step
-	_last_move_offset = movement.step
+	_last_move_offset = movement.direction
 
 func _is_camp_valid() -> bool:
 	return _camp != null and is_instance_valid(_camp) and _camp.has_method("find_nearest_tree")
