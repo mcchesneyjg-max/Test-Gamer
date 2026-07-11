@@ -13,7 +13,9 @@ const META_WAIT_ELAPSED := "character_walk_wait_elapsed"
 const META_PLAY_SPEED := "character_walk_play_speed"
 const META_CHOP_PHASE := "character_walk_chop_phase"
 const META_CHOP_ELAPSED := "character_walk_chop_elapsed"
+const META_CHOP_AXE_TRIGGERED := "character_walk_chop_axe_triggered"
 const CHOP_LOOP_START_FRAME := 3
+const CHOP_AXE_STRIKE_TRIGGER_FRAME := 6
 const DIRECTION_TO_FOLDER := {
 	"n": "walk_north",
 	"ne": "walk_north_east",
@@ -128,6 +130,20 @@ static func update_motion(
 static func reset_chopping(sprite: AnimatedSprite2D) -> void:
 	sprite.set_meta(META_CHOP_PHASE, "intro")
 	sprite.set_meta(META_CHOP_ELAPSED, 0.0)
+	sprite.set_meta(META_CHOP_AXE_TRIGGERED, false)
+
+static func poll_axe_strike_trigger(sprite: AnimatedSprite2D) -> bool:
+	if sprite.sprite_frames == null or sprite.animation != &"wood_cutting":
+		return false
+	if sprite.get_meta(META_CHOP_AXE_TRIGGERED, false):
+		return false
+	if sprite.frame != CHOP_AXE_STRIKE_TRIGGER_FRAME:
+		return false
+	sprite.set_meta(META_CHOP_AXE_TRIGGERED, true)
+	return true
+
+static func load_png_sequence(folder_root: String, file_prefix: String) -> Array[Texture2D]:
+	return _load_png_sequence(folder_root, file_prefix)
 
 static func update_chopping(sprite: AnimatedSprite2D, delta: float = 0.0) -> void:
 	sprite.flip_h = false

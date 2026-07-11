@@ -5,14 +5,37 @@ extends Node2D
 @export var chop_stand_distance: float = 20.0
 @export var chop_stand_north_offset: float = -32.0
 
+const AXE_STRIKE_ROOT := "res://assets/sprites/summer_tree_animation/summer_tree_1/axe_strike_animation"
+const AXE_STRIKE_PREFIX := "axe_strike"
+const AXE_STRIKE_PLAY_SPEED := 10.0
+
 var _chopper: Node = null
+var _static_texture: Texture2D
+var _axe_strike_frames: Array[Texture2D] = []
+var _axe_strike_active: bool = false
+var _axe_strike_elapsed: float = 0.0
 
 @onready var _sprite: Sprite2D = $Sprite
 @onready var _foreground_sprite: Sprite2D = $ForegroundSprite
 
 func _ready() -> void:
 	TreeRegistry.register_tree(self)
+	_static_texture = _sprite.texture
+	_axe_strike_frames = CharacterWalk.load_png_sequence(AXE_STRIKE_ROOT, AXE_STRIKE_PREFIX)
+	if _axe_strike_frames.is_empty():
+		push_warning(
+			"MatureTree: no axe strike frames found in %s"
+			% AXE_STRIKE_ROOT
+		)
 	_setup_chop_foreground_sprite()
+
+func _process(delta: float) -> void:
+	if not _axe_strike_active or _axe_strike_frames.is_empty():
+		return
+
+	_axe_strike_elapsed += delta
+	var frame_index := int(_axe_strike_elapsed * AXE_STRIKE_PLAY_SPEED) % _axe_strike_frames.size()
+	_set_tree_texture(_axe_strike_frames[frame_index])
 
 func _exit_tree() -> void:
 	_chopper = null
@@ -35,7 +58,22 @@ func try_reserve(chopper: Node) -> bool:
 func release_reservation(chopper: Node) -> void:
 	if _chopper == chopper:
 		_chopper = null
+		end_axe_strike()
 		_update_chop_foreground()
+
+func begin_axe_strike() -> void:
+	if _axe_strike_frames.is_empty():
+		return
+	_axe_strike_active = true
+	_axe_strike_elapsed = 0.0
+	_set_tree_texture(_axe_strike_frames[0])
+
+func end_axe_strike() -> void:
+	if not _axe_strike_active:
+		return
+	_axe_strike_active = false
+	_axe_strike_elapsed = 0.0
+	_set_tree_texture(_static_texture)
 
 func get_chop_position() -> Vector2:
 	var texture_size := Vector2.ZERO
@@ -62,6 +100,7 @@ func harvest(amount: int = 1, chopper: Node = null) -> int:
 func _clear_stale_chopper() -> void:
 	if _chopper != null and not is_instance_valid(_chopper):
 		_chopper = null
+		end_axe_strike()
 		_update_chop_foreground()
 
 func _setup_chop_foreground_sprite() -> void:
@@ -76,3 +115,7 @@ func _setup_chop_foreground_sprite() -> void:
 func _update_chop_foreground() -> void:
 	_clear_stale_chopper()
 	_foreground_sprite.visible = _chopper != null
+
+func _set_tree_texture(texture: Texture2D) -> void:
+	_sprite.texture = texture
+	_foreground_sprite.texture = texture
