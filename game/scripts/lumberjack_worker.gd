@@ -40,6 +40,10 @@ func _process(delta: float) -> void:
 	_update_animation(delta)
 
 func _update_animation(delta: float) -> void:
+	if _state == State.CHOPPING:
+		CharacterWalk.update_chopping(_body, delta)
+		return
+
 	var is_walking := _last_move_offset.length_squared() > 0.001
 	CharacterWalk.update_motion(_body, is_walking, _last_move_offset, delta)
 
