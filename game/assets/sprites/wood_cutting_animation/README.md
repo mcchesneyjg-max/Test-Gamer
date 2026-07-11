@@ -5,11 +5,13 @@ Drop your Aseprite frame exports into this folder.
 ## File naming
 
 ```
-wood_cutting_animation_1.png
-wood_cutting_animation_2.png
+wood_cutting_1.png
+wood_cutting_2.png
 ...
-wood_cutting_animation_11.png
+wood_cutting_11.png
 ```
+
+Also accepted: `wood_cutting_animation_1.png`, etc.
 
 ## Playback
 
