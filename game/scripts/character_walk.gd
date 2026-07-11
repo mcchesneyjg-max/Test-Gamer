@@ -344,6 +344,36 @@ static func _load_texture(texture_path: String) -> Texture2D:
 	push_warning("CharacterWalk: failed to load %s" % texture_path)
 	return null
 
+static func get_texture_trunk_base(texture: Texture2D) -> Vector2:
+	if texture == null:
+		return Vector2.ZERO
+
+	var image: Image = texture.get_image()
+	if image == null or image.is_empty():
+		var size := texture.get_size()
+		return Vector2(size.x * 0.5, size.y)
+
+	var width := image.get_width()
+	var height := image.get_height()
+	var min_x := width
+	var min_y := height
+	var max_x := -1
+	var max_y := -1
+
+	for y in range(height):
+		for x in range(width):
+			if image.get_pixel(x, y).a > 0.04:
+				min_x = mini(min_x, x)
+				min_y = mini(min_y, y)
+				max_x = maxi(max_x, x)
+				max_y = maxi(max_y, y)
+
+	if max_x < 0:
+		var fallback_size := texture.get_size()
+		return Vector2(fallback_size.x * 0.5, fallback_size.y)
+
+	return Vector2((min_x + max_x) * 0.5, max_y)
+
 static func _update_waiting(sprite: AnimatedSprite2D, delta: float) -> void:
 	if sprite.sprite_frames == null:
 		return

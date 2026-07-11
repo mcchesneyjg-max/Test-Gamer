@@ -22,18 +22,21 @@ const AXE_STRIKE_PREFIXES: Array[String] = [
 	"summer_tree_axe",
 ]
 const FALL_ANIMATION_PREFIXES: Array[String] = [
-	"fall",
-	"fall_animation",
+	"summer_tree_fall_frame",
 	"summer_tree_fall",
+	"fall_animation",
+	"fall",
 	"tree_fall",
 ]
 const AXE_STRIKE_PLAY_SPEED := 10.0
 const FALL_ANIMATION_PLAY_SPEED := 10.0
+const FALL_DRAW_Z_INDEX := 5
 
 var _chopper: Node = null
 var _static_texture: Texture2D
 var _axe_strike_frames: Array[Texture2D] = []
 var _fall_frames: Array[Texture2D] = []
+var _texture_anchors: Dictionary = {}
 var _axe_strike_active: bool = false
 var _fall_active: bool = false
 var _axe_strike_elapsed: float = 0.0
@@ -125,12 +128,7 @@ func begin_fall_animation() -> void:
 	print("MatureTree: started fall animation (%d frames)" % _fall_frames.size())
 
 func get_chop_position() -> Vector2:
-	var texture_size := Vector2.ZERO
-	if _sprite.texture:
-		texture_size = _sprite.texture.get_size()
-
-	var trunk_base := position + _sprite.position + Vector2(0.0, texture_size.y * 0.5)
-	return trunk_base + Vector2(chop_stand_distance, chop_stand_north_offset)
+	return position + Vector2(chop_stand_distance, chop_stand_north_offset)
 
 func is_depleted() -> bool:
 	return harvest_remaining <= 0
@@ -158,6 +156,8 @@ func _load_axe_strike_frames() -> void:
 			% ", ".join(AXE_STRIKE_ROOT_CANDIDATES)
 		)
 		_static_texture = _sprite.texture
+		if _sprite.texture:
+			_set_tree_texture(_sprite.texture)
 		return
 
 	_static_texture = _axe_strike_frames[0]
@@ -195,6 +195,20 @@ func _finish_fall_animation() -> void:
 	fall_animation_finished.emit()
 	queue_free()
 
+func _get_texture_anchor(texture: Texture2D) -> Vector2:
+	if texture == null:
+		return Vector2.ZERO
+
+	var cache_key := texture.resource_path
+	if cache_key.is_empty():
+		cache_key = str(texture.get_instance_id())
+	if _texture_anchors.has(cache_key):
+		return _texture_anchors[cache_key]
+
+	var anchor := CharacterWalk.get_texture_trunk_base(texture)
+	_texture_anchors[cache_key] = anchor
+	return anchor
+
 func _clear_stale_chopper() -> void:
 	if _chopper != null and not is_instance_valid(_chopper):
 		_chopper = null
@@ -216,6 +230,19 @@ func _update_chop_foreground() -> void:
 	_foreground_sprite.visible = _chopper != null and not _fall_active
 
 func _set_tree_texture(texture: Texture2D) -> void:
+	var sprite_offset := -_get_texture_anchor(texture)
+
+	_sprite.centered = false
+	_sprite.position = sprite_offset
 	_sprite.texture = texture
-	if not _fall_active:
-		_foreground_sprite.texture = texture
+
+	if _fall_active:
+		_sprite.z_as_relative = false
+		_sprite.z_index = FALL_DRAW_Z_INDEX
+		return
+
+	_sprite.z_as_relative = true
+	_sprite.z_index = 0
+	_foreground_sprite.centered = false
+	_foreground_sprite.position = sprite_offset
+	_foreground_sprite.texture = texture
