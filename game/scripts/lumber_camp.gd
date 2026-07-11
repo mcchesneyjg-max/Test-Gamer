@@ -2,7 +2,7 @@ extends Node2D
 
 const LUMBERJACK_WORKER_SCENE := preload("res://scenes/lumberjack_worker.tscn")
 
-@export var chop_interval: float = 2.0
+@export var chop_interval: float = 8.0
 @export var chop_radius_tiles: int = 6
 
 @onready var _storage = $StorageAreas
