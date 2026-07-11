@@ -3,6 +3,7 @@ extends Node2D
 ## Depletable wood source for future lumber camps.
 @export var harvest_remaining: int = 10
 @export var chop_stand_distance: float = 20.0
+@export var chop_stand_north_offset: float = -12.0
 
 var _chopper: Node = null
 
@@ -41,7 +42,7 @@ func get_chop_position(from_position: Vector2 = position) -> Vector2:
 	var stand_side := chop_stand_distance
 	if from_position.x < position.x:
 		stand_side = -chop_stand_distance
-	return trunk_base + Vector2(stand_side, 0.0)
+	return trunk_base + Vector2(stand_side, chop_stand_north_offset)
 
 func is_depleted() -> bool:
 	return harvest_remaining <= 0
