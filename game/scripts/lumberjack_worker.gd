@@ -146,7 +146,7 @@ func _release_tree_reservation() -> void:
 
 func _get_chop_position() -> Vector2:
 	if _is_tree_valid() and _target_tree.has_method("get_chop_position"):
-		return _target_tree.get_chop_position(position)
+		return _target_tree.get_chop_position()
 	if _is_tree_valid():
 		return _target_tree.position
 	return Vector2.ZERO
