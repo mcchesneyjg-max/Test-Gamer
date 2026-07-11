@@ -72,6 +72,10 @@ static func apply_shared(sprite: AnimatedSprite2D, walk_speed: float = 10.0) -> 
 
 	var waiting_frames := _load_waiting_frames()
 	if waiting_frames.is_empty():
+		push_warning(
+			"CharacterWalk: no waiting frames found in %s — using idle fallback. "
+			% WAITING_ANIMATIONS_ROOT
+		)
 		_add_idle_fallback_animation(frames)
 	else:
 		_add_waiting_animation(frames, waiting_frames, walk_speed)
@@ -199,8 +203,8 @@ static func _update_waiting(sprite: AnimatedSprite2D, delta: float) -> void:
 
 static func _advance_waiting(sprite: AnimatedSprite2D, delta: float) -> void:
 	if sprite.animation != &"waiting":
-		sprite.play(&"waiting")
-	sprite.pause()
+		sprite.animation = &"waiting"
+	sprite.stop()
 
 	var frame_count := sprite.sprite_frames.get_frame_count(&"waiting")
 	if frame_count <= 0:
@@ -242,8 +246,8 @@ static func _reset_waiting_state(sprite: AnimatedSprite2D) -> void:
 
 static func _start_waiting(sprite: AnimatedSprite2D) -> void:
 	if sprite.sprite_frames.has_animation(&"waiting"):
-		sprite.play(&"waiting")
-		sprite.pause()
+		sprite.animation = &"waiting"
+		sprite.stop()
 		sprite.frame = 0
 	elif sprite.sprite_frames.has_animation(&"idle"):
 		sprite.play(&"idle")
