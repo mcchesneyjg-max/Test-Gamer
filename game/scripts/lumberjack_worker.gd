@@ -12,6 +12,7 @@ var _target_tree: Node2D
 var _cargo_amount: int = 0
 var _idle_timer: float = 0.0
 var _chop_timer: float = 0.0
+var _chop_position := Vector2.ZERO
 var _move_direction := Vector2.ZERO
 var _last_move_offset := Vector2.ZERO
 
@@ -62,12 +63,17 @@ func _process_to_tree(delta: float) -> void:
 		_return_idle()
 		return
 
-	_move_toward(_target_tree.position, delta)
-	if position.distance_to(_target_tree.position) <= ARRIVE_DISTANCE:
+	var chop_position := _get_chop_position()
+	_move_toward(chop_position, delta)
+	if position.distance_to(chop_position) <= ARRIVE_DISTANCE:
+		position = chop_position
+		_chop_position = chop_position
 		_state = State.CHOPPING
 		_chop_timer = _camp.get_chop_duration() if _is_camp_valid() else 1.5
+		_move_direction = Vector2.ZERO
 
 func _process_chopping(delta: float) -> void:
+	position = _chop_position
 	_chop_timer -= delta
 	if _chop_timer > 0.0:
 		return
@@ -129,6 +135,14 @@ func _return_idle() -> void:
 	_state = State.IDLE
 	_idle_timer = 0.25
 	_move_direction = Vector2.ZERO
+	_chop_position = Vector2.ZERO
+
+func _get_chop_position() -> Vector2:
+	if _is_tree_valid() and _target_tree.has_method("get_chop_position"):
+		return _target_tree.get_chop_position(position)
+	if _is_tree_valid():
+		return _target_tree.position
+	return Vector2.ZERO
 
 func _move_toward(target_position: Vector2, delta: float) -> void:
 	var movement := GridMovement.step_toward(position, target_position, move_speed, delta, _move_direction)
