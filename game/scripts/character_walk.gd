@@ -11,6 +11,9 @@ const META_WAS_WALKING := "character_walk_was_walking"
 const META_WAIT_PHASE := "character_walk_wait_phase"
 const META_WAIT_ELAPSED := "character_walk_wait_elapsed"
 const META_PLAY_SPEED := "character_walk_play_speed"
+const META_CHOP_PHASE := "character_walk_chop_phase"
+const META_CHOP_ELAPSED := "character_walk_chop_elapsed"
+const CHOP_LOOP_START_FRAME := 3
 const DIRECTION_TO_FOLDER := {
 	"n": "walk_north",
 	"ne": "walk_north_east",
@@ -122,17 +125,24 @@ static func update_motion(
 	if sprite.animation != animation_name:
 		sprite.play(animation_name)
 
-static func update_chopping(sprite: AnimatedSprite2D, _delta: float = 0.0) -> void:
+static func reset_chopping(sprite: AnimatedSprite2D) -> void:
+	sprite.set_meta(META_CHOP_PHASE, "intro")
+	sprite.set_meta(META_CHOP_ELAPSED, 0.0)
+
+static func update_chopping(sprite: AnimatedSprite2D, delta: float = 0.0) -> void:
 	sprite.flip_h = false
 	if sprite.sprite_frames == null:
 		return
 
 	if not sprite.sprite_frames.has_animation(&"wood_cutting"):
-		_update_waiting(sprite, _delta)
+		_update_waiting(sprite, delta)
 		return
 
 	if sprite.animation != &"wood_cutting":
-		sprite.play(&"wood_cutting")
+		reset_chopping(sprite)
+		sprite.animation = &"wood_cutting"
+	sprite.stop()
+	_advance_chopping(sprite, delta)
 
 static func _load_direction_frames(folder_name: String) -> Array[Texture2D]:
 	for candidate in _folder_candidates(folder_name):
@@ -165,10 +175,39 @@ static func _add_wood_cutting_animation(
 	walk_speed: float
 ) -> void:
 	frames.add_animation(&"wood_cutting")
-	frames.set_animation_loop(&"wood_cutting", true)
+	frames.set_animation_loop(&"wood_cutting", false)
 	frames.set_animation_speed(&"wood_cutting", walk_speed)
 	for texture in wood_cutting_frames:
 		frames.add_frame(&"wood_cutting", texture)
+
+static func _advance_chopping(sprite: AnimatedSprite2D, delta: float) -> void:
+	var frame_count := sprite.sprite_frames.get_frame_count(&"wood_cutting")
+	if frame_count <= 0:
+		return
+
+	var phase: String = sprite.get_meta(META_CHOP_PHASE, "intro")
+	var elapsed: float = float(sprite.get_meta(META_CHOP_ELAPSED, 0.0)) + delta
+	var play_speed: float = float(sprite.get_meta(META_PLAY_SPEED, 10.0))
+	var loop_start_frame := mini(CHOP_LOOP_START_FRAME, maxi(frame_count - 1, 0))
+
+	if phase == "intro":
+		var frame_index := int(elapsed * play_speed)
+		if frame_index >= frame_count:
+			phase = "loop"
+			elapsed = 0.0
+			sprite.frame = loop_start_frame
+		else:
+			sprite.frame = frame_index
+	else:
+		var loop_length := frame_count - loop_start_frame
+		if loop_length <= 0:
+			sprite.frame = frame_count - 1
+		else:
+			var frame_index := loop_start_frame + (int(elapsed * play_speed) % loop_length)
+			sprite.frame = frame_index
+
+	sprite.set_meta(META_CHOP_PHASE, phase)
+	sprite.set_meta(META_CHOP_ELAPSED, elapsed)
 
 static func _add_idle_fallback_animation(frames: SpriteFrames) -> void:
 	frames.add_animation(&"idle")

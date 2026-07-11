@@ -15,7 +15,8 @@ Also accepted: `wood_cutting_animation_1.png`, etc.
 
 ## Playback
 
-Plays while the lumberjack is chopping a tree (gathering a wood log). Frames 1–11 loop at walk animation speed until the chop finishes.
+1. Play frames 1–11 in order once at walk animation speed (10 fps by default)
+2. After frame 11 is shown, loop frames 4–11 until chopping finishes
 
 ## Upload your PNGs
 
