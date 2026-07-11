@@ -43,6 +43,8 @@ func _process(delta: float) -> void:
 func _update_animation(delta: float) -> void:
 	if _state == State.CHOPPING:
 		CharacterWalk.update_chopping(_body, delta)
+		if _is_tree_valid() and CharacterWalk.poll_axe_strike_trigger(_body):
+			_target_tree.begin_axe_strike()
 		return
 
 	var is_walking := _last_move_offset.length_squared() > 0.001
@@ -88,6 +90,7 @@ func _process_chopping(delta: float) -> void:
 		_return_idle()
 		return
 
+	_end_tree_axe_strike()
 	_cargo_amount = harvested
 	_cargo.visible = true
 	_release_tree_reservation()
@@ -132,7 +135,12 @@ func _deliver_log() -> void:
 		_cargo.visible = false
 	_return_idle()
 
+func _end_tree_axe_strike() -> void:
+	if _is_tree_valid() and _target_tree.has_method("end_axe_strike"):
+		_target_tree.end_axe_strike()
+
 func _return_idle() -> void:
+	_end_tree_axe_strike()
 	_release_tree_reservation()
 	_target_tree = null
 	_state = State.IDLE
