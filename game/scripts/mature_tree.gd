@@ -33,16 +33,13 @@ func release_reservation(chopper: Node) -> void:
 	if _chopper == chopper:
 		_chopper = null
 
-func get_chop_position(from_position: Vector2 = position) -> Vector2:
+func get_chop_position() -> Vector2:
 	var texture_size := Vector2.ZERO
 	if _sprite.texture:
 		texture_size = _sprite.texture.get_size()
 
 	var trunk_base := position + _sprite.position + Vector2(texture_size.x * 0.5, texture_size.y)
-	var stand_side := chop_stand_distance
-	if from_position.x < position.x:
-		stand_side = -chop_stand_distance
-	return trunk_base + Vector2(stand_side, chop_stand_north_offset)
+	return trunk_base + Vector2(chop_stand_distance, chop_stand_north_offset)
 
 func is_depleted() -> bool:
 	return harvest_remaining <= 0
