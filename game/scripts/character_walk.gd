@@ -207,6 +207,11 @@ static func _advance_waiting(sprite: AnimatedSprite2D, delta: float) -> void:
 		return
 
 	var phase: String = sprite.get_meta(META_WAIT_PHASE, "hold")
+
+	if phase == "rest":
+		sprite.frame = frame_count - 1
+		return
+
 	var elapsed: float = float(sprite.get_meta(META_WAIT_ELAPSED, 0.0)) + delta
 	var play_speed: float = float(sprite.get_meta(META_PLAY_SPEED, 10.0))
 
@@ -214,16 +219,16 @@ static func _advance_waiting(sprite: AnimatedSprite2D, delta: float) -> void:
 		sprite.frame = 0
 		if elapsed >= WAIT_HOLD_SECONDS:
 			if frame_count <= 1:
-				elapsed = 0.0
+				phase = "rest"
 			else:
 				phase = "cycle"
-				elapsed = 0.0
+			elapsed = 0.0
 	elif phase == "cycle":
 		var frame_index := 1 + int(elapsed * play_speed)
 		if frame_index >= frame_count:
-			phase = "hold"
+			phase = "rest"
 			elapsed = 0.0
-			sprite.frame = 0
+			sprite.frame = frame_count - 1
 		else:
 			sprite.frame = frame_index
 
