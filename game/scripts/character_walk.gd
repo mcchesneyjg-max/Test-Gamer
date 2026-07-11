@@ -5,7 +5,7 @@ const WALK_ANIMATIONS_ROOT := "res://assets/sprites/walking_animations"
 const WAITING_ANIMATIONS_ROOT := "res://assets/sprites/waiting_animation"
 const WAITING_PREFIX := "waiting_animation"
 const WOOD_CUTTING_ROOT := "res://assets/sprites/wood_cutting_animation"
-const WOOD_CUTTING_PREFIX := "wood_cutting_animation"
+const WOOD_CUTTING_PREFIX := "wood_cutting"
 const WAIT_HOLD_SECONDS := 4.0
 const META_WAS_WALKING := "character_walk_was_walking"
 const META_WAIT_PHASE := "character_walk_wait_phase"
@@ -227,9 +227,9 @@ static func _load_texture(texture_path: String) -> Texture2D:
 		return texture
 
 	var global_path := ProjectSettings.globalize_path(texture_path)
-	var image := Image.new()
-	if image.load_from_file(global_path) == OK:
-		return ImageTexture.create_from_image(image)
+	var loaded_image: Image = Image.load_from_file(global_path)
+	if loaded_image != null:
+		return ImageTexture.create_from_image(loaded_image)
 
 	push_warning("CharacterWalk: failed to load %s" % texture_path)
 	return null
