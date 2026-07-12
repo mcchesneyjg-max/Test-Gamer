@@ -36,6 +36,7 @@ func _process(delta: float) -> void:
 		State.TO_HOME:
 			_process_to_home(delta)
 	_update_animation(delta)
+	YSortDepth.apply_to_entity(self)
 
 func _update_animation(delta: float) -> void:
 	var is_walking := _last_move_offset.length_squared() > 0.001

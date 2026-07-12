@@ -19,6 +19,7 @@ func _ready() -> void:
 	HaulerStationRegistry.register_station(self)
 	_update_hauler_label()
 	call_deferred("_spawn_workers")
+	YSortDepth.apply_to_entity(self)
 
 func _exit_tree() -> void:
 	for worker in _spawned_workers:
