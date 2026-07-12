@@ -5,6 +5,8 @@ extends Node2D
 func _ready() -> void:
 	WarehouseRegistry.register_warehouse(self)
 	_storage.input.changed.connect(_on_input_changed)
+
+func _process(_delta: float) -> void:
 	YSortDepth.apply_to_entity(self)
 
 func _exit_tree() -> void:

@@ -31,8 +31,6 @@ const FALL_ANIMATION_PREFIXES: Array[String] = [
 ]
 const AXE_STRIKE_PLAY_SPEED := 10.0
 const FALL_ANIMATION_PLAY_SPEED := 10.0
-const FALL_DRAW_Z_INDEX := 5
-
 var _chopper: Node = null
 var _tree_variant: String = ""
 var _axe_strike_root_candidates: Array[String] = []
@@ -60,14 +58,12 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if _fall_active:
 		_advance_fall_animation(delta)
-		return
+	elif _axe_strike_active and not _axe_strike_frames.is_empty():
+		_axe_strike_elapsed += delta
+		var frame_index := int(_axe_strike_elapsed * AXE_STRIKE_PLAY_SPEED) % _axe_strike_frames.size()
+		_set_tree_texture(_axe_strike_frames[frame_index])
 
-	if not _axe_strike_active or _axe_strike_frames.is_empty():
-		return
-
-	_axe_strike_elapsed += delta
-	var frame_index := int(_axe_strike_elapsed * AXE_STRIKE_PLAY_SPEED) % _axe_strike_frames.size()
-	_set_tree_texture(_axe_strike_frames[frame_index])
+	YSortDepth.apply_to_entity(self)
 
 func _exit_tree() -> void:
 	_chopper = null
@@ -268,17 +264,11 @@ func _clear_stale_chopper() -> void:
 		_update_chop_foreground()
 
 func _setup_chop_foreground_sprite() -> void:
-	_foreground_sprite.texture = _sprite.texture
-	_foreground_sprite.position = _sprite.position
-	_foreground_sprite.centered = _sprite.centered
-	_foreground_sprite.texture_filter = _sprite.texture_filter
-	_foreground_sprite.z_as_relative = false
-	_foreground_sprite.z_index = 4
 	_foreground_sprite.visible = false
 
 func _update_chop_foreground() -> void:
 	_clear_stale_chopper()
-	_foreground_sprite.visible = _chopper != null and not _fall_active
+	_foreground_sprite.visible = false
 
 func _set_tree_texture(texture: Texture2D) -> void:
 	var sprite_offset := -_planted_root
@@ -287,16 +277,5 @@ func _set_tree_texture(texture: Texture2D) -> void:
 	_sprite.position = sprite_offset
 	_sprite.texture = texture
 
-	if _fall_active:
-		_sprite.z_as_relative = false
-		_sprite.z_index = FALL_DRAW_Z_INDEX
-		YSortDepth.apply_to_entity(self)
-		return
-
 	_sprite.z_as_relative = true
 	_sprite.z_index = 0
-	_foreground_sprite.centered = false
-	_foreground_sprite.position = sprite_offset
-	_foreground_sprite.texture = texture
-
-	YSortDepth.apply_to_entity(self)
