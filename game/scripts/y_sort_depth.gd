@@ -11,43 +11,27 @@ static var _opaque_bottom_cache: Dictionary = {}
 static func apply_to_entity(entity: Node2D, force_recompute_depth: bool = false) -> void:
 	if entity == null:
 		return
+	if entity.has_meta(INITIALIZED_META_KEY) and not force_recompute_depth:
+		return
 
 	var applied: float = entity.get_meta(APPLIED_META_KEY, 0.0)
 	var sprites := _collect_sprites(entity)
-	var stable_depth := _get_stable_depth(entity, sprites, applied, force_recompute_depth)
+	var stable_depth := _get_stable_depth(entity, sprites, applied, true)
 
-	if not entity.has_meta(INITIALIZED_META_KEY):
-		_apply_depth_compensation(sprites, applied, stable_depth)
-		entity.position.y += stable_depth
-		entity.set_meta(INITIALIZED_META_KEY, true)
-	elif force_recompute_depth and roundf(stable_depth) != roundf(applied):
-		_apply_depth_compensation(sprites, applied, stable_depth)
-		entity.position.y += stable_depth - applied
+	var delta := stable_depth - applied
+	if absf(delta) >= 0.001:
+		for sprite_entry in sprites:
+			var sprite := sprite_entry["sprite"] as Node2D
+			sprite.position.y = roundf(sprite.position.y - delta)
 
-	applied = entity.get_meta(APPLIED_META_KEY, stable_depth)
-	var logical_y := entity.position.y - applied
-	entity.position = Vector2(
-		roundf(entity.position.x),
-		roundf(logical_y + applied)
-	)
-
-static func _apply_depth_compensation(
-	sprites: Array[Dictionary],
-	current_applied: float,
-	target_depth: float
-) -> void:
-	var delta := target_depth - current_applied
-	if absf(delta) < 0.001:
-		return
-
-	for sprite_entry in sprites:
-		var sprite := sprite_entry["sprite"] as Node2D
-		sprite.position.y = roundf(sprite.position.y - delta)
+	entity.set_meta(APPLIED_META_KEY, stable_depth)
+	entity.set_meta(STABLE_DEPTH_META_KEY, stable_depth)
+	entity.set_meta(INITIALIZED_META_KEY, true)
 
 static func _get_stable_depth(
 	entity: Node2D,
 	sprites: Array[Dictionary],
-	applied: float,
+	sort_compensation: float,
 	force_recompute: bool
 ) -> float:
 	if not force_recompute and entity.has_meta(STABLE_DEPTH_META_KEY):
@@ -57,12 +41,11 @@ static func _get_stable_depth(
 	for sprite_entry in sprites:
 		deepest = maxf(
 			deepest,
-			_stable_sprite_depth(entity, sprite_entry["sprite"], sprite_entry["offset"], applied)
+			_stable_sprite_depth(entity, sprite_entry["sprite"], sprite_entry["offset"], sort_compensation)
 		)
 
 	deepest = roundf(deepest)
 	entity.set_meta(STABLE_DEPTH_META_KEY, deepest)
-	entity.set_meta(APPLIED_META_KEY, deepest)
 	return deepest
 
 static func _collect_sprites(entity: Node2D) -> Array[Dictionary]:
