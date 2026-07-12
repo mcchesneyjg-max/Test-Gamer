@@ -38,11 +38,14 @@ static func apply_to_entity(entity: Node2D) -> void:
 	if absf(delta) >= 0.001:
 		for sprite_entry in sprites:
 			var sprite := sprite_entry["sprite"] as Node2D
-			sprite.position.y -= delta
+			sprite.position.y = roundf(sprite.position.y - delta)
 
 	entity.set_meta(LOGICAL_POS_META_KEY, logical_pos)
 	entity.set_meta(APPLIED_META_KEY, deepest)
-	entity.position = logical_pos + Vector2(0.0, deepest)
+	entity.position = Vector2(
+		roundf(logical_pos.x),
+		roundf(logical_pos.y + deepest)
+	)
 
 static func _collect_sprites(entity: Node2D) -> Array[Dictionary]:
 	var sprites: Array[Dictionary] = []
