@@ -4,7 +4,6 @@
 [ext_resource type="Script" path="res://scripts/camera_controller.gd" id="2_camera"]
 
 [node name="Player" type="Node2D"]
-z_index = 8
 script = ExtResource("1_player")
 
 [node name="Body" type="AnimatedSprite2D" parent="."]

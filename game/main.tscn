@@ -24,12 +24,13 @@ script = ExtResource("9_zone_overlay")
 script = ExtResource("5_placer")
 
 [node name="TileMap" type="TileMap" parent="."]
+y_sort_enabled = true
 z_index = 1
 tile_set = ExtResource("4_tileset")
 format = 2
 script = ExtResource("3_map")
 
-[node name="Player" parent="." instance=ExtResource("10_player")]
+[node name="Player" parent="TileMap" instance=ExtResource("10_player")]
 
 [node name="GameHud" parent="." instance=ExtResource("6_hud")]
 

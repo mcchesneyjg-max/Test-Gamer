@@ -3,7 +3,7 @@ extends Node
 const MATURE_TREE_SCENE := preload("res://scenes/mature_tree.tscn")
 
 func _frame_view(world_position: Vector2, zoom_level: Vector2 = Vector2(3, 3)) -> void:
-	var player: Node2D = get_parent().get_node("Player")
+	var player: Node2D = get_parent().get_node("TileMap/Player")
 	player.position = world_position
 	var camera: Camera2D = player.get_node("Camera2D")
 	camera.position = Vector2.ZERO
