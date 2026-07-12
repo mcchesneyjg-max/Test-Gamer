@@ -20,7 +20,7 @@ Also accepted:
 
 ## Playback
 
-The trunk base stays locked to the same world position for every frame in both chop and fall animations. All PNGs should keep the roots drawn at the same pixel location in each frame.
+The trunk base stays locked to the same world position for every frame in both chop and fall animations. When fall begins, the code matches the current chop pose so the tree does not jump sideways.
 
 1. Lumberjack chops until the tree's final log is gathered.
 2. The tree plays through all fall animation frames once (no loop).
