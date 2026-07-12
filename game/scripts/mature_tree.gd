@@ -37,6 +37,7 @@ var _static_texture: Texture2D
 var _axe_strike_frames: Array[Texture2D] = []
 var _fall_frames: Array[Texture2D] = []
 var _sprite_anchor: Vector2 = Vector2.ZERO
+var _fall_sprite_offset: Vector2 = Vector2.ZERO
 var _axe_strike_active: bool = false
 var _fall_active: bool = false
 var _axe_strike_elapsed: float = 0.0
@@ -123,6 +124,11 @@ func begin_fall_animation() -> void:
 
 	_fall_active = true
 	_fall_elapsed = 0.0
+	var current_trunk := _sprite_anchor
+	if _sprite.texture:
+		current_trunk = CharacterWalk.get_texture_trunk_base(_sprite.texture)
+	var fall_trunk := CharacterWalk.get_texture_trunk_base(_fall_frames[0])
+	_fall_sprite_offset = -fall_trunk + (current_trunk - _sprite_anchor)
 	_set_tree_texture(_fall_frames[0])
 	_update_chop_foreground()
 	print("MatureTree: started fall animation (%d frames)" % _fall_frames.size())
@@ -219,6 +225,8 @@ func _update_chop_foreground() -> void:
 
 func _set_tree_texture(texture: Texture2D) -> void:
 	var sprite_offset := -_sprite_anchor
+	if _fall_active:
+		sprite_offset = _fall_sprite_offset
 
 	_sprite.centered = false
 	_sprite.position = sprite_offset
