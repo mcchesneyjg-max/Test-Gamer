@@ -3,6 +3,7 @@ extends RefCounted
 
 const ALPHA_THRESHOLD := 0.04
 const APPLIED_META_KEY := "_y_sort_applied"
+const LOGICAL_POS_META_KEY := "_y_sort_logical_pos"
 
 static var _opaque_bottom_cache: Dictionary = {}
 
@@ -11,20 +12,33 @@ static func apply_to_entity(entity: Node2D) -> void:
 		return
 
 	var applied: float = entity.get_meta(APPLIED_META_KEY, 0.0)
+	var logical_pos: Vector2
+	if entity.has_meta(LOGICAL_POS_META_KEY):
+		logical_pos = entity.get_meta(LOGICAL_POS_META_KEY)
+	else:
+		logical_pos = entity.position
+		entity.set_meta(LOGICAL_POS_META_KEY, logical_pos)
+
+	var expected_sort_pos := logical_pos + Vector2(0.0, applied)
+	if entity.position.distance_squared_to(expected_sort_pos) > 0.01:
+		if entity.position.distance_squared_to(logical_pos) < entity.position.distance_squared_to(expected_sort_pos):
+			pass
+		else:
+			logical_pos += entity.position - expected_sort_pos
+
 	var deepest := 0.0
 	for child in entity.get_children():
 		deepest = maxf(deepest, _deepest_visible_sprite_y(child, applied))
 
 	var delta := deepest - applied
-	if absf(delta) < 0.001:
-		return
+	if absf(delta) >= 0.001:
+		for child in entity.get_children():
+			if child is Sprite2D or child is AnimatedSprite2D:
+				(child as Node2D).position.y -= delta
 
-	entity.position.y += delta
-	for child in entity.get_children():
-		if child is Sprite2D or child is AnimatedSprite2D:
-			(child as Node2D).position.y -= delta
-
+	entity.set_meta(LOGICAL_POS_META_KEY, logical_pos)
 	entity.set_meta(APPLIED_META_KEY, deepest)
+	entity.position = logical_pos + Vector2(0.0, deepest)
 
 static func _deepest_visible_sprite_y(node: Node, sort_compensation: float) -> float:
 	if node is Sprite2D:
