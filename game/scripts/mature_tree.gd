@@ -37,7 +37,9 @@ var _static_texture: Texture2D
 var _axe_strike_frames: Array[Texture2D] = []
 var _fall_frames: Array[Texture2D] = []
 var _sprite_anchor: Vector2 = Vector2.ZERO
+var _sprite_offset: Vector2 = Vector2.ZERO
 var _fall_sprite_offset: Vector2 = Vector2.ZERO
+var _anchor_initialized: bool = false
 var _axe_strike_active: bool = false
 var _fall_active: bool = false
 var _axe_strike_elapsed: float = 0.0
@@ -96,11 +98,7 @@ func is_falling() -> bool:
 	return _fall_active
 
 func begin_axe_strike() -> void:
-	if _fall_active:
-		return
-	_load_axe_strike_frames()
-	if _axe_strike_frames.is_empty():
-		push_warning("MatureTree: cannot play axe strike — no frames loaded")
+	if _fall_active or _axe_strike_frames.is_empty():
 		return
 	_axe_strike_active = true
 	_axe_strike_elapsed = 0.0
@@ -124,7 +122,7 @@ func begin_fall_animation() -> void:
 
 	_fall_active = true
 	_fall_elapsed = 0.0
-	_fall_sprite_offset = _sprite.position
+	_fall_sprite_offset = _sprite_offset
 	_set_tree_texture(_fall_frames[0])
 	_update_chop_foreground()
 	print("MatureTree: started fall animation (%d frames)" % _fall_frames.size())
@@ -147,6 +145,9 @@ func harvest(amount: int = 1, chopper: Node = null) -> int:
 	return taken
 
 func _load_axe_strike_frames() -> void:
+	if not _axe_strike_frames.is_empty():
+		return
+
 	_axe_strike_frames = CharacterWalk.load_png_sequence_from_candidates(
 		AXE_STRIKE_ROOT_CANDIDATES,
 		AXE_STRIKE_PREFIXES,
@@ -158,17 +159,19 @@ func _load_axe_strike_frames() -> void:
 			% ", ".join(AXE_STRIKE_ROOT_CANDIDATES)
 		)
 		_static_texture = _sprite.texture
+		_initialize_sprite_anchor(_sprite.texture)
 		if _sprite.texture:
-			_sprite_anchor = _quantize_anchor(CharacterWalk.get_texture_trunk_base(_sprite.texture))
 			_set_tree_texture(_sprite.texture)
 		return
 
 	_static_texture = _axe_strike_frames[0]
-	_sprite_anchor = _quantize_anchor(CharacterWalk.get_texture_trunk_base(_static_texture))
-	if not _axe_strike_active and not _fall_active:
-		_set_tree_texture(_static_texture)
+	_initialize_sprite_anchor(_static_texture)
+	_set_tree_texture(_static_texture)
 
 func _load_fall_frames() -> void:
+	if not _fall_frames.is_empty():
+		return
+
 	_fall_frames = CharacterWalk.load_png_sequence_from_candidates(
 		FALL_ANIMATION_ROOT_CANDIDATES,
 		FALL_ANIMATION_PREFIXES,
@@ -179,6 +182,13 @@ func _load_fall_frames() -> void:
 			"MatureTree: no fall frames found. Checked: %s"
 			% ", ".join(FALL_ANIMATION_ROOT_CANDIDATES)
 		)
+
+func _initialize_sprite_anchor(texture: Texture2D) -> void:
+	if _anchor_initialized or texture == null:
+		return
+	_sprite_anchor = CharacterWalk.get_texture_trunk_base(texture)
+	_sprite_offset = -_sprite_anchor
+	_anchor_initialized = true
 
 func _advance_fall_animation(delta: float) -> void:
 	if _fall_frames.is_empty():
@@ -220,9 +230,7 @@ func _update_chop_foreground() -> void:
 	_foreground_sprite.visible = _chopper != null and not _fall_active
 
 func _set_tree_texture(texture: Texture2D) -> void:
-	var sprite_offset := _quantize_sprite_offset(-_sprite_anchor)
-	if _fall_active:
-		sprite_offset = _quantize_sprite_offset(_fall_sprite_offset)
+	var sprite_offset := _fall_sprite_offset if _fall_active else _sprite_offset
 
 	_sprite.centered = false
 	_sprite.position = sprite_offset
@@ -238,9 +246,3 @@ func _set_tree_texture(texture: Texture2D) -> void:
 	_foreground_sprite.centered = false
 	_foreground_sprite.position = sprite_offset
 	_foreground_sprite.texture = texture
-
-func _quantize_sprite_offset(offset: Vector2) -> Vector2:
-	return Vector2(round(offset.x), round(offset.y))
-
-func _quantize_anchor(anchor: Vector2) -> Vector2:
-	return Vector2(round(anchor.x), round(anchor.y))
