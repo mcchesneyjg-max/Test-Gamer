@@ -38,6 +38,7 @@ var _axe_strike_frames: Array[Texture2D] = []
 var _fall_frames: Array[Texture2D] = []
 var _texture_anchors: Dictionary = {}
 var _sprite_anchor: Vector2 = Vector2.ZERO
+var _fall_reference_anchor: Vector2 = Vector2.ZERO
 var _axe_strike_active: bool = false
 var _fall_active: bool = false
 var _axe_strike_elapsed: float = 0.0
@@ -178,6 +179,10 @@ func _load_fall_frames() -> void:
 			"MatureTree: no fall frames found. Checked: %s"
 			% ", ".join(FALL_ANIMATION_ROOT_CANDIDATES)
 		)
+		_fall_reference_anchor = Vector2.ZERO
+		return
+
+	_fall_reference_anchor = _get_texture_anchor(_fall_frames[0])
 
 func _advance_fall_animation(delta: float) -> void:
 	if _fall_frames.is_empty():
@@ -212,6 +217,10 @@ func _get_texture_anchor(texture: Texture2D) -> Vector2:
 	_texture_anchors[cache_key] = anchor
 	return anchor
 
+func _get_fall_anchor(texture: Texture2D) -> Vector2:
+	var frame_anchor := _get_texture_anchor(texture)
+	return _sprite_anchor + (frame_anchor - _fall_reference_anchor)
+
 func _clear_stale_chopper() -> void:
 	if _chopper != null and not is_instance_valid(_chopper):
 		_chopper = null
@@ -235,7 +244,7 @@ func _update_chop_foreground() -> void:
 func _set_tree_texture(texture: Texture2D) -> void:
 	var anchor := _sprite_anchor
 	if _fall_active:
-		anchor = _get_texture_anchor(texture)
+		anchor = _get_fall_anchor(texture)
 
 	var sprite_offset := -anchor
 
