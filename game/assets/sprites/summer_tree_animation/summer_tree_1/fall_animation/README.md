@@ -20,7 +20,7 @@ Also accepted:
 
 ## Playback
 
-Frames are aligned to the chop pose at fall frame 1, then each later frame follows trunk movement in your art relative to that start.
+The trunk base stays locked to the same world position for every frame in both chop and fall animations. All PNGs should keep the roots drawn at the same pixel location in each frame.
 
 1. Lumberjack chops until the tree's final log is gathered.
 2. The tree plays through all fall animation frames once (no loop).
