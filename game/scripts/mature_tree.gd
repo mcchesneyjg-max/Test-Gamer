@@ -37,6 +37,7 @@ var _static_texture: Texture2D
 var _axe_strike_frames: Array[Texture2D] = []
 var _fall_frames: Array[Texture2D] = []
 var _texture_anchors: Dictionary = {}
+var _sprite_anchor: Vector2 = Vector2.ZERO
 var _axe_strike_active: bool = false
 var _fall_active: bool = false
 var _axe_strike_elapsed: float = 0.0
@@ -157,10 +158,12 @@ func _load_axe_strike_frames() -> void:
 		)
 		_static_texture = _sprite.texture
 		if _sprite.texture:
+			_sprite_anchor = CharacterWalk.get_texture_trunk_base(_sprite.texture)
 			_set_tree_texture(_sprite.texture)
 		return
 
 	_static_texture = _axe_strike_frames[0]
+	_sprite_anchor = CharacterWalk.get_texture_trunk_base(_static_texture)
 	if not _axe_strike_active and not _fall_active:
 		_set_tree_texture(_static_texture)
 
@@ -230,7 +233,11 @@ func _update_chop_foreground() -> void:
 	_foreground_sprite.visible = _chopper != null and not _fall_active
 
 func _set_tree_texture(texture: Texture2D) -> void:
-	var sprite_offset := -_get_texture_anchor(texture)
+	var anchor := _sprite_anchor
+	if _fall_active:
+		anchor = _get_texture_anchor(texture)
+
+	var sprite_offset := -anchor
 
 	_sprite.centered = false
 	_sprite.position = sprite_offset
