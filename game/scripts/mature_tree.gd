@@ -178,12 +178,17 @@ func _load_axe_strike_frames() -> void:
 		if _sprite.texture:
 			_initialize_planted_root(_sprite.texture)
 			_set_tree_texture(_sprite.texture)
+			_sprite.visible = true
 		return
 
 	_static_texture = _axe_strike_frames[0]
 	_initialize_planted_root(_static_texture)
 	_set_tree_texture(_static_texture)
-	print("MatureTree: using variant %s (%d chop frames)" % [_tree_variant, _axe_strike_frames.size()])
+	_sprite.visible = true
+	print(
+		"MatureTree: using variant %s (%d chop frames, root %s)"
+		% [_tree_variant, _axe_strike_frames.size(), _planted_root]
+	)
 
 func _load_fall_frames() -> void:
 	if not _fall_frames.is_empty():
