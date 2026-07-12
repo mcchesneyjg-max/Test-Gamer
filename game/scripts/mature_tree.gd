@@ -4,8 +4,8 @@ signal fall_animation_finished
 
 ## Depletable wood source for future lumber camps.
 @export var harvest_remaining: int = 10
-@export var chop_stand_distance: float = 20.0
-@export var chop_stand_north_offset: float = -32.0
+@export var chop_stand_distance: float = 14.0
+@export var chop_stand_north_offset: float = 0.0
 
 const TREE_VARIANT_NAMES: Array[String] = [
 	"summer_tree_1",
@@ -125,6 +125,7 @@ func begin_fall_animation() -> void:
 	print("MatureTree: started fall animation (%d frames)" % _fall_frames.size())
 
 func get_chop_position() -> Vector2:
+	# Tree position is the planted trunk base; lumberjack position is their feet.
 	return position + Vector2(chop_stand_distance, chop_stand_north_offset)
 
 func is_depleted() -> bool:
