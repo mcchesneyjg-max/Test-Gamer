@@ -114,7 +114,6 @@ static func update_motion(
 	sprite.flip_h = false
 	if not is_walking or move_offset.length_squared() <= 0.001:
 		_update_waiting(sprite, delta)
-		_apply_entity_y_sort(sprite)
 		return
 
 	sprite.set_meta(META_WAS_WALKING, true)
@@ -124,13 +123,10 @@ static func update_motion(
 	var animation_name := StringName(folder_name)
 	if folder_name.is_empty() or not sprite.sprite_frames.has_animation(animation_name):
 		_update_waiting(sprite, delta)
-		_apply_entity_y_sort(sprite)
 		return
 
 	if sprite.animation != animation_name:
 		sprite.play(animation_name)
-
-	_apply_entity_y_sort(sprite)
 
 static func reset_chopping(sprite: AnimatedSprite2D) -> void:
 	sprite.set_meta(META_CHOP_PHASE, "intro")
@@ -177,12 +173,10 @@ static func load_png_sequence_from_candidates(
 static func update_chopping(sprite: AnimatedSprite2D, delta: float = 0.0) -> void:
 	sprite.flip_h = false
 	if sprite.sprite_frames == null:
-		_apply_entity_y_sort(sprite)
 		return
 
 	if not sprite.sprite_frames.has_animation(&"wood_cutting"):
 		_update_waiting(sprite, delta)
-		_apply_entity_y_sort(sprite)
 		return
 
 	if sprite.animation != &"wood_cutting":
@@ -190,7 +184,6 @@ static func update_chopping(sprite: AnimatedSprite2D, delta: float = 0.0) -> voi
 		sprite.animation = &"wood_cutting"
 	sprite.stop()
 	_advance_chopping(sprite, delta)
-	_apply_entity_y_sort(sprite)
 
 static func _load_direction_frames(folder_name: String) -> Array[Texture2D]:
 	for candidate in _folder_candidates(folder_name):

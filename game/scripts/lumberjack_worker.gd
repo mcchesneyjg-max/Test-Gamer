@@ -40,6 +40,7 @@ func _process(delta: float) -> void:
 		State.TO_CAMP:
 			_process_to_camp(delta)
 	_update_animation(delta)
+	YSortDepth.apply_to_entity(self)
 
 func _update_animation(delta: float) -> void:
 	if _state == State.CHOPPING:

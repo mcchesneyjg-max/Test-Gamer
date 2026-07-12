@@ -23,6 +23,8 @@ func _process(delta: float) -> void:
 	else:
 		CharacterWalk.update_motion(_body, false, Vector2.ZERO, delta)
 
+	YSortDepth.apply_to_entity(self)
+
 func _get_input_direction() -> Vector2:
 	var raw := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	return GridMovement.snap_eight_directions(raw)
