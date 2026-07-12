@@ -2,6 +2,7 @@ class_name YSortDepth
 extends RefCounted
 
 const ALPHA_THRESHOLD := 0.04
+const APPLIED_META_KEY := "_y_sort_applied"
 
 static var _opaque_bottom_cache: Dictionary = {}
 
@@ -9,20 +10,30 @@ static func apply_to_entity(entity: Node2D) -> void:
 	if entity == null:
 		return
 
+	var applied: float = entity.get_meta(APPLIED_META_KEY, 0.0)
 	var deepest := 0.0
 	for child in entity.get_children():
-		deepest = maxf(deepest, _deepest_visible_sprite_y(child))
+		deepest = maxf(deepest, _deepest_visible_sprite_y(child, applied))
 
-	entity.y_sort_origin = deepest
+	var delta := deepest - applied
+	if absf(delta) < 0.001:
+		return
 
-static func _deepest_visible_sprite_y(node: Node) -> float:
+	entity.position.y += delta
+	for child in entity.get_children():
+		if child is Sprite2D or child is AnimatedSprite2D:
+			(child as Node2D).position.y -= delta
+
+	entity.set_meta(APPLIED_META_KEY, deepest)
+
+static func _deepest_visible_sprite_y(node: Node, sort_compensation: float) -> float:
 	if node is Sprite2D:
-		return _sprite_deepest_y(node as Sprite2D)
+		return _sprite_deepest_y(node as Sprite2D, sort_compensation)
 	if node is AnimatedSprite2D:
-		return _animated_sprite_deepest_y(node as AnimatedSprite2D)
+		return _animated_sprite_deepest_y(node as AnimatedSprite2D, sort_compensation)
 	return 0.0
 
-static func _animated_sprite_deepest_y(sprite: AnimatedSprite2D) -> float:
+static func _animated_sprite_deepest_y(sprite: AnimatedSprite2D, sort_compensation: float) -> float:
 	if not sprite.visible or sprite.sprite_frames == null:
 		return 0.0
 
@@ -35,19 +46,19 @@ static func _animated_sprite_deepest_y(sprite: AnimatedSprite2D) -> float:
 		return 0.0
 
 	return _sprite_deepest_y_from_texture(
-		sprite.position,
+		sprite.position + Vector2(0.0, sort_compensation),
 		sprite.offset,
 		sprite.centered,
 		sprite.scale,
 		texture
 	)
 
-static func _sprite_deepest_y(sprite: Sprite2D) -> float:
+static func _sprite_deepest_y(sprite: Sprite2D, sort_compensation: float) -> float:
 	if not sprite.visible or sprite.texture == null:
 		return 0.0
 
 	return _sprite_deepest_y_from_texture(
-		sprite.position,
+		sprite.position + Vector2(0.0, sort_compensation),
 		sprite.offset,
 		sprite.centered,
 		sprite.scale,
