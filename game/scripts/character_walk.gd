@@ -348,11 +348,29 @@ static func get_texture_trunk_base(texture: Texture2D) -> Vector2:
 	if texture == null:
 		return Vector2.ZERO
 
-	var image: Image = texture.get_image()
+	var image := _get_readable_image(texture)
 	if image == null or image.is_empty():
 		var size := texture.get_size()
 		return Vector2(size.x * 0.5, size.y)
 
+	return _get_trunk_base_from_image(image)
+
+static func _get_readable_image(texture: Texture2D) -> Image:
+	var image: Image = texture.get_image()
+	if image != null and not image.is_empty():
+		return image
+
+	var texture_path := texture.resource_path
+	if texture_path.is_empty():
+		return null
+
+	var global_path := ProjectSettings.globalize_path(texture_path)
+	if not FileAccess.file_exists(global_path):
+		return null
+
+	return Image.load_from_file(global_path)
+
+static func _get_trunk_base_from_image(image: Image) -> Vector2:
 	var width := image.get_width()
 	var height := image.get_height()
 	var min_x := width
@@ -369,8 +387,18 @@ static func get_texture_trunk_base(texture: Texture2D) -> Vector2:
 				max_y = maxi(max_y, y)
 
 	if max_x < 0:
-		var fallback_size := texture.get_size()
-		return Vector2(fallback_size.x * 0.5, fallback_size.y)
+		return Vector2(width * 0.5, height)
+
+	var bottom_row := max_y
+	var row_min_x := width
+	var row_max_x := -1
+	for x in range(width):
+		if image.get_pixel(x, bottom_row).a > 0.04:
+			row_min_x = mini(row_min_x, x)
+			row_max_x = maxi(row_max_x, x)
+
+	if row_max_x >= 0:
+		return Vector2((row_min_x + row_max_x) * 0.5, bottom_row)
 
 	return Vector2((min_x + max_x) * 0.5, max_y)
 
