@@ -290,6 +290,7 @@ func _set_tree_texture(texture: Texture2D) -> void:
 	if _fall_active:
 		_sprite.z_as_relative = false
 		_sprite.z_index = FALL_DRAW_Z_INDEX
+		YSortDepth.apply_to_entity(self)
 		return
 
 	_sprite.z_as_relative = true
@@ -297,3 +298,5 @@ func _set_tree_texture(texture: Texture2D) -> void:
 	_foreground_sprite.centered = false
 	_foreground_sprite.position = sprite_offset
 	_foreground_sprite.texture = texture
+
+	YSortDepth.apply_to_entity(self)
