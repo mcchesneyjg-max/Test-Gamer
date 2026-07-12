@@ -3,7 +3,6 @@ extends RefCounted
 
 const ALPHA_THRESHOLD := 0.04
 const APPLIED_META_KEY := "_y_sort_applied"
-const LOGICAL_POS_META_KEY := "_y_sort_logical_pos"
 const STABLE_DEPTH_META_KEY := "_y_sort_stable_depth"
 const INITIALIZED_META_KEY := "_y_sort_initialized"
 
@@ -14,35 +13,22 @@ static func apply_to_entity(entity: Node2D, force_recompute_depth: bool = false)
 		return
 
 	var applied: float = entity.get_meta(APPLIED_META_KEY, 0.0)
-	var logical_pos: Vector2
-	if entity.has_meta(LOGICAL_POS_META_KEY):
-		logical_pos = entity.get_meta(LOGICAL_POS_META_KEY)
-	else:
-		logical_pos = Vector2(roundf(entity.position.x), roundf(entity.position.y))
-		entity.set_meta(LOGICAL_POS_META_KEY, logical_pos)
-
-	var expected_sort_pos := logical_pos + Vector2(0.0, applied)
-	if entity.position.distance_squared_to(expected_sort_pos) > 0.01:
-		if entity.position.distance_squared_to(logical_pos) < entity.position.distance_squared_to(expected_sort_pos):
-			pass
-		else:
-			logical_pos += entity.position - expected_sort_pos
-			logical_pos = Vector2(roundf(logical_pos.x), roundf(logical_pos.y))
-
 	var sprites := _collect_sprites(entity)
 	var stable_depth := _get_stable_depth(entity, sprites, applied, force_recompute_depth)
 
 	if not entity.has_meta(INITIALIZED_META_KEY):
 		_apply_depth_compensation(sprites, applied, stable_depth)
+		entity.position.y += stable_depth
 		entity.set_meta(INITIALIZED_META_KEY, true)
 	elif force_recompute_depth and roundf(stable_depth) != roundf(applied):
 		_apply_depth_compensation(sprites, applied, stable_depth)
+		entity.position.y += stable_depth - applied
 
 	applied = entity.get_meta(APPLIED_META_KEY, stable_depth)
-	entity.set_meta(LOGICAL_POS_META_KEY, logical_pos)
+	var logical_y := entity.position.y - applied
 	entity.position = Vector2(
-		roundf(logical_pos.x),
-		roundf(logical_pos.y + applied)
+		roundf(entity.position.x),
+		roundf(logical_y + applied)
 	)
 
 static func _apply_depth_compensation(
