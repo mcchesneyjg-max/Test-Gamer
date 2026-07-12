@@ -124,11 +124,7 @@ func begin_fall_animation() -> void:
 
 	_fall_active = true
 	_fall_elapsed = 0.0
-	var current_trunk := _sprite_anchor
-	if _sprite.texture:
-		current_trunk = CharacterWalk.get_texture_trunk_base(_sprite.texture)
-	var fall_trunk := CharacterWalk.get_texture_trunk_base(_fall_frames[0])
-	_fall_sprite_offset = -fall_trunk + (current_trunk - _sprite_anchor)
+	_fall_sprite_offset = _sprite.position
 	_set_tree_texture(_fall_frames[0])
 	_update_chop_foreground()
 	print("MatureTree: started fall animation (%d frames)" % _fall_frames.size())
@@ -163,12 +159,12 @@ func _load_axe_strike_frames() -> void:
 		)
 		_static_texture = _sprite.texture
 		if _sprite.texture:
-			_sprite_anchor = CharacterWalk.get_texture_trunk_base(_sprite.texture)
+			_sprite_anchor = _quantize_anchor(CharacterWalk.get_texture_trunk_base(_sprite.texture))
 			_set_tree_texture(_sprite.texture)
 		return
 
 	_static_texture = _axe_strike_frames[0]
-	_sprite_anchor = CharacterWalk.get_texture_trunk_base(_static_texture)
+	_sprite_anchor = _quantize_anchor(CharacterWalk.get_texture_trunk_base(_static_texture))
 	if not _axe_strike_active and not _fall_active:
 		_set_tree_texture(_static_texture)
 
@@ -224,9 +220,9 @@ func _update_chop_foreground() -> void:
 	_foreground_sprite.visible = _chopper != null and not _fall_active
 
 func _set_tree_texture(texture: Texture2D) -> void:
-	var sprite_offset := -_sprite_anchor
+	var sprite_offset := _quantize_sprite_offset(-_sprite_anchor)
 	if _fall_active:
-		sprite_offset = _fall_sprite_offset
+		sprite_offset = _quantize_sprite_offset(_fall_sprite_offset)
 
 	_sprite.centered = false
 	_sprite.position = sprite_offset
@@ -242,3 +238,9 @@ func _set_tree_texture(texture: Texture2D) -> void:
 	_foreground_sprite.centered = false
 	_foreground_sprite.position = sprite_offset
 	_foreground_sprite.texture = texture
+
+func _quantize_sprite_offset(offset: Vector2) -> Vector2:
+	return Vector2(round(offset.x), round(offset.y))
+
+func _quantize_anchor(anchor: Vector2) -> Vector2:
+	return Vector2(round(anchor.x), round(anchor.y))
