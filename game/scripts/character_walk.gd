@@ -390,17 +390,32 @@ static func _get_trunk_base_from_image(image: Image) -> Vector2:
 		return Vector2(width * 0.5, height)
 
 	var bottom_row := max_y
-	var row_min_x := width
-	var row_max_x := -1
+	var row_pixels: Array[int] = []
 	for x in range(width):
 		if image.get_pixel(x, bottom_row).a > 0.04:
-			row_min_x = mini(row_min_x, x)
-			row_max_x = maxi(row_max_x, x)
+			row_pixels.append(x)
 
-	if row_max_x >= 0:
-		return Vector2((row_min_x + row_max_x) * 0.5, bottom_row)
+	if row_pixels.is_empty():
+		return Vector2((min_x + max_x) * 0.5, max_y)
 
-	return Vector2((min_x + max_x) * 0.5, max_y)
+	# When the tree is lying down the bottom row can span the full trunk width.
+	# Anchor to the rightmost stump cluster so planted roots stay fixed.
+	var cluster_start := row_pixels[0]
+	var cluster_end := row_pixels[0]
+	var right_start := cluster_start
+	var right_end := cluster_end
+
+	for i in range(1, row_pixels.size()):
+		var pixel_x := row_pixels[i]
+		if pixel_x == cluster_end + 1:
+			cluster_end = pixel_x
+		else:
+			cluster_start = pixel_x
+			cluster_end = pixel_x
+		right_start = cluster_start
+		right_end = cluster_end
+
+	return Vector2((right_start + right_end) * 0.5, bottom_row)
 
 static func _update_waiting(sprite: AnimatedSprite2D, delta: float) -> void:
 	if sprite.sprite_frames == null:
