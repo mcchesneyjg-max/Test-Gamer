@@ -36,10 +36,7 @@ var _chopper: Node = null
 var _static_texture: Texture2D
 var _axe_strike_frames: Array[Texture2D] = []
 var _fall_frames: Array[Texture2D] = []
-var _sprite_anchor: Vector2 = Vector2.ZERO
-var _sprite_offset: Vector2 = Vector2.ZERO
-var _fall_sprite_offset: Vector2 = Vector2.ZERO
-var _anchor_initialized: bool = false
+var _trunk_anchor_cache: Dictionary = {}
 var _axe_strike_active: bool = false
 var _fall_active: bool = false
 var _axe_strike_elapsed: float = 0.0
@@ -122,7 +119,6 @@ func begin_fall_animation() -> void:
 
 	_fall_active = true
 	_fall_elapsed = 0.0
-	_fall_sprite_offset = _sprite_offset
 	_set_tree_texture(_fall_frames[0])
 	_update_chop_foreground()
 	print("MatureTree: started fall animation (%d frames)" % _fall_frames.size())
@@ -159,13 +155,11 @@ func _load_axe_strike_frames() -> void:
 			% ", ".join(AXE_STRIKE_ROOT_CANDIDATES)
 		)
 		_static_texture = _sprite.texture
-		_initialize_sprite_anchor(_sprite.texture)
 		if _sprite.texture:
 			_set_tree_texture(_sprite.texture)
 		return
 
 	_static_texture = _axe_strike_frames[0]
-	_initialize_sprite_anchor(_static_texture)
 	_set_tree_texture(_static_texture)
 
 func _load_fall_frames() -> void:
@@ -183,12 +177,19 @@ func _load_fall_frames() -> void:
 			% ", ".join(FALL_ANIMATION_ROOT_CANDIDATES)
 		)
 
-func _initialize_sprite_anchor(texture: Texture2D) -> void:
-	if _anchor_initialized or texture == null:
-		return
-	_sprite_anchor = CharacterWalk.get_texture_trunk_base(texture)
-	_sprite_offset = -_sprite_anchor
-	_anchor_initialized = true
+func _get_texture_anchor(texture: Texture2D) -> Vector2:
+	if texture == null:
+		return Vector2.ZERO
+
+	var cache_key := texture.resource_path
+	if cache_key.is_empty():
+		cache_key = str(texture.get_instance_id())
+	if _trunk_anchor_cache.has(cache_key):
+		return _trunk_anchor_cache[cache_key]
+
+	var anchor := CharacterWalk.get_texture_trunk_base(texture)
+	_trunk_anchor_cache[cache_key] = anchor
+	return anchor
 
 func _advance_fall_animation(delta: float) -> void:
 	if _fall_frames.is_empty():
@@ -230,7 +231,7 @@ func _update_chop_foreground() -> void:
 	_foreground_sprite.visible = _chopper != null and not _fall_active
 
 func _set_tree_texture(texture: Texture2D) -> void:
-	var sprite_offset := _fall_sprite_offset if _fall_active else _sprite_offset
+	var sprite_offset := -_get_texture_anchor(texture)
 
 	_sprite.centered = false
 	_sprite.position = sprite_offset
