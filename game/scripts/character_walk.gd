@@ -372,6 +372,17 @@ static func get_texture_trunk_base(texture: Texture2D) -> Vector2:
 		var fallback_size := texture.get_size()
 		return Vector2(fallback_size.x * 0.5, fallback_size.y)
 
+	var bottom_row := max_y
+	var row_min_x := width
+	var row_max_x := -1
+	for x in range(width):
+		if image.get_pixel(x, bottom_row).a > 0.04:
+			row_min_x = mini(row_min_x, x)
+			row_max_x = maxi(row_max_x, x)
+
+	if row_max_x >= 0:
+		return Vector2((row_min_x + row_max_x) * 0.5, bottom_row)
+
 	return Vector2((min_x + max_x) * 0.5, max_y)
 
 static func _update_waiting(sprite: AnimatedSprite2D, delta: float) -> void:
