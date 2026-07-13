@@ -22,7 +22,7 @@ Also accepted:
 
 After the fall animation finishes:
 
-1. The final fall frame is held for **1 second**.
+1. The final fall frame (`summer_tree_fall_frame_12`) is held for **1.5 seconds**.
 2. This fallen-tree chop animation plays once (no loop).
 3. The tree is removed and the lumberjack carries the log back to camp.
 
