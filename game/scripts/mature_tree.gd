@@ -12,10 +12,7 @@ const TREE_VARIANT_NAMES: Array[String] = [
 	"summer_tree_2",
 	"summer_tree_3",
 ]
-const ANIMATION_BASE_CANDIDATES: Array[String] = [
-	"res://assets/sprites/Summer_tree_animation",
-	"res://assets/sprites/summer_tree_animation",
-]
+const ANIMATION_BASE_PATH := "res://assets/sprites/summer_tree_animation"
 const AXE_STRIKE_PREFIXES: Array[String] = [
 	"axe_strike",
 	"axe_strike_animation",
@@ -194,11 +191,9 @@ func _load_axe_strike_frames() -> void:
 				"MatureTree: no axe strike frames for %s — falling back to %s axe art only"
 				% [_tree_variant, TREE_VARIANT_NAMES[0]]
 			)
-			var fallback_roots: Array[String] = []
-			for base_path in ANIMATION_BASE_CANDIDATES:
-				fallback_roots.append(
-					"%s/%s/axe_strike_animation" % [base_path, TREE_VARIANT_NAMES[0]]
-				)
+			var fallback_roots: Array[String] = [
+				"%s/%s/axe_strike_animation" % [ANIMATION_BASE_PATH, TREE_VARIANT_NAMES[0]]
+			]
 			_axe_strike_frames = CharacterWalk.load_png_sequence_from_candidates(
 				fallback_roots,
 				AXE_STRIKE_PREFIXES,
@@ -228,10 +223,7 @@ func _load_axe_strike_frames() -> void:
 	_set_tree_texture(_static_texture)
 	_sprite.visible = true
 	_refresh_sort_textures()
-	print(
-		"MatureTree: using variant %s (%d chop frames, root %s)"
-		% [_tree_variant, _axe_strike_frames.size(), _planted_root]
-	)
+	_log_loaded_sequence("axe", _axe_strike_frames, _axe_strike_root_candidates)
 
 func _load_fall_frames() -> void:
 	if not _fall_frames.is_empty():
@@ -249,10 +241,7 @@ func _load_fall_frames() -> void:
 		)
 	else:
 		_refresh_sort_textures()
-		print(
-			"MatureTree: loaded %d fall frames for %s"
-			% [_fall_frames.size(), _tree_variant]
-		)
+		_log_loaded_sequence("fall", _fall_frames, _fall_animation_root_candidates)
 
 func _load_fallen_chop_frames() -> void:
 	if not _fallen_chop_frames.is_empty():
@@ -270,10 +259,7 @@ func _load_fallen_chop_frames() -> void:
 		)
 	else:
 		_refresh_sort_textures()
-		print(
-			"MatureTree: loaded %d fallen chop frames for %s"
-			% [_fallen_chop_frames.size(), _tree_variant]
-		)
+		_log_loaded_sequence("fallen_chop", _fallen_chop_frames, _fallen_chop_root_candidates)
 
 func _pick_random_variant() -> void:
 	_replenish_variant_bag_if_needed()
@@ -316,16 +302,28 @@ func _set_variant_paths(variant_name: String) -> void:
 	_axe_strike_root_candidates.clear()
 	_fall_animation_root_candidates.clear()
 	_fallen_chop_root_candidates.clear()
-	for base_path in ANIMATION_BASE_CANDIDATES:
-		_axe_strike_root_candidates.append(
-			"%s/%s/axe_strike_animation" % [base_path, variant_name]
-		)
-		_fall_animation_root_candidates.append(
-			"%s/%s/fall_animation" % [base_path, variant_name]
-		)
-		_fallen_chop_root_candidates.append(
-			"%s/%s/fallen_tree_chop_animation" % [base_path, variant_name]
-		)
+	_axe_strike_root_candidates.append(
+		"%s/%s/axe_strike_animation" % [ANIMATION_BASE_PATH, variant_name]
+	)
+	_fall_animation_root_candidates.append(
+		"%s/%s/fall_animation" % [ANIMATION_BASE_PATH, variant_name]
+	)
+	_fallen_chop_root_candidates.append(
+		"%s/%s/fallen_tree_chop_animation" % [ANIMATION_BASE_PATH, variant_name]
+	)
+
+func _log_loaded_sequence(
+	sequence_name: String,
+	frames: Array[Texture2D],
+	root_candidates: Array[String]
+) -> void:
+	var first_path := ""
+	if not frames.is_empty() and frames[0] != null:
+		first_path = frames[0].resource_path
+	print(
+		"MatureTree: %s loaded %d frames for %s from %s (first=%s)"
+		% [sequence_name, frames.size(), _tree_variant, root_candidates[0], first_path]
+	)
 
 func _get_texture_anchor(texture: Texture2D) -> Vector2:
 	if texture == null:
