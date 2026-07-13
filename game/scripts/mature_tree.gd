@@ -62,6 +62,9 @@ var _axe_strike_active: bool = false
 var _fall_phase: FallPhase = FallPhase.NONE
 var _axe_strike_elapsed: float = 0.0
 var _fall_elapsed: float = 0.0
+var _uses_fallback_axe_art: bool = false
+
+static var _variant_bag: Array[String] = []
 
 @onready var _sprite: Sprite2D = $Sprite
 @onready var _foreground_sprite: Sprite2D = $ForegroundSprite
@@ -72,6 +75,7 @@ func _ready() -> void:
 	_load_axe_strike_frames()
 	_load_fall_frames()
 	_load_fallen_chop_frames()
+	_validate_variant_assets()
 	_setup_chop_foreground_sprite()
 
 func _process(delta: float) -> void:
@@ -119,6 +123,9 @@ func release_reservation(chopper: Node) -> void:
 		set_chopper_draws_behind_tree(false)
 		if _fall_phase == FallPhase.NONE:
 			end_axe_strike()
+
+func get_tree_variant() -> String:
+	return _tree_variant
 
 func is_falling() -> bool:
 	return _fall_phase != FallPhase.NONE
@@ -197,6 +204,12 @@ func _load_axe_strike_frames() -> void:
 				AXE_STRIKE_PREFIXES,
 				true
 			)
+			if not _axe_strike_frames.is_empty():
+				_uses_fallback_axe_art = true
+				push_warning(
+					"MatureTree: %s is using summer_tree_1 axe art and may look like variant 1"
+					% _tree_variant
+				)
 
 	if _axe_strike_frames.is_empty():
 		push_warning(
@@ -263,8 +276,40 @@ func _load_fallen_chop_frames() -> void:
 		)
 
 func _pick_random_variant() -> void:
-	var variant_index := randi() % TREE_VARIANT_NAMES.size()
-	_set_variant_paths(TREE_VARIANT_NAMES[variant_index])
+	_replenish_variant_bag_if_needed()
+	var variant_name: String = _variant_bag.pop_back()
+	_set_variant_paths(variant_name)
+
+static func _replenish_variant_bag_if_needed() -> void:
+	if not _variant_bag.is_empty():
+		return
+	_variant_bag = TREE_VARIANT_NAMES.duplicate()
+	_variant_bag.shuffle()
+
+func _validate_variant_assets() -> void:
+	var missing: PackedStringArray = []
+	if _axe_strike_frames.is_empty():
+		missing.append("axe")
+	if _fall_frames.is_empty():
+		missing.append("fall")
+	if _fallen_chop_frames.is_empty():
+		missing.append("fallen_chop")
+	if missing.is_empty():
+		print(
+			"MatureTree: %s ready with axe=%d fall=%d fallen_chop=%d%s"
+			% [
+				_tree_variant,
+				_axe_strike_frames.size(),
+				_fall_frames.size(),
+				_fallen_chop_frames.size(),
+				" (borrowed axe art)" if _uses_fallback_axe_art else "",
+			]
+		)
+		return
+	push_warning(
+		"MatureTree: %s is missing animations: %s"
+		% [_tree_variant, ", ".join(missing)]
+	)
 
 func _set_variant_paths(variant_name: String) -> void:
 	_tree_variant = variant_name
