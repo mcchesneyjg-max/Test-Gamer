@@ -31,7 +31,10 @@ const FALL_ANIMATION_PREFIXES: Array[String] = [
 ]
 const AXE_STRIKE_PLAY_SPEED := 10.0
 const FALL_ANIMATION_PLAY_SPEED := 10.0
+const CHOP_FOREGROUND_Z_INDEX := 4
+
 var _chopper: Node = null
+var _chop_overlay_active: bool = false
 var _tree_variant: String = ""
 var _axe_strike_root_candidates: Array[String] = []
 var _fall_animation_root_candidates: Array[String] = []
@@ -82,15 +85,18 @@ func try_reserve(chopper: Node) -> bool:
 	if _chopper != null and _chopper != chopper:
 		return false
 	_chopper = chopper
-	_update_chop_foreground()
 	return true
+
+func set_chopper_draws_behind_tree(active: bool) -> void:
+	_chop_overlay_active = active
+	_apply_chop_foreground()
 
 func release_reservation(chopper: Node) -> void:
 	if _chopper == chopper:
 		_chopper = null
+		set_chopper_draws_behind_tree(false)
 		if not _fall_active:
 			end_axe_strike()
-		_update_chop_foreground()
 
 func is_falling() -> bool:
 	return _fall_active
@@ -121,7 +127,6 @@ func begin_fall_animation() -> void:
 	_fall_active = true
 	_fall_elapsed = 0.0
 	_set_tree_texture(_fall_frames[0])
-	_update_chop_foreground()
 	print("MatureTree: started fall animation (%d frames)" % _fall_frames.size())
 
 func get_chop_position() -> Vector2:
@@ -263,14 +268,23 @@ func _clear_stale_chopper() -> void:
 		_chopper = null
 		if not _fall_active:
 			end_axe_strike()
-		_update_chop_foreground()
+		set_chopper_draws_behind_tree(false)
 
 func _setup_chop_foreground_sprite() -> void:
+	_foreground_sprite.z_as_relative = false
+	_foreground_sprite.z_index = CHOP_FOREGROUND_Z_INDEX
 	_foreground_sprite.visible = false
 
-func _update_chop_foreground() -> void:
-	_clear_stale_chopper()
-	_foreground_sprite.visible = false
+func _apply_chop_foreground() -> void:
+	_foreground_sprite.visible = _chop_overlay_active
+	if _chop_overlay_active:
+		_sync_chop_foreground_sprite()
+
+func _sync_chop_foreground_sprite() -> void:
+	_foreground_sprite.texture = _sprite.texture
+	_foreground_sprite.position = _sprite.position
+	_foreground_sprite.centered = _sprite.centered
+	_foreground_sprite.texture_filter = _sprite.texture_filter
 
 func _set_tree_texture(texture: Texture2D) -> void:
 	var sprite_offset := -_planted_root
@@ -281,6 +295,8 @@ func _set_tree_texture(texture: Texture2D) -> void:
 
 	_sprite.z_as_relative = true
 	_sprite.z_index = 0
+	if _chop_overlay_active:
+		_sync_chop_foreground_sprite()
 
 func _refresh_sort_textures() -> void:
 	var textures: Array[Texture2D] = []
