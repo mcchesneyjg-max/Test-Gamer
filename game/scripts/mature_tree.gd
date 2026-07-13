@@ -13,8 +13,8 @@ const TREE_VARIANT_NAMES: Array[String] = [
 	"summer_tree_3",
 ]
 const ANIMATION_BASE_CANDIDATES: Array[String] = [
-	"res://assets/sprites/summer_tree_animation",
 	"res://assets/sprites/Summer_tree_animation",
+	"res://assets/sprites/summer_tree_animation",
 ]
 const AXE_STRIKE_PREFIXES: Array[String] = [
 	"axe_strike",
@@ -30,6 +30,7 @@ const FALL_ANIMATION_PREFIXES: Array[String] = [
 	"tree_fall",
 ]
 const FALLEN_CHOP_PREFIXES: Array[String] = [
+	"fallen_tree_chop_animation",
 	"fallen_tree_chop",
 	"summer_tree_fallen_chop_frame",
 	"summer_tree_fallen_chop",
@@ -68,6 +69,8 @@ func _ready() -> void:
 	_pick_random_variant()
 	TreeRegistry.register_tree(self)
 	_load_axe_strike_frames()
+	_load_fall_frames()
+	_load_fallen_chop_frames()
 	_setup_chop_foreground_sprite()
 
 func _process(delta: float) -> void:
@@ -177,12 +180,16 @@ func _load_axe_strike_frames() -> void:
 	if _axe_strike_frames.is_empty():
 		if _tree_variant != TREE_VARIANT_NAMES[0]:
 			push_warning(
-				"MatureTree: no axe strike frames for %s — falling back to %s"
+				"MatureTree: no axe strike frames for %s — falling back to %s axe art only"
 				% [_tree_variant, TREE_VARIANT_NAMES[0]]
 			)
-			_set_variant_paths(TREE_VARIANT_NAMES[0])
+			var fallback_roots: Array[String] = []
+			for base_path in ANIMATION_BASE_CANDIDATES:
+				fallback_roots.append(
+					"%s/%s/axe_strike_animation" % [base_path, TREE_VARIANT_NAMES[0]]
+				)
 			_axe_strike_frames = CharacterWalk.load_png_sequence_from_candidates(
-				_axe_strike_root_candidates,
+				fallback_roots,
 				AXE_STRIKE_PREFIXES,
 				true
 			)
