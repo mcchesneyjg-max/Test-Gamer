@@ -21,3 +21,16 @@ func get_tree_count() -> int:
 
 func get_active_trees() -> Array[Node2D]:
 	return _trees.duplicate()
+
+func get_variant_counts() -> Dictionary:
+	var counts := {
+		"summer_tree_1": 0,
+		"summer_tree_2": 0,
+		"summer_tree_3": 0,
+	}
+	for tree in _trees:
+		if tree.has_method("get_tree_variant"):
+			var variant: String = tree.get_tree_variant()
+			if counts.has(variant):
+				counts[variant] += 1
+	return counts

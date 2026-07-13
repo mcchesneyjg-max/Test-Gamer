@@ -34,7 +34,13 @@ func _update_wood_label() -> void:
 	_wood_label.text = "Wood Logs: %d" % Warehouse.wood_logs
 
 func _update_tree_label() -> void:
-	_tree_label.text = "Trees: %d" % TreeRegistry.get_tree_count()
+	var counts := TreeRegistry.get_variant_counts()
+	_tree_label.text = "Trees: %d (1:%d 2:%d 3:%d)" % [
+		TreeRegistry.get_tree_count(),
+		counts.get("summer_tree_1", 0),
+		counts.get("summer_tree_2", 0),
+		counts.get("summer_tree_3", 0),
+	]
 
 func _update_sapling_label() -> void:
 	_sapling_label.text = "Saplings: %d" % SaplingRegistry.get_sapling_count()
