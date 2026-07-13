@@ -2,7 +2,7 @@ extends Node2D
 
 const LUMBERJACK_WORKER_SCENE := preload("res://scenes/lumberjack_worker.tscn")
 const MAX_WORKERS := 6
-const WORKER_OFFSETS := [
+const WORKER_OFFSETS: Array[Vector2] = [
 	Vector2(6, 38),
 	Vector2(16, 38),
 	Vector2(26, 38),
