@@ -11,10 +11,11 @@ summer_tree_1/
   fallen_tree_chop_animation/  ← post-fall chop (14 frames typical)
 ```
 
-Both path casings work on Windows:
+**Use this path only** (lowercase `summer_tree_animation`):
 
-- `game/assets/sprites/Summer_tree_animation/summer_tree_1/`
-- `game/assets/sprites/summer_tree_animation/summer_tree_1/`
+`game/assets/sprites/summer_tree_animation/summer_tree_1/`
+
+Do not create a separate `Summer_tree_animation` folder on Windows — it is the same folder and causes confusion.
 
 ## Expected file naming
 
@@ -37,24 +38,47 @@ Any numbered `.png` in each folder also works as a fallback.
 ## After replacing this folder
 
 ```cmd
-git add game\assets\sprites\Summer_tree_animation\summer_tree_1\axe_strike_animation\*.png
-git add game\assets\sprites\Summer_tree_animation\summer_tree_1\fall_animation\*.png
-git add game\assets\sprites\Summer_tree_animation\summer_tree_1\fallen_tree_chop_animation\*.png
+git add game\assets\sprites\summer_tree_animation\summer_tree_1\axe_strike_animation\*.png
+git add game\assets\sprites\summer_tree_animation\summer_tree_1\fall_animation\*.png
+git add game\assets\sprites\summer_tree_animation\summer_tree_1\fallen_tree_chop_animation\*.png
 git commit -m "Replace summer_tree_1 animation assets"
+git pull --no-edit origin main
 git push
 ```
 
+**Never run `git restore .` after copying new PNGs** — it discards your uncommitted art and restores the old files from git (which may look like `summer_tree_3`).
+
 Then in Godot: **Project → Reload Current Project** → **F5**
 
-## Verify in Output panel
+## Verify files are really yours (not swapped with tree_3)
+
+On Windows, compare axe frame 1 between variants:
+
+```cmd
+fc game\assets\sprites\summer_tree_animation\summer_tree_1\axe_strike_animation\summer_tree_axe_frame_1.png game\assets\sprites\summer_tree_animation\summer_tree_3\axe_strike_animation\summer_tree_axe_frame_1.png
+```
+
+- **"FC: no differences"** — the two files are byte-identical on disk (not a path bug).
+- **"Files are different sizes"** or **"FC: differences found"** — they are distinct.
+
+Or run the repo checker:
+
+```cmd
+python game\tools\verify_summer_tree_variants.py
+```
+
+**Note:** In the current repo, `fall_animation` frames for `summer_tree_1` and `summer_tree_3` are intentionally identical (12/12 frames match). Only `axe_strike_animation` and `fallen_tree_chop_animation` should look different between variants.
+
+## Verify in Godot Output panel
 
 When placing trees, look for:
 
 ```
-MatureTree: using variant summer_tree_1 (10 chop frames, ...)
-MatureTree: loaded 12 fall frames for summer_tree_1
-MatureTree: loaded 14 fallen chop frames for summer_tree_1
+MatureTree: axe loaded 10 frames for summer_tree_1 from res://assets/sprites/summer_tree_animation/summer_tree_1/axe_strike_animation (first=res://...summer_tree_1/...)
+MatureTree: fall loaded 12 frames for summer_tree_1 from res://assets/sprites/summer_tree_animation/summer_tree_1/fall_animation (first=res://...summer_tree_1/...)
 MatureTree: summer_tree_1 ready with axe=10 fall=12 fallen_chop=14
 ```
+
+The `first=` path must contain `summer_tree_1`, not `summer_tree_3`.
 
 Warnings about missing frames or `borrowed axe art` mean a subfolder is empty or misnamed.
