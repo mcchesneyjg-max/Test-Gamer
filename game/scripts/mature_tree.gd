@@ -29,23 +29,35 @@ const FALL_ANIMATION_PREFIXES: Array[String] = [
 	"fall",
 	"tree_fall",
 ]
+const FALLEN_CHOP_PREFIXES: Array[String] = [
+	"fallen_tree_chop",
+	"summer_tree_fallen_chop_frame",
+	"summer_tree_fallen_chop",
+	"fallen_chop",
+]
 const AXE_STRIKE_PLAY_SPEED := 10.0
 const FALL_ANIMATION_PLAY_SPEED := 10.0
+const FALLEN_CHOP_PLAY_SPEED := 10.0
+const FALL_HOLD_SECONDS := 1.0
 const CHOP_FOREGROUND_Z_INDEX := 4
+
+enum FallPhase { NONE, FALLING, HOLD, FALLEN_CHOP }
 
 var _chopper: Node = null
 var _chop_overlay_active: bool = false
 var _tree_variant: String = ""
 var _axe_strike_root_candidates: Array[String] = []
 var _fall_animation_root_candidates: Array[String] = []
+var _fallen_chop_root_candidates: Array[String] = []
 var _static_texture: Texture2D
 var _axe_strike_frames: Array[Texture2D] = []
 var _fall_frames: Array[Texture2D] = []
+var _fallen_chop_frames: Array[Texture2D] = []
 var _trunk_anchor_cache: Dictionary = {}
 var _planted_root: Vector2 = Vector2.ZERO
 var _planted_root_initialized: bool = false
 var _axe_strike_active: bool = false
-var _fall_active: bool = false
+var _fall_phase: FallPhase = FallPhase.NONE
 var _axe_strike_elapsed: float = 0.0
 var _fall_elapsed: float = 0.0
 
@@ -59,12 +71,18 @@ func _ready() -> void:
 	_setup_chop_foreground_sprite()
 
 func _process(delta: float) -> void:
-	if _fall_active:
-		_advance_fall_animation(delta)
-	elif _axe_strike_active and not _axe_strike_frames.is_empty():
-		_axe_strike_elapsed += delta
-		var frame_index := int(_axe_strike_elapsed * AXE_STRIKE_PLAY_SPEED) % _axe_strike_frames.size()
-		_set_tree_texture(_axe_strike_frames[frame_index])
+	match _fall_phase:
+		FallPhase.FALLING:
+			_advance_fall_animation(delta)
+		FallPhase.HOLD:
+			_advance_fall_hold(delta)
+		FallPhase.FALLEN_CHOP:
+			_advance_fallen_chop_animation(delta)
+		_:
+			if _axe_strike_active and not _axe_strike_frames.is_empty():
+				_axe_strike_elapsed += delta
+				var frame_index := int(_axe_strike_elapsed * AXE_STRIKE_PLAY_SPEED) % _axe_strike_frames.size()
+				_set_tree_texture(_axe_strike_frames[frame_index])
 
 func _exit_tree() -> void:
 	_chopper = null
@@ -72,7 +90,7 @@ func _exit_tree() -> void:
 
 func is_available_to(chopper: Node) -> bool:
 	_clear_stale_chopper()
-	if _fall_active:
+	if _fall_phase != FallPhase.NONE:
 		return false
 	if _chopper == null:
 		return true
@@ -80,7 +98,7 @@ func is_available_to(chopper: Node) -> bool:
 
 func try_reserve(chopper: Node) -> bool:
 	_clear_stale_chopper()
-	if _fall_active:
+	if _fall_phase != FallPhase.NONE:
 		return false
 	if _chopper != null and _chopper != chopper:
 		return false
@@ -95,14 +113,14 @@ func release_reservation(chopper: Node) -> void:
 	if _chopper == chopper:
 		_chopper = null
 		set_chopper_draws_behind_tree(false)
-		if not _fall_active:
+		if _fall_phase == FallPhase.NONE:
 			end_axe_strike()
 
 func is_falling() -> bool:
-	return _fall_active
+	return _fall_phase != FallPhase.NONE
 
 func begin_axe_strike() -> void:
-	if _fall_active or _axe_strike_frames.is_empty():
+	if _fall_phase != FallPhase.NONE or _axe_strike_frames.is_empty():
 		return
 	_axe_strike_active = true
 	_axe_strike_elapsed = 0.0
@@ -124,7 +142,7 @@ func begin_fall_animation() -> void:
 		queue_free()
 		return
 
-	_fall_active = true
+	_fall_phase = FallPhase.FALLING
 	_fall_elapsed = 0.0
 	_set_tree_texture(_fall_frames[0])
 	print("MatureTree: started fall animation (%d frames)" % _fall_frames.size())
@@ -208,6 +226,27 @@ func _load_fall_frames() -> void:
 	else:
 		_refresh_sort_textures()
 
+func _load_fallen_chop_frames() -> void:
+	if not _fallen_chop_frames.is_empty():
+		return
+
+	_fallen_chop_frames = CharacterWalk.load_png_sequence_from_candidates(
+		_fallen_chop_root_candidates,
+		FALLEN_CHOP_PREFIXES,
+		true
+	)
+	if _fallen_chop_frames.is_empty():
+		push_warning(
+			"MatureTree: no fallen chop frames found for %s. Checked: %s"
+			% [_tree_variant, ", ".join(_fallen_chop_root_candidates)]
+		)
+	else:
+		_refresh_sort_textures()
+		print(
+			"MatureTree: loaded %d fallen chop frames for %s"
+			% [_fallen_chop_frames.size(), _tree_variant]
+		)
+
 func _pick_random_variant() -> void:
 	var variant_index := randi() % TREE_VARIANT_NAMES.size()
 	_set_variant_paths(TREE_VARIANT_NAMES[variant_index])
@@ -216,12 +255,16 @@ func _set_variant_paths(variant_name: String) -> void:
 	_tree_variant = variant_name
 	_axe_strike_root_candidates.clear()
 	_fall_animation_root_candidates.clear()
+	_fallen_chop_root_candidates.clear()
 	for base_path in ANIMATION_BASE_CANDIDATES:
 		_axe_strike_root_candidates.append(
 			"%s/%s/axe_strike_animation" % [base_path, variant_name]
 		)
 		_fall_animation_root_candidates.append(
 			"%s/%s/fall_animation" % [base_path, variant_name]
+		)
+		_fallen_chop_root_candidates.append(
+			"%s/%s/fallen_tree_chop_animation" % [base_path, variant_name]
 		)
 
 func _get_texture_anchor(texture: Texture2D) -> Vector2:
@@ -246,27 +289,60 @@ func _initialize_planted_root(texture: Texture2D) -> void:
 
 func _advance_fall_animation(delta: float) -> void:
 	if _fall_frames.is_empty():
-		_finish_fall_animation()
+		_finish_fall_sequence()
 		return
 
 	_fall_elapsed += delta
 	var frame_index := int(_fall_elapsed * FALL_ANIMATION_PLAY_SPEED)
 	if frame_index >= _fall_frames.size():
-		_finish_fall_animation()
+		_begin_fall_hold()
 		return
 	_set_tree_texture(_fall_frames[frame_index])
 
-func _finish_fall_animation() -> void:
-	if not _fall_active:
+func _begin_fall_hold() -> void:
+	_fall_phase = FallPhase.HOLD
+	_fall_elapsed = 0.0
+	_set_tree_texture(_fall_frames[_fall_frames.size() - 1])
+	print("MatureTree: holding final fall frame for %.1fs" % FALL_HOLD_SECONDS)
+
+func _advance_fall_hold(delta: float) -> void:
+	_fall_elapsed += delta
+	if _fall_elapsed < FALL_HOLD_SECONDS:
 		return
-	_fall_active = false
+
+	_load_fallen_chop_frames()
+	if _fallen_chop_frames.is_empty():
+		_finish_fall_sequence()
+		return
+
+	_fall_phase = FallPhase.FALLEN_CHOP
+	_fall_elapsed = 0.0
+	_set_tree_texture(_fallen_chop_frames[0])
+	print("MatureTree: started fallen chop animation (%d frames)" % _fallen_chop_frames.size())
+
+func _advance_fallen_chop_animation(delta: float) -> void:
+	if _fallen_chop_frames.is_empty():
+		_finish_fall_sequence()
+		return
+
+	_fall_elapsed += delta
+	var frame_index := int(_fall_elapsed * FALLEN_CHOP_PLAY_SPEED)
+	if frame_index >= _fallen_chop_frames.size():
+		_finish_fall_sequence()
+		return
+	_set_tree_texture(_fallen_chop_frames[frame_index])
+
+func _finish_fall_sequence() -> void:
+	if _fall_phase == FallPhase.NONE:
+		return
+	_fall_phase = FallPhase.NONE
 	fall_animation_finished.emit()
 	queue_free()
 
 func _clear_stale_chopper() -> void:
 	if _chopper != null and not is_instance_valid(_chopper):
 		_chopper = null
-		if not _fall_active:
+		if _fall_phase == FallPhase.NONE:
 			end_axe_strike()
 		set_chopper_draws_behind_tree(false)
 
@@ -306,6 +382,9 @@ func _refresh_sort_textures() -> void:
 		if texture != null:
 			textures.append(texture)
 	for texture in _fall_frames:
+		if texture != null:
+			textures.append(texture)
+	for texture in _fallen_chop_frames:
 		if texture != null:
 			textures.append(texture)
 	set_meta("_y_sort_extra_textures", textures)
