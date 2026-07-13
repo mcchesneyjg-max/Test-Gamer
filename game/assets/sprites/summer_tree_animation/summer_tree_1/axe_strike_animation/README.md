@@ -4,10 +4,10 @@ Animated summer tree variants for chopping and other seasonal effects.
 
 ## Folder layout
 
-Your folder may be named `summer_tree_animation` or `Summer_tree_animation` — both work on Windows.
+Your folder must be named `summer_tree_animation` (lowercase).
 
 ```
-Summer_tree_animation/
+summer_tree_animation/
   summer_tree_1/
     axe_strike_animation/   ← tree reacts while lumberjack chops
     (other animation folders)
@@ -19,7 +19,7 @@ Summer_tree_animation/
 
 Drop your Aseprite frame exports into:
 
-`game/assets/sprites/Summer_tree_animation/summer_tree_1/axe_strike_animation/`
+`game/assets/sprites/summer_tree_animation/summer_tree_1/axe_strike_animation/`
 
 ### File naming
 
@@ -64,12 +64,15 @@ If you see `no axe strike frames found`, the PNG path or filenames do not match.
 2. Push them to git:
 
 ```cmd
-git add game\assets\sprites\Summer_tree_animation\summer_tree_1\axe_strike_animation\*.png
-git add game\assets\sprites\Summer_tree_animation\summer_tree_1\fall_animation\*.png
-git add game\assets\sprites\Summer_tree_animation\summer_tree_1\fallen_tree_chop_animation\*.png
+git add game\assets\sprites\summer_tree_animation\summer_tree_1\axe_strike_animation\*.png
+git add game\assets\sprites\summer_tree_animation\summer_tree_1\fall_animation\*.png
+git add game\assets\sprites\summer_tree_animation\summer_tree_1\fallen_tree_chop_animation\*.png
 git commit -m "Replace summer_tree_1 animation assets"
+git pull --no-edit origin main
 git push
 ```
+
+**Do not run `git restore .` before committing** — it will undo your new PNGs.
 
 3. Reload the Godot project (**Project → Reload Current Project**).
 4. Run the game (**F5**).
