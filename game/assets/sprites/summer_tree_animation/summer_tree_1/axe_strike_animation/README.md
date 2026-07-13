@@ -38,12 +38,12 @@ Also accepted:
 
 ### Playback
 
-1. The mature tree shows `summer_tree_axe_frame_1.png` from this folder when idle (not being chopped).
+1. The mature tree shows the first axe strike frame from this folder when idle (not being chopped).
 2. Lumberjack plays the wood cutting animation (frames 1–11, then loops 4–11).
 3. When the lumberjack reaches **wood cutting frame 7 for the first time**, the tree plays through the full axe strike sequence.
 4. Both the main tree sprite and the foreground trunk overlay use the same axe strike frames.
 5. The tree loops through all axe strike frames until the log is gathered.
-6. The tree returns to `summer_tree_axe_frame_1.png` from this folder when chopping ends.
+6. The tree returns to the first axe strike frame from this folder when chopping ends.
 
 The copy in `game/assets/sprites/summer_tree_axe_frame_1.png` is no longer used.
 
@@ -65,7 +65,9 @@ If you see `no axe strike frames found`, the PNG path or filenames do not match.
 
 ```cmd
 git add game\assets\sprites\Summer_tree_animation\summer_tree_1\axe_strike_animation\*.png
-git commit -m "Update summer tree axe strike animation frames"
+git add game\assets\sprites\Summer_tree_animation\summer_tree_1\fall_animation\*.png
+git add game\assets\sprites\Summer_tree_animation\summer_tree_1\fallen_tree_chop_animation\*.png
+git commit -m "Replace summer_tree_1 animation assets"
 git push
 ```
 
