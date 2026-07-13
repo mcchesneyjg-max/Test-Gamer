@@ -20,12 +20,14 @@ Also accepted:
 
 ## Playback
 
-The trunk base stays locked to the same world position for every frame in both chop and fall animations. When fall begins, the code matches the current chop pose so the tree does not jump sideways.
+The trunk base stays locked to the same world position for every frame in chop, fall, and fallen-chop animations. When fall begins, the code matches the current chop pose so the tree does not jump sideways.
 
 1. Lumberjack chops until the tree's final log is gathered.
 2. The tree plays through all fall animation frames once (no loop).
-3. The lumberjack keeps swinging through the full fall sequence.
-4. When the fall animation finishes, the tree is removed and the lumberjack carries the log back to camp.
+3. The final fall frame is held for **1 second**.
+4. The `fallen_tree_chop_animation` plays once for this tree variant.
+5. The lumberjack keeps waiting through the full sequence.
+6. When the fallen-chop animation finishes, the tree is removed and the lumberjack carries the log back to camp.
 
 ## Upload your PNGs
 
