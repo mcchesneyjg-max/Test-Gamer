@@ -25,6 +25,7 @@ WarehouseRegistry="*res://scripts/warehouse_registry.gd"
 HaulerStationRegistry="*res://scripts/hauler_station_registry.gd"
 SaplingRegistry="*res://scripts/sapling_registry.gd"
 ForesterLodgeRegistry="*res://scripts/forester_lodge_registry.gd"
+WorkerPool="*res://scripts/worker_pool.gd"
 
 [display]
 
