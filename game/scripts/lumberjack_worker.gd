@@ -72,6 +72,7 @@ func _process_to_tree(delta: float) -> void:
 		position = chop_position
 		_chop_position = chop_position
 		CharacterWalk.reset_chopping(_body)
+		_set_tree_chop_overlay(true)
 		_state = State.CHOPPING
 		_chop_timer = _camp.get_chop_duration() if _is_camp_valid() else 6.0
 		_move_direction = Vector2.ZERO
@@ -98,6 +99,7 @@ func _process_chopping(delta: float) -> void:
 		return
 
 	if _target_tree.has_method("is_falling") and _target_tree.is_falling():
+		_set_tree_chop_overlay(false)
 		_waiting_for_tree_fall = true
 		_cargo_amount = harvested
 		if _target_tree.has_signal("fall_animation_finished"):
@@ -105,6 +107,7 @@ func _process_chopping(delta: float) -> void:
 		return
 
 	_end_tree_axe_strike()
+	_set_tree_chop_overlay(false)
 	_cargo_amount = harvested
 	_cargo.visible = true
 	_release_tree_reservation()
@@ -167,6 +170,7 @@ func _complete_chop_after_fall() -> void:
 
 func _return_idle() -> void:
 	_waiting_for_tree_fall = false
+	_set_tree_chop_overlay(false)
 	_end_tree_axe_strike()
 	_release_tree_reservation()
 	_target_tree = null
@@ -178,6 +182,10 @@ func _return_idle() -> void:
 func _release_tree_reservation() -> void:
 	if _target_tree != null and is_instance_valid(_target_tree) and _target_tree.has_method("release_reservation"):
 		_target_tree.release_reservation(self)
+
+func _set_tree_chop_overlay(active: bool) -> void:
+	if _is_tree_valid() and _target_tree.has_method("set_chopper_draws_behind_tree"):
+		_target_tree.set_chopper_draws_behind_tree(active)
 
 func _get_chop_position() -> Vector2:
 	if _is_tree_valid() and _target_tree.has_method("get_chop_position"):
