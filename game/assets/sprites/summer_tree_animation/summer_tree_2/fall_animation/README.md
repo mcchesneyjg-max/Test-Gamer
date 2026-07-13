@@ -1,11 +1,11 @@
-# Summer tree fall animation (summer_tree_1)
+# Summer tree fall animation (summer_tree_2)
 
 Drop your Aseprite frame exports into this folder.
 
 Supported locations (either works):
 
-- `game/assets/sprites/Summer_tree_animation/summer_tree_1/fall_animation/`
-- `game/assets/sprites/summer_tree_animation/summer_tree_1/fall_animation/`
+- `game/assets/sprites/Summer_tree_animation/summer_tree_2/fall_animation/`
+- `game/assets/sprites/summer_tree_animation/summer_tree_2/fall_animation/`
 
 ## File naming
 
@@ -34,13 +34,3 @@ Each fall frame anchors by its trunk base so updated art stays grounded through 
 4. The `fallen_tree_chop_animation` plays once for this tree variant.
 5. The lumberjack keeps waiting through the full sequence.
 6. When the fallen-chop animation finishes, the tree is removed and the lumberjack carries the log back to camp.
-
-## Upload your PNGs
-
-```cmd
-git add game\assets\sprites\Summer_tree_animation\summer_tree_1\fall_animation\*.png
-git commit -m "Update summer_tree_1 fall animation frames"
-git push
-```
-
-Reload the Godot project after pushing (**Project → Reload Current Project**).
