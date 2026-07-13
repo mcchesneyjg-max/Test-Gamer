@@ -2,7 +2,6 @@ extends Node2D
 
 @onready var _tilemap: TileMap = $"../TileMap"
 @onready var _forester_ui: CanvasLayer = $"../ForesterUi"
-@onready var _lumber_camp_ui: CanvasLayer = $"../LumberCampUi"
 
 const MATURE_TREE_SCENE := preload("res://scenes/mature_tree.tscn")
 const LUMBER_CAMP_SCENE := preload("res://scenes/lumber_camp.tscn")
@@ -13,11 +12,7 @@ const FORESTER_LODGE_SCENE := preload("res://scenes/forester_lodge.tscn")
 func _unhandled_input(event: InputEvent) -> void:
 	if _forester_ui and _forester_ui.handle_input(event):
 		return
-	if _lumber_camp_ui and _lumber_camp_ui.handle_input(event):
-		return
 	if _forester_ui and _forester_ui.is_blocking_placement():
-		return
-	if _lumber_camp_ui and _lumber_camp_ui.is_blocking_placement():
 		return
 
 	if event is InputEventMouseButton and event.pressed:

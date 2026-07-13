@@ -1,15 +1,6 @@
 extends Node2D
 
 const LUMBERJACK_WORKER_SCENE := preload("res://scenes/lumberjack_worker.tscn")
-const MAX_WORKERS := 6
-const WORKER_OFFSETS := [
-	Vector2(6, 38),
-	Vector2(16, 38),
-	Vector2(26, 38),
-	Vector2(-4, 42),
-	Vector2(10, 42),
-	Vector2(22, 42),
-]
 
 @export var chop_interval: float = 8.0
 @export var chop_radius_tiles: int = 6
@@ -17,54 +8,17 @@ const WORKER_OFFSETS := [
 @onready var _storage = $StorageAreas
 @onready var _tilemap: TileMap = get_parent() as TileMap
 
-var _workers: Array[Node2D] = []
-var _assigned_count: int = 0
+var _worker: Node2D
 
 func _ready() -> void:
 	CampRegistry.register_camp(self)
+	call_deferred("_spawn_worker")
 	YSortDepth.apply_to_entity(self)
 
 func _exit_tree() -> void:
-	_release_all_workers_to_pool()
-	_despawn_all_workers()
+	if is_instance_valid(_worker):
+		_worker.queue_free()
 	CampRegistry.unregister_camp(self)
-
-func get_max_workers() -> int:
-	return MAX_WORKERS
-
-func get_assigned_worker_count() -> int:
-	return _assigned_count
-
-func can_add_worker() -> bool:
-	return _assigned_count < MAX_WORKERS and WorkerPool.get_available() > 0
-
-func can_remove_worker() -> bool:
-	return _assigned_count > 0
-
-func add_worker() -> bool:
-	if not can_add_worker():
-		return false
-	if not WorkerPool.try_assign(1):
-		return false
-	_assigned_count += 1
-	_spawn_worker_at(_assigned_count - 1)
-	return true
-
-func remove_worker() -> bool:
-	if not can_remove_worker():
-		return false
-	WorkerPool.release(1)
-	_assigned_count -= 1
-	if _workers.size() > _assigned_count:
-		var worker: Node2D = _workers.pop_back()
-		if is_instance_valid(worker):
-			worker.queue_free()
-	return true
-
-func occupies_tile(tile: Vector2i) -> bool:
-	if _tilemap == null:
-		return false
-	return _tilemap.local_to_map(position) == tile
 
 func get_chop_duration() -> float:
 	return chop_interval
@@ -118,24 +72,11 @@ func find_nearest_tree(for_worker: Node = null) -> Node2D:
 
 	return nearest
 
-func _release_all_workers_to_pool() -> void:
-	if _assigned_count > 0:
-		WorkerPool.release(_assigned_count)
-		_assigned_count = 0
-
-func _despawn_all_workers() -> void:
-	for worker in _workers:
-		if is_instance_valid(worker):
-			worker.queue_free()
-	_workers.clear()
-
-func _spawn_worker_at(index: int) -> void:
+func _spawn_worker() -> void:
 	if _tilemap == null:
 		return
 
-	var worker := LUMBERJACK_WORKER_SCENE.instantiate()
-	worker.setup(self)
-	var offset := WORKER_OFFSETS[index % WORKER_OFFSETS.size()]
-	worker.position = position + offset
-	_tilemap.add_child(worker)
-	_workers.append(worker)
+	_worker = LUMBERJACK_WORKER_SCENE.instantiate()
+	_worker.setup(self)
+	_worker.position = position + Vector2(10, 38)
+	_tilemap.add_child(_worker)

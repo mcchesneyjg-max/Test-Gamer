@@ -4,7 +4,6 @@ extends CanvasLayer
 @onready var _tree_label: Label = $MarginContainer/VBoxContainer/TreesLabel
 @onready var _sapling_label: Label = $MarginContainer/VBoxContainer/SaplingsLabel
 @onready var _camp_logs_label: Label = $MarginContainer/VBoxContainer/CampLogsLabel
-@onready var _worker_pool_label: Label = $MarginContainer/VBoxContainer/WorkerPoolLabel
 
 var _refresh_timer: float = 0.0
 
@@ -13,11 +12,9 @@ func _ready() -> void:
 	_update_tree_label()
 	_update_sapling_label()
 	_update_camp_logs_label()
-	_update_worker_pool_label()
 	Warehouse.wood_logs_changed.connect(func(_v): _update_wood_label())
 	TreeRegistry.tree_count_changed.connect(func(_c): _update_tree_label())
 	SaplingRegistry.sapling_count_changed.connect(func(_c): _update_sapling_label())
-	WorkerPool.pool_changed.connect(func(_a, _b, _c): _update_worker_pool_label())
 
 func _process(delta: float) -> void:
 	_refresh_timer += delta
@@ -38,9 +35,6 @@ func _update_tree_label() -> void:
 
 func _update_sapling_label() -> void:
 	_sapling_label.text = "Saplings: %d" % SaplingRegistry.get_sapling_count()
-
-func _update_worker_pool_label() -> void:
-	_worker_pool_label.text = "Workers available: %d" % WorkerPool.get_available()
 
 func _update_camp_logs_label() -> void:
 	var waiting := 0
