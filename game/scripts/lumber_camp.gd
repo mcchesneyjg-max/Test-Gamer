@@ -24,6 +24,11 @@ var _assigned_count: int = 0
 func _ready() -> void:
 	CampRegistry.register_camp(self)
 	YSortDepth.apply_to_entity(self)
+	call_deferred("_assign_initial_worker")
+
+func _assign_initial_worker() -> void:
+	if _assigned_count == 0:
+		add_worker()
 
 func _exit_tree() -> void:
 	_release_all_workers_to_pool()
