@@ -26,6 +26,7 @@ const FALL_ANIMATION_PREFIXES: Array[String] = [
 	"summer_tree_fall_frame",
 	"summer_tree_fall",
 	"fall_animation",
+	"fall_animation_frame",
 	"fall",
 	"tree_fall",
 ]
@@ -147,8 +148,11 @@ func begin_fall_animation() -> void:
 
 	_fall_phase = FallPhase.FALLING
 	_fall_elapsed = 0.0
-	_set_tree_texture(_fall_frames[0])
-	print("MatureTree: started fall animation (%d frames)" % _fall_frames.size())
+	_set_tree_texture(_fall_frames[0], true)
+	print(
+		"MatureTree: started fall animation for %s (%d frames)"
+		% [_tree_variant, _fall_frames.size()]
+	)
 
 func get_chop_position() -> Vector2:
 	# Tree position is the planted trunk base; lumberjack position is their feet.
@@ -232,6 +236,10 @@ func _load_fall_frames() -> void:
 		)
 	else:
 		_refresh_sort_textures()
+		print(
+			"MatureTree: loaded %d fall frames for %s"
+			% [_fall_frames.size(), _tree_variant]
+		)
 
 func _load_fallen_chop_frames() -> void:
 	if not _fallen_chop_frames.is_empty():
@@ -304,12 +312,12 @@ func _advance_fall_animation(delta: float) -> void:
 	if frame_index >= _fall_frames.size():
 		_begin_fall_hold()
 		return
-	_set_tree_texture(_fall_frames[frame_index])
+	_set_tree_texture(_fall_frames[frame_index], true)
 
 func _begin_fall_hold() -> void:
 	_fall_phase = FallPhase.HOLD
 	_fall_elapsed = 0.0
-	_set_tree_texture(_fall_frames[_fall_frames.size() - 1])
+	_set_tree_texture(_fall_frames[_fall_frames.size() - 1], true)
 	print("MatureTree: holding final fall frame for %.1fs" % FALL_HOLD_SECONDS)
 
 func _advance_fall_hold(delta: float) -> void:
@@ -324,8 +332,11 @@ func _advance_fall_hold(delta: float) -> void:
 
 	_fall_phase = FallPhase.FALLEN_CHOP
 	_fall_elapsed = 0.0
-	_set_tree_texture(_fallen_chop_frames[0])
-	print("MatureTree: started fallen chop animation (%d frames)" % _fallen_chop_frames.size())
+	_set_tree_texture(_fallen_chop_frames[0], true)
+	print(
+		"MatureTree: started fallen chop animation for %s (%d frames)"
+		% [_tree_variant, _fallen_chop_frames.size()]
+	)
 
 func _advance_fallen_chop_animation(delta: float) -> void:
 	if _fallen_chop_frames.is_empty():
@@ -337,7 +348,7 @@ func _advance_fallen_chop_animation(delta: float) -> void:
 	if frame_index >= _fallen_chop_frames.size():
 		_finish_fall_sequence()
 		return
-	_set_tree_texture(_fallen_chop_frames[frame_index])
+	_set_tree_texture(_fallen_chop_frames[frame_index], true)
 
 func _finish_fall_sequence() -> void:
 	if _fall_phase == FallPhase.NONE:
@@ -369,8 +380,11 @@ func _sync_chop_foreground_sprite() -> void:
 	_foreground_sprite.centered = _sprite.centered
 	_foreground_sprite.texture_filter = _sprite.texture_filter
 
-func _set_tree_texture(texture: Texture2D) -> void:
-	var sprite_offset := -_planted_root
+func _set_tree_texture(texture: Texture2D, use_frame_anchor: bool = false) -> void:
+	var anchor := _get_texture_anchor(texture) if use_frame_anchor else _planted_root
+	if not use_frame_anchor and not _planted_root_initialized:
+		anchor = _get_texture_anchor(texture)
+	var sprite_offset := -anchor
 
 	_sprite.centered = false
 	_sprite.position = sprite_offset
