@@ -13,8 +13,6 @@ var _worker: Node2D
 func _ready() -> void:
 	CampRegistry.register_camp(self)
 	call_deferred("_spawn_worker")
-
-func _process(_delta: float) -> void:
 	YSortDepth.apply_to_entity(self)
 
 func _exit_tree() -> void:

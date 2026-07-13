@@ -3,46 +3,50 @@ extends RefCounted
 
 const ALPHA_THRESHOLD := 0.04
 const APPLIED_META_KEY := "_y_sort_applied"
-const LOGICAL_POS_META_KEY := "_y_sort_logical_pos"
+const STABLE_DEPTH_META_KEY := "_y_sort_stable_depth"
+const INITIALIZED_META_KEY := "_y_sort_initialized"
 
 static var _opaque_bottom_cache: Dictionary = {}
 
-static func apply_to_entity(entity: Node2D) -> void:
+static func apply_to_entity(entity: Node2D, force_recompute_depth: bool = false) -> void:
 	if entity == null:
+		return
+	if entity.has_meta(INITIALIZED_META_KEY) and not force_recompute_depth:
 		return
 
 	var applied: float = entity.get_meta(APPLIED_META_KEY, 0.0)
-	var logical_pos: Vector2
-	if entity.has_meta(LOGICAL_POS_META_KEY):
-		logical_pos = entity.get_meta(LOGICAL_POS_META_KEY)
-	else:
-		logical_pos = entity.position
-		entity.set_meta(LOGICAL_POS_META_KEY, logical_pos)
-
-	var expected_sort_pos := logical_pos + Vector2(0.0, applied)
-	if entity.position.distance_squared_to(expected_sort_pos) > 0.01:
-		if entity.position.distance_squared_to(logical_pos) < entity.position.distance_squared_to(expected_sort_pos):
-			pass
-		else:
-			logical_pos += entity.position - expected_sort_pos
-
 	var sprites := _collect_sprites(entity)
+	var stable_depth := _get_stable_depth(entity, sprites, applied, true)
+
+	var delta := stable_depth - applied
+	if absf(delta) >= 0.001:
+		for sprite_entry in sprites:
+			var sprite := sprite_entry["sprite"] as Node2D
+			sprite.position.y = roundf(sprite.position.y - delta)
+
+	entity.set_meta(APPLIED_META_KEY, stable_depth)
+	entity.set_meta(STABLE_DEPTH_META_KEY, stable_depth)
+	entity.set_meta(INITIALIZED_META_KEY, true)
+
+static func _get_stable_depth(
+	entity: Node2D,
+	sprites: Array[Dictionary],
+	sort_compensation: float,
+	force_recompute: bool
+) -> float:
+	if not force_recompute and entity.has_meta(STABLE_DEPTH_META_KEY):
+		return float(entity.get_meta(STABLE_DEPTH_META_KEY))
+
 	var deepest := 0.0
 	for sprite_entry in sprites:
 		deepest = maxf(
 			deepest,
-			_deepest_visible_sprite_y(sprite_entry["sprite"], sprite_entry["offset"], applied)
+			_stable_sprite_depth(entity, sprite_entry["sprite"], sprite_entry["offset"], sort_compensation)
 		)
 
-	var delta := deepest - applied
-	if absf(delta) >= 0.001:
-		for sprite_entry in sprites:
-			var sprite := sprite_entry["sprite"] as Node2D
-			sprite.position.y -= delta
-
-	entity.set_meta(LOGICAL_POS_META_KEY, logical_pos)
-	entity.set_meta(APPLIED_META_KEY, deepest)
-	entity.position = logical_pos + Vector2(0.0, deepest)
+	deepest = roundf(deepest)
+	entity.set_meta(STABLE_DEPTH_META_KEY, deepest)
+	return deepest
 
 static func _collect_sprites(entity: Node2D) -> Array[Dictionary]:
 	var sprites: Array[Dictionary] = []
@@ -67,14 +71,19 @@ static func _collect_sprites_recursive(
 	for child in node.get_children():
 		_collect_sprites_recursive(entity, child, accumulated_offset, sprites)
 
-static func _deepest_visible_sprite_y(sprite: Node, parent_offset: Vector2, sort_compensation: float) -> float:
+static func _stable_sprite_depth(
+	entity: Node2D,
+	sprite: Node,
+	parent_offset: Vector2,
+	sort_compensation: float
+) -> float:
 	if sprite is Sprite2D:
-		return _sprite_deepest_y(sprite as Sprite2D, parent_offset, sort_compensation)
+		return _sprite_deepest_y(entity, sprite as Sprite2D, parent_offset, sort_compensation)
 	if sprite is AnimatedSprite2D:
-		return _animated_sprite_deepest_y(sprite as AnimatedSprite2D, parent_offset, sort_compensation)
+		return _animated_sprite_stable_deepest_y(sprite as AnimatedSprite2D, parent_offset, sort_compensation)
 	return 0.0
 
-static func _animated_sprite_deepest_y(
+static func _animated_sprite_stable_deepest_y(
 	sprite: AnimatedSprite2D,
 	parent_offset: Vector2,
 	sort_compensation: float
@@ -82,33 +91,58 @@ static func _animated_sprite_deepest_y(
 	if not sprite.visible or sprite.sprite_frames == null:
 		return 0.0
 
-	var frame_count := sprite.sprite_frames.get_frame_count(sprite.animation)
-	if frame_count <= 0:
+	var deepest := 0.0
+	for animation_name in sprite.sprite_frames.get_animation_names():
+		var frame_count := sprite.sprite_frames.get_frame_count(animation_name)
+		for frame_index in range(frame_count):
+			var texture := sprite.sprite_frames.get_frame_texture(animation_name, frame_index)
+			if texture == null:
+				continue
+			deepest = maxf(
+				deepest,
+				_sprite_deepest_y_from_texture(
+					parent_offset + sprite.position + Vector2(0.0, sort_compensation),
+					sprite.offset,
+					sprite.centered,
+					sprite.scale,
+					texture
+				)
+			)
+	return deepest
+
+static func _sprite_deepest_y(
+	entity: Node2D,
+	sprite: Sprite2D,
+	parent_offset: Vector2,
+	sort_compensation: float
+) -> float:
+	if not sprite.visible:
 		return 0.0
 
-	var texture := sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
-	if texture == null:
-		return 0.0
+	var sprite_position := parent_offset + sprite.position + Vector2(0.0, sort_compensation)
+	var deepest := 0.0
+	if sprite.texture != null:
+		deepest = _sprite_deepest_y_from_texture(
+			sprite_position,
+			sprite.offset,
+			sprite.centered,
+			sprite.scale,
+			sprite.texture
+		)
 
-	return _sprite_deepest_y_from_texture(
-		parent_offset + sprite.position + Vector2(0.0, sort_compensation),
-		sprite.offset,
-		sprite.centered,
-		sprite.scale,
-		texture
-	)
-
-static func _sprite_deepest_y(sprite: Sprite2D, parent_offset: Vector2, sort_compensation: float) -> float:
-	if not sprite.visible or sprite.texture == null:
-		return 0.0
-
-	return _sprite_deepest_y_from_texture(
-		parent_offset + sprite.position + Vector2(0.0, sort_compensation),
-		sprite.offset,
-		sprite.centered,
-		sprite.scale,
-		sprite.texture
-	)
+	for texture in entity.get_meta("_y_sort_extra_textures", []):
+		if texture is Texture2D:
+			deepest = maxf(
+				deepest,
+				_sprite_deepest_y_from_texture(
+					sprite_position,
+					sprite.offset,
+					sprite.centered,
+					sprite.scale,
+					texture
+				)
+			)
+	return deepest
 
 static func _sprite_deepest_y_from_texture(
 	sprite_position: Vector2,

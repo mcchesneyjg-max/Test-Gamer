@@ -58,6 +58,7 @@ func _ready() -> void:
 	ForesterLodgeRegistry.register_lodge(self)
 	_update_spawn_label()
 	call_deferred("_spawn_worker")
+	YSortDepth.apply_to_entity(self)
 
 func _exit_tree() -> void:
 	if is_instance_valid(_worker):
@@ -66,7 +67,6 @@ func _exit_tree() -> void:
 
 func _process(_delta: float) -> void:
 	_prune_invalid_saplings()
-	YSortDepth.apply_to_entity(self)
 
 func initialize_placement(top_left: Vector2i) -> void:
 	_footprint_top_left = top_left
@@ -180,7 +180,7 @@ func _apply_level_visual() -> void:
 	_sprite.position = SPRITE_OFFSET
 	_spawn_label.offset_top = -22.0 - float(_level - 1) * 10.0
 	_spawn_label.offset_bottom = _spawn_label.offset_top + 16.0
-	YSortDepth.apply_to_entity(self)
+	YSortDepth.apply_to_entity(self, true)
 
 func _spawn_worker() -> void:
 	if _tilemap == null:

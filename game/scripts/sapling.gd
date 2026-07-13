@@ -11,6 +11,10 @@ var _has_matured: bool = false
 
 func _ready() -> void:
 	SaplingRegistry.register_sapling(self)
+	call_deferred("_apply_sort_depth")
+
+func _apply_sort_depth() -> void:
+	YSortDepth.apply_to_entity(self)
 
 func _exit_tree() -> void:
 	SaplingRegistry.unregister_sapling(self)
@@ -25,8 +29,6 @@ func _process(delta: float) -> void:
 
 	if _grow_timer >= grow_time:
 		_mature_into_tree()
-
-	YSortDepth.apply_to_entity(self)
 
 func _mature_into_tree() -> void:
 	if _has_matured:

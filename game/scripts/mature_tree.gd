@@ -4,8 +4,8 @@ signal fall_animation_finished
 
 ## Depletable wood source for future lumber camps.
 @export var harvest_remaining: int = 10
-@export var chop_stand_distance: float = 20.0
-@export var chop_stand_north_offset: float = -32.0
+@export var chop_stand_distance: float = 14.0
+@export var chop_stand_north_offset: float = 0.0
 
 const TREE_VARIANT_NAMES: Array[String] = [
 	"summer_tree_1",
@@ -62,8 +62,6 @@ func _process(delta: float) -> void:
 		_axe_strike_elapsed += delta
 		var frame_index := int(_axe_strike_elapsed * AXE_STRIKE_PLAY_SPEED) % _axe_strike_frames.size()
 		_set_tree_texture(_axe_strike_frames[frame_index])
-
-	YSortDepth.apply_to_entity(self)
 
 func _exit_tree() -> void:
 	_chopper = null
@@ -127,6 +125,7 @@ func begin_fall_animation() -> void:
 	print("MatureTree: started fall animation (%d frames)" % _fall_frames.size())
 
 func get_chop_position() -> Vector2:
+	# Tree position is the planted trunk base; lumberjack position is their feet.
 	return position + Vector2(chop_stand_distance, chop_stand_north_offset)
 
 func is_depleted() -> bool:
@@ -181,6 +180,7 @@ func _load_axe_strike_frames() -> void:
 	_initialize_planted_root(_static_texture)
 	_set_tree_texture(_static_texture)
 	_sprite.visible = true
+	_refresh_sort_textures()
 	print(
 		"MatureTree: using variant %s (%d chop frames, root %s)"
 		% [_tree_variant, _axe_strike_frames.size(), _planted_root]
@@ -200,6 +200,8 @@ func _load_fall_frames() -> void:
 			"MatureTree: no fall frames found for %s. Checked: %s"
 			% [_tree_variant, ", ".join(_fall_animation_root_candidates)]
 		)
+	else:
+		_refresh_sort_textures()
 
 func _pick_random_variant() -> void:
 	var variant_index := randi() % TREE_VARIANT_NAMES.size()
@@ -279,3 +281,16 @@ func _set_tree_texture(texture: Texture2D) -> void:
 
 	_sprite.z_as_relative = true
 	_sprite.z_index = 0
+
+func _refresh_sort_textures() -> void:
+	var textures: Array[Texture2D] = []
+	if _static_texture != null:
+		textures.append(_static_texture)
+	for texture in _axe_strike_frames:
+		if texture != null:
+			textures.append(texture)
+	for texture in _fall_frames:
+		if texture != null:
+			textures.append(texture)
+	set_meta("_y_sort_extra_textures", textures)
+	YSortDepth.apply_to_entity(self, true)
