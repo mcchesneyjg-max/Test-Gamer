@@ -15,6 +15,4 @@ func _apply_zoom(delta: float) -> void:
 	var next := zoom + Vector2.ONE * delta
 	next.x = clampf(next.x, ZOOM_MIN, ZOOM_MAX)
 	next.y = clampf(next.y, ZOOM_MIN, ZOOM_MAX)
-	next.x = snappedf(next.x, 0.25)
-	next.y = snappedf(next.y, 0.25)
 	zoom = next
