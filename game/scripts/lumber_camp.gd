@@ -1,4 +1,5 @@
 extends Node2D
+class_name LumberCamp
 
 const LUMBERJACK_WORKER_SCENE := preload("res://scenes/lumberjack_worker.tscn")
 const MAX_WORKERS := 6
