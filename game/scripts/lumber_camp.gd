@@ -1,4 +1,5 @@
 extends Node2D
+class_name LumberCamp
 
 const LUMBERJACK_WORKER_SCENE := preload("res://scenes/lumberjack_worker.tscn")
 const MAX_WORKERS := 6
@@ -135,7 +136,7 @@ func _spawn_worker_at(index: int) -> void:
 
 	var worker := LUMBERJACK_WORKER_SCENE.instantiate()
 	worker.setup(self)
-	var offset := WORKER_OFFSETS[index % WORKER_OFFSETS.size()]
+	var offset: Vector2 = WORKER_OFFSETS[index % WORKER_OFFSETS.size()]
 	worker.position = position + offset
 	_tilemap.add_child(worker)
 	_workers.append(worker)

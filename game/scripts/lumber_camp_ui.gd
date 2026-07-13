@@ -9,7 +9,7 @@ extends CanvasLayer
 @onready var _close_button: Button = $Panel/Margin/VBox/CloseButton
 
 var _tilemap: TileMap
-var _selected_camp: Node2D
+var _selected_camp: LumberCamp
 
 func setup(tilemap: TileMap) -> void:
 	_tilemap = tilemap
@@ -36,7 +36,7 @@ func _try_select_camp() -> bool:
 	_open_panel(camp)
 	return true
 
-func _open_panel(camp: Node2D) -> void:
+func _open_panel(camp: LumberCamp) -> void:
 	_selected_camp = camp
 	_title_label.text = "Lumber Camp"
 	_refresh_panel_labels()
@@ -75,9 +75,9 @@ func _on_pool_changed(_available: int, _assigned: int, _total: int) -> void:
 	if _panel.visible:
 		_refresh_panel_labels()
 
-func _camp_at_mouse() -> Node2D:
+func _camp_at_mouse() -> LumberCamp:
 	var click_tile := GridPlacement.mouse_tile_coords(_tilemap)
 	for camp in CampRegistry.get_active_camps():
-		if camp.has_method("occupies_tile") and camp.occupies_tile(click_tile):
+		if camp is LumberCamp and camp.occupies_tile(click_tile):
 			return camp
 	return null
