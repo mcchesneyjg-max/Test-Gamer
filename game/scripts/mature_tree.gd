@@ -4,6 +4,7 @@ signal fall_animation_finished
 signal fallen_chop_started
 signal log_pile_ready
 signal log_pile_pickup_taken(remaining: int)
+signal log_pickup_animation_finished
 
 ## Depletable wood source for future lumber camps.
 @export var harvest_remaining: int = 10
@@ -68,6 +69,7 @@ var _fallen_chop_frames: Array[Texture2D] = []
 var _tree_to_log_frames: Array[Texture2D] = []
 var _life_phase: TreeLifePhase = TreeLifePhase.STANDING
 var _log_pile_pickups_remaining: int = 0
+var _pickup_animating: bool = false
 var _trunk_anchor_cache: Dictionary = {}
 var _planted_root: Vector2 = Vector2.ZERO
 var _planted_root_initialized: bool = false
@@ -168,6 +170,26 @@ func is_in_tree_to_log() -> bool:
 func get_log_pile_pickups_remaining() -> int:
 	return _log_pile_pickups_remaining
 
+func is_log_pickup_animating() -> bool:
+	return _pickup_animating
+
+func try_begin_log_pickup(chopper: Node = null) -> bool:
+	if _life_phase != TreeLifePhase.LOG_PILE:
+		return false
+	if _log_pile_pickups_remaining <= 0 or _pickup_animating:
+		return false
+	if chopper != null and _chopper != null and _chopper != chopper:
+		return false
+	if chopper != null:
+		_chopper = chopper
+
+	if _log_pile_pickups_remaining == LOG_PILE_PICKUPS:
+		_begin_first_log_pickup_animation()
+		return true
+
+	_complete_log_pickup_step()
+	return true
+
 func get_fallen_log_chop_position() -> Vector2:
 	return position + fallen_log_chop_offset
 
@@ -211,7 +233,9 @@ func is_depleted() -> bool:
 
 func harvest(amount: int = 1, chopper: Node = null) -> int:
 	if _life_phase == TreeLifePhase.LOG_PILE:
-		return _harvest_log_pile(chopper)
+		if try_begin_log_pickup(chopper):
+			return 0 if _pickup_animating else 1
+		return 0
 	if chopper != null and _chopper != chopper:
 		return 0
 	if harvest_remaining <= 0:
@@ -222,11 +246,10 @@ func harvest(amount: int = 1, chopper: Node = null) -> int:
 		begin_fall_animation()
 	return taken
 
-func _harvest_log_pile(chopper: Node = null) -> int:
+func _complete_log_pickup_step() -> void:
 	if _log_pile_pickups_remaining <= 0:
-		return 0
-	if chopper != null and _chopper != chopper:
-		return 0
+		return
+
 	_log_pile_pickups_remaining -= 1
 	_show_log_pile_frame(5 - _log_pile_pickups_remaining)
 	log_pile_pickup_taken.emit(_log_pile_pickups_remaining)
@@ -237,7 +260,6 @@ func _harvest_log_pile(chopper: Node = null) -> int:
 	if _log_pile_pickups_remaining <= 0:
 		_life_phase = TreeLifePhase.DEPLETED
 		_chopper = null
-	return 1
 
 func _load_axe_strike_frames() -> void:
 	if not _axe_strike_frames.is_empty():
@@ -465,45 +487,53 @@ func _advance_fallen_chop_animation(delta: float) -> void:
 	_fall_elapsed += delta
 	var frame_index := int(_fall_elapsed * FALLEN_CHOP_PLAY_SPEED)
 	if frame_index >= _fallen_chop_frames.size():
-		_begin_tree_to_log()
+		_begin_log_pile_phase()
 		return
 	_set_tree_texture(_fallen_chop_frames[frame_index], true)
 
-func _begin_tree_to_log() -> void:
+func _begin_first_log_pickup_animation() -> void:
 	_load_tree_to_log_frames()
 	if _tree_to_log_frames.is_empty():
-		_begin_log_pile_phase()
+		_complete_log_pickup_step()
 		return
 
+	_pickup_animating = true
 	_fall_phase = FallPhase.TREE_TO_LOG
 	_fall_elapsed = 0.0
 	_set_tree_to_log_frame(1)
 	print(
-		"MatureTree: started tree-to-log animation (%d frames, stops at frame %d)"
-		% [_tree_to_log_frames.size(), TREE_TO_LOG_ANIM_END_FRAME]
+		"MatureTree: playing first log pickup animation (frames 1-%d)"
+		% TREE_TO_LOG_ANIM_END_FRAME
 	)
 
 func _advance_tree_to_log_animation(delta: float) -> void:
-	if _tree_to_log_frames.is_empty():
-		_begin_log_pile_phase()
+	if not _pickup_animating or _tree_to_log_frames.is_empty():
 		return
 
 	_fall_elapsed += delta
 	var frame_index := int(_fall_elapsed * TREE_TO_LOG_PLAY_SPEED)
 	if frame_index >= TREE_TO_LOG_ANIM_END_FRAME:
-		_begin_log_pile_phase()
+		_finish_first_log_pickup_animation()
 		return
 	_set_tree_to_log_frame(frame_index + 1)
+
+func _finish_first_log_pickup_animation() -> void:
+	_pickup_animating = false
+	_fall_phase = FallPhase.NONE
+	_set_tree_to_log_frame(TREE_TO_LOG_ANIM_END_FRAME)
+	_complete_log_pickup_step()
+	log_pickup_animation_finished.emit()
 
 func _begin_log_pile_phase() -> void:
 	_fall_phase = FallPhase.NONE
 	_life_phase = TreeLifePhase.LOG_PILE
 	_log_pile_pickups_remaining = LOG_PILE_PICKUPS
-	_show_log_pile_frame(TREE_TO_LOG_ANIM_END_FRAME)
+	_pickup_animating = false
+	_show_log_pile_frame(1)
 	log_pile_ready.emit()
 	print(
-		"MatureTree: log pile ready at logs_post_tree_fall_%d (%d pickups available)"
-		% [TREE_TO_LOG_ANIM_END_FRAME, _log_pile_pickups_remaining]
+		"MatureTree: log pile ready at logs_post_tree_fall_1 (%d pickups available)"
+		% _log_pile_pickups_remaining
 	)
 
 func _show_log_pile_frame(frame_number: int) -> void:
