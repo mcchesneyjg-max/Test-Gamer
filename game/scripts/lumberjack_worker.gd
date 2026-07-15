@@ -1,6 +1,7 @@
 extends Node2D
 
 enum State { IDLE, TO_TREE, CHOPPING, TO_CAMP }
+enum FallWaitPhase { WATCH, WALK_TO_LOG, CUT_LOG }
 
 const ARRIVE_DISTANCE := 8.0
 
@@ -13,9 +14,11 @@ var _cargo_amount: int = 0
 var _idle_timer: float = 0.0
 var _chop_timer: float = 0.0
 var _chop_position := Vector2.ZERO
+var _fallen_log_position := Vector2.ZERO
 var _move_direction := Vector2.ZERO
 var _last_move_offset := Vector2.ZERO
 var _waiting_for_tree_fall: bool = false
+var _fall_wait_phase: FallWaitPhase = FallWaitPhase.WATCH
 
 @onready var _body: AnimatedSprite2D = $Body
 @onready var _cargo: Sprite2D = $Cargo
@@ -42,6 +45,16 @@ func _process(delta: float) -> void:
 	_update_animation(delta)
 
 func _update_animation(delta: float) -> void:
+	if _state == State.CHOPPING and _waiting_for_tree_fall:
+		match _fall_wait_phase:
+			FallWaitPhase.WALK_TO_LOG:
+				CharacterWalk.update_motion(_body, true, _last_move_offset, delta)
+			FallWaitPhase.CUT_LOG:
+				CharacterWalk.update_log_cutting(_body, delta)
+			_:
+				CharacterWalk.update_motion(_body, false, Vector2.ZERO, delta)
+		return
+
 	if _state == State.CHOPPING:
 		CharacterWalk.update_chopping(_body, delta)
 		if _is_tree_valid() and CharacterWalk.poll_axe_strike_trigger(_body):
@@ -78,12 +91,11 @@ func _process_to_tree(delta: float) -> void:
 		_move_direction = Vector2.ZERO
 
 func _process_chopping(delta: float) -> void:
-	position = _chop_position
-
 	if _waiting_for_tree_fall:
-		if not _is_tree_valid():
-			_complete_chop_after_fall()
+		_process_fall_wait(delta)
 		return
+
+	position = _chop_position
 
 	_chop_timer -= delta
 	if _chop_timer > 0.0:
@@ -99,11 +111,7 @@ func _process_chopping(delta: float) -> void:
 		return
 
 	if _target_tree.has_method("is_falling") and _target_tree.is_falling():
-		_set_tree_chop_overlay(false)
-		_waiting_for_tree_fall = true
-		_cargo_amount = harvested
-		if _target_tree.has_signal("fall_animation_finished"):
-			_target_tree.fall_animation_finished.connect(_on_tree_fall_finished, CONNECT_ONE_SHOT)
+		_begin_fall_wait(harvested)
 		return
 
 	_end_tree_axe_strike()
@@ -114,6 +122,61 @@ func _process_chopping(delta: float) -> void:
 	_target_tree = null
 	_state = State.TO_CAMP
 	_move_direction = Vector2.ZERO
+
+func _process_fall_wait(delta: float) -> void:
+	if not _is_tree_valid():
+		_complete_chop_after_fall()
+		return
+
+	match _fall_wait_phase:
+		FallWaitPhase.WATCH:
+			if _target_tree.has_method("is_in_fall_hold") and _target_tree.is_in_fall_hold():
+				_start_walk_to_fallen_log()
+			elif _target_tree.has_method("is_in_fallen_chop") and _target_tree.is_in_fallen_chop():
+				_start_walk_to_fallen_log()
+		FallWaitPhase.WALK_TO_LOG:
+			_move_toward(_fallen_log_position, delta)
+			if position.distance_to(_fallen_log_position) <= ARRIVE_DISTANCE:
+				position = _fallen_log_position
+				_move_direction = Vector2.ZERO
+				_begin_fallen_log_cutting()
+			elif _target_tree.has_method("is_in_fallen_chop") and _target_tree.is_in_fallen_chop():
+				# Keep walking west until centered even after fallen chop starts.
+				pass
+		FallWaitPhase.CUT_LOG:
+			position = _fallen_log_position
+
+func _begin_fall_wait(harvested: int) -> void:
+	_set_tree_chop_overlay(false)
+	_waiting_for_tree_fall = true
+	_fall_wait_phase = FallWaitPhase.WATCH
+	_cargo_amount = harvested
+	_move_direction = Vector2.ZERO
+	if _target_tree.has_signal("fall_hold_started"):
+		_target_tree.fall_hold_started.connect(_on_tree_fall_hold_started, CONNECT_ONE_SHOT)
+	if _target_tree.has_signal("fall_animation_finished"):
+		_target_tree.fall_animation_finished.connect(_on_tree_fall_finished, CONNECT_ONE_SHOT)
+
+func _start_walk_to_fallen_log() -> void:
+	if _fall_wait_phase != FallWaitPhase.WATCH:
+		return
+	_fallen_log_position = _get_fallen_log_chop_position()
+	_fall_wait_phase = FallWaitPhase.WALK_TO_LOG
+	_move_direction = Vector2.ZERO
+	print(
+		"LumberjackWorker: walking west to fallen log center at %s"
+		% _fallen_log_position
+	)
+
+func _begin_fallen_log_cutting() -> void:
+	if _fall_wait_phase == FallWaitPhase.CUT_LOG:
+		return
+	CharacterWalk.reset_log_cutting(_body)
+	_fall_wait_phase = FallWaitPhase.CUT_LOG
+	print("LumberjackWorker: started log cutting animation at fallen tree")
+
+func _on_tree_fall_hold_started() -> void:
+	_start_walk_to_fallen_log()
 
 func _process_to_camp(delta: float) -> void:
 	if not _is_camp_valid():
@@ -161,6 +224,7 @@ func _on_tree_fall_finished() -> void:
 
 func _complete_chop_after_fall() -> void:
 	_waiting_for_tree_fall = false
+	_fall_wait_phase = FallWaitPhase.WATCH
 	_release_tree_reservation()
 	_target_tree = null
 	if _cargo_amount > 0:
@@ -170,6 +234,7 @@ func _complete_chop_after_fall() -> void:
 
 func _return_idle() -> void:
 	_waiting_for_tree_fall = false
+	_fall_wait_phase = FallWaitPhase.WATCH
 	_set_tree_chop_overlay(false)
 	_end_tree_axe_strike()
 	_release_tree_reservation()
@@ -178,6 +243,7 @@ func _return_idle() -> void:
 	_idle_timer = 0.25
 	_move_direction = Vector2.ZERO
 	_chop_position = Vector2.ZERO
+	_fallen_log_position = Vector2.ZERO
 
 func _release_tree_reservation() -> void:
 	if _target_tree != null and is_instance_valid(_target_tree) and _target_tree.has_method("release_reservation"):
@@ -190,6 +256,13 @@ func _set_tree_chop_overlay(active: bool) -> void:
 func _get_chop_position() -> Vector2:
 	if _is_tree_valid() and _target_tree.has_method("get_chop_position"):
 		return _target_tree.get_chop_position()
+	if _is_tree_valid():
+		return _target_tree.position
+	return Vector2.ZERO
+
+func _get_fallen_log_chop_position() -> Vector2:
+	if _is_tree_valid() and _target_tree.has_method("get_fallen_log_chop_position"):
+		return _target_tree.get_fallen_log_chop_position()
 	if _is_tree_valid():
 		return _target_tree.position
 	return Vector2.ZERO

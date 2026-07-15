@@ -6,6 +6,16 @@ const WAITING_ANIMATIONS_ROOT := "res://assets/sprites/waiting_animation"
 const WAITING_PREFIX := "waiting_animation"
 const WOOD_CUTTING_ROOT := "res://assets/sprites/wood_cutting_animation"
 const WOOD_CUTTING_PREFIX := "wood_cutting"
+const LOG_CUTTING_ROOT := "res://assets/sprites/log_cutting_animation"
+const LOG_CUTTING_FALLBACK_ROOTS: Array[String] = [
+	LOG_CUTTING_ROOT,
+	WOOD_CUTTING_ROOT,
+]
+const LOG_CUTTING_FALLBACK_PREFIXES: Array[String] = [
+	"log_cutting",
+	"log_cutting_animation",
+	WOOD_CUTTING_PREFIX,
+]
 const WAIT_HOLD_SECONDS := 4.0
 const META_WAS_WALKING := "character_walk_was_walking"
 const META_WAIT_PHASE := "character_walk_wait_phase"
@@ -14,6 +24,8 @@ const META_PLAY_SPEED := "character_walk_play_speed"
 const META_CHOP_PHASE := "character_walk_chop_phase"
 const META_CHOP_ELAPSED := "character_walk_chop_elapsed"
 const META_CHOP_AXE_TRIGGERED := "character_walk_chop_axe_triggered"
+const META_LOG_CUT_PHASE := "character_walk_log_cut_phase"
+const META_LOG_CUT_ELAPSED := "character_walk_log_cut_elapsed"
 const CHOP_LOOP_START_FRAME := 3
 const CHOP_AXE_STRIKE_TRIGGER_FRAME := 6
 const DIRECTION_TO_FOLDER := {
@@ -98,6 +110,16 @@ static func apply_shared(sprite: AnimatedSprite2D, walk_speed: float = 10.0) -> 
 		_add_wood_cutting_animation(frames, wood_cutting_frames, walk_speed)
 		print("CharacterWalk: loaded %d wood cutting frames" % wood_cutting_frames.size())
 
+	var log_cutting_frames := _load_log_cutting_frames()
+	if log_cutting_frames.is_empty():
+		push_warning(
+			"CharacterWalk: no log cutting frames found in %s (also checked %s)"
+			% [LOG_CUTTING_ROOT, WOOD_CUTTING_ROOT]
+		)
+	else:
+		_add_log_cutting_animation(frames, log_cutting_frames, walk_speed)
+		print("CharacterWalk: loaded %d log cutting frames" % log_cutting_frames.size())
+
 	sprite.sprite_frames = frames
 	sprite.flip_h = false
 	sprite.set_meta(META_PLAY_SPEED, walk_speed)
@@ -142,6 +164,25 @@ static func poll_axe_strike_trigger(sprite: AnimatedSprite2D) -> bool:
 		return false
 	sprite.set_meta(META_CHOP_AXE_TRIGGERED, true)
 	return true
+
+static func reset_log_cutting(sprite: AnimatedSprite2D) -> void:
+	sprite.set_meta(META_LOG_CUT_PHASE, "intro")
+	sprite.set_meta(META_LOG_CUT_ELAPSED, 0.0)
+
+static func update_log_cutting(sprite: AnimatedSprite2D, delta: float = 0.0) -> void:
+	sprite.flip_h = false
+	if sprite.sprite_frames == null:
+		return
+
+	if not sprite.sprite_frames.has_animation(&"log_cutting"):
+		_update_waiting(sprite, delta)
+		return
+
+	if sprite.animation != &"log_cutting":
+		reset_log_cutting(sprite)
+		sprite.animation = &"log_cutting"
+	sprite.stop()
+	_advance_log_cutting(sprite, delta)
 
 static func load_png_sequence(folder_root: String, file_prefix: String) -> Array[Texture2D]:
 	return _load_png_sequence(folder_root, file_prefix)
@@ -221,13 +262,48 @@ static func _add_wood_cutting_animation(
 	for texture in wood_cutting_frames:
 		frames.add_frame(&"wood_cutting", texture)
 
+static func _add_log_cutting_animation(
+	frames: SpriteFrames,
+	log_cutting_frames: Array[Texture2D],
+	walk_speed: float
+) -> void:
+	frames.add_animation(&"log_cutting")
+	frames.set_animation_loop(&"log_cutting", false)
+	frames.set_animation_speed(&"log_cutting", walk_speed)
+	for texture in log_cutting_frames:
+		frames.add_frame(&"log_cutting", texture)
+
+static func _advance_log_cutting(sprite: AnimatedSprite2D, delta: float) -> void:
+	_advance_intro_loop_animation(
+		sprite,
+		&"log_cutting",
+		META_LOG_CUT_PHASE,
+		META_LOG_CUT_ELAPSED,
+		delta
+	)
+
 static func _advance_chopping(sprite: AnimatedSprite2D, delta: float) -> void:
-	var frame_count := sprite.sprite_frames.get_frame_count(&"wood_cutting")
+	_advance_intro_loop_animation(
+		sprite,
+		&"wood_cutting",
+		META_CHOP_PHASE,
+		META_CHOP_ELAPSED,
+		delta
+	)
+
+static func _advance_intro_loop_animation(
+	sprite: AnimatedSprite2D,
+	animation_name: StringName,
+	phase_meta: String,
+	elapsed_meta: String,
+	delta: float
+) -> void:
+	var frame_count := sprite.sprite_frames.get_frame_count(animation_name)
 	if frame_count <= 0:
 		return
 
-	var phase: String = sprite.get_meta(META_CHOP_PHASE, "intro")
-	var elapsed: float = float(sprite.get_meta(META_CHOP_ELAPSED, 0.0)) + delta
+	var phase: String = sprite.get_meta(phase_meta, "intro")
+	var elapsed: float = float(sprite.get_meta(elapsed_meta, 0.0)) + delta
 	var play_speed: float = float(sprite.get_meta(META_PLAY_SPEED, 10.0))
 	var loop_start_frame := mini(CHOP_LOOP_START_FRAME, maxi(frame_count - 1, 0))
 
@@ -247,8 +323,8 @@ static func _advance_chopping(sprite: AnimatedSprite2D, delta: float) -> void:
 			var frame_index := loop_start_frame + (int(elapsed * play_speed) % loop_length)
 			sprite.frame = frame_index
 
-	sprite.set_meta(META_CHOP_PHASE, phase)
-	sprite.set_meta(META_CHOP_ELAPSED, elapsed)
+	sprite.set_meta(phase_meta, phase)
+	sprite.set_meta(elapsed_meta, elapsed)
 
 static func _add_idle_fallback_animation(frames: SpriteFrames) -> void:
 	frames.add_animation(&"idle")
@@ -268,6 +344,13 @@ static func _load_waiting_frames() -> Array[Texture2D]:
 
 static func _load_wood_cutting_frames() -> Array[Texture2D]:
 	return _load_png_sequence(WOOD_CUTTING_ROOT, WOOD_CUTTING_PREFIX)
+
+static func _load_log_cutting_frames() -> Array[Texture2D]:
+	return load_png_sequence_from_candidates(
+		LOG_CUTTING_FALLBACK_ROOTS,
+		LOG_CUTTING_FALLBACK_PREFIXES,
+		true
+	)
 
 static func _load_png_sequence(folder_root: String, file_prefix: String) -> Array[Texture2D]:
 	var textures: Array[Texture2D] = []
