@@ -7,7 +7,7 @@ This folder must contain all three animation subfolders for the tree to work cor
 ```
 summer_tree_1/
   axe_strike_animation/        ← idle + chopping (10 frames typical)
-  fall_animation/              ← tree fall (11 frames, ends at frame 11)
+  fall_animation/              ← tree fall (12 frames, ends at frame 12)
   fallen_tree_chop_animation/  ← post-fall chop (14 frames typical)
 ```
 
@@ -22,7 +22,7 @@ Do not create a separate `Summer_tree_animation` folder on Windows — it is the
 | Folder | Recognized prefixes | Example |
 |--------|---------------------|---------|
 | `axe_strike_animation` | `summer_tree_axe_frame`, `axe_strike` | `summer_tree_axe_frame_1.png` |
-| `fall_animation` | `summer_tree_fall_frame`, `fall_animation` | `summer_tree_fall_frame_11.png` |
+| `fall_animation` | `summer_tree_fall_frame`, `fall_animation` | `summer_tree_fall_frame_12.png` |
 | `fallen_tree_chop_animation` | `fallen_tree_chop_animation`, `fallen_tree_chop` | `fallen_tree_chop_animation_1.png` |
 
 Any numbered `.png` in each folder also works as a fallback.
@@ -31,7 +31,7 @@ Any numbered `.png` in each folder also works as a fallback.
 
 1. **Idle/chop** — `axe_strike_animation` frames while lumberjack chops
 2. **Fall** — all `fall_animation` frames play once
-3. **Hold** — final fall frame (`summer_tree_fall_frame_11`) held for **1.5 seconds**
+3. **Hold** — final fall frame (`summer_tree_fall_frame_12`) held for **1.5 seconds**
 4. **Fallen chop** — `fallen_tree_chop_animation` plays once
 5. Tree removed, lumberjack carries log to camp
 
@@ -67,7 +67,7 @@ Or run the repo checker:
 python game\tools\verify_summer_tree_variants.py
 ```
 
-**Note:** In the current repo, `fall_animation` frames for `summer_tree_1` and `summer_tree_3` may be identical. Only `axe_strike_animation` and `fallen_tree_chop_animation` should look different between variants. The game uses frames 1–11 only (`summer_tree_fall_frame_12` is ignored).
+**Note:** In the current repo, `fall_animation` frames for `summer_tree_1` and `summer_tree_3` are intentionally identical (12/12 frames match). Only `axe_strike_animation` and `fallen_tree_chop_animation` should look different between variants.
 
 ## Verify in Godot Output panel
 
@@ -75,7 +75,7 @@ When placing trees, look for:
 
 ```
 MatureTree: axe loaded 10 frames for summer_tree_1 from res://assets/sprites/summer_tree_animation/summer_tree_1/axe_strike_animation (first=res://...summer_tree_1/...)
-MatureTree: fall loaded 11 frames for summer_tree_1 from res://assets/sprites/summer_tree_animation/summer_tree_1/fall_animation (first=res://...summer_tree_1/...)
+MatureTree: fall loaded 12 frames for summer_tree_1 from res://assets/sprites/summer_tree_animation/summer_tree_1/fall_animation (first=res://...summer_tree_1/...)
 MatureTree: summer_tree_1 ready with axe=10 fall=12 fallen_chop=14
 ```
 
