@@ -31,7 +31,7 @@ func setup(camp: Node2D) -> void:
 
 func _ready() -> void:
 	add_to_group("lumberjack_worker")
-	CharacterWalk.apply_shared(_body, 10.0)
+	CharacterWalk.apply_shared(_body, 10.0, 40.0)
 	_cargo.visible = false
 
 func _process(delta: float) -> void:
@@ -98,7 +98,7 @@ func _process_to_tree(delta: float) -> void:
 	CharacterWalk.reset_chopping(_body)
 	_set_tree_chop_overlay(true)
 	_state = State.CHOPPING
-	_chop_timer = _camp.get_chop_duration() if _is_camp_valid() else 6.0
+	_chop_timer = _camp.get_chop_duration() if _is_camp_valid() else 1.5
 	_move_direction = Vector2.ZERO
 
 func _process_chopping(delta: float) -> void:
@@ -126,7 +126,7 @@ func _process_chopping(delta: float) -> void:
 		_process_fall_wait(delta)
 		return
 
-	_chop_timer = _camp.get_chop_duration() if _is_camp_valid() else 6.0
+	_chop_timer = _camp.get_chop_duration() if _is_camp_valid() else 1.5
 
 func _process_fall_wait(delta: float) -> void:
 	if not _is_tree_valid():

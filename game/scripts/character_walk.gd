@@ -33,6 +33,7 @@ const META_WAS_WALKING := "character_walk_was_walking"
 const META_WAIT_PHASE := "character_walk_wait_phase"
 const META_WAIT_ELAPSED := "character_walk_wait_elapsed"
 const META_PLAY_SPEED := "character_walk_play_speed"
+const META_CHOP_PLAY_SPEED := "character_walk_chop_play_speed"
 const META_CHOP_PHASE := "character_walk_chop_phase"
 const META_CHOP_ELAPSED := "character_walk_chop_elapsed"
 const META_CHOP_AXE_TRIGGERED := "character_walk_chop_axe_triggered"
@@ -78,7 +79,12 @@ const FOLDER_FILENAME_PREFIXES := {
 }
 const ANGLE_INDEX_TO_DIRECTION := ["e", "se", "s", "sw", "w", "nw", "n", "ne"]
 
-static func apply_shared(sprite: AnimatedSprite2D, walk_speed: float = 10.0) -> void:
+static func apply_shared(
+	sprite: AnimatedSprite2D,
+	walk_speed: float = 10.0,
+	chop_animation_speed: float = -1.0
+) -> void:
+	var effective_chop_speed := chop_animation_speed if chop_animation_speed > 0.0 else walk_speed
 	var frames := SpriteFrames.new()
 	var loaded_any := false
 
@@ -122,7 +128,7 @@ static func apply_shared(sprite: AnimatedSprite2D, walk_speed: float = 10.0) -> 
 			% ", ".join(WOOD_CUTTING_ROOT_CANDIDATES)
 		)
 	else:
-		_add_wood_cutting_animation(frames, wood_cutting_frames, walk_speed)
+		_add_wood_cutting_animation(frames, wood_cutting_frames, effective_chop_speed)
 		print("CharacterWalk: loaded %d wood cutting frames" % wood_cutting_frames.size())
 
 	var log_cutting_frames := _load_log_cutting_frames()
@@ -132,12 +138,13 @@ static func apply_shared(sprite: AnimatedSprite2D, walk_speed: float = 10.0) -> 
 			% ", ".join(LOG_CUTTING_ROOT_CANDIDATES)
 		)
 	else:
-		_add_log_cutting_animation(frames, log_cutting_frames, walk_speed)
+		_add_log_cutting_animation(frames, log_cutting_frames, effective_chop_speed)
 		print("CharacterWalk: loaded %d log cutting frames" % log_cutting_frames.size())
 
 	sprite.sprite_frames = frames
 	sprite.flip_h = false
 	sprite.set_meta(META_PLAY_SPEED, walk_speed)
+	sprite.set_meta(META_CHOP_PLAY_SPEED, effective_chop_speed)
 	_reset_waiting_state(sprite)
 	_start_waiting(sprite)
 	_apply_entity_y_sort(sprite)
@@ -320,7 +327,7 @@ static func _advance_intro_loop_animation(
 
 	var phase: String = sprite.get_meta(phase_meta, "intro")
 	var elapsed: float = float(sprite.get_meta(elapsed_meta, 0.0)) + delta
-	var play_speed: float = float(sprite.get_meta(META_PLAY_SPEED, 10.0))
+	var play_speed: float = float(sprite.get_meta(META_CHOP_PLAY_SPEED, sprite.get_meta(META_PLAY_SPEED, 10.0)))
 	var loop_start_frame := mini(CHOP_LOOP_START_FRAME, maxi(frame_count - 1, 0))
 
 	if phase == "intro":
