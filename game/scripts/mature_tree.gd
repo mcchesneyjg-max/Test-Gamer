@@ -2,6 +2,8 @@ extends Node2D
 
 signal fall_animation_finished
 signal fallen_chop_started
+signal log_pile_ready
+signal log_pile_pickup_taken(remaining: int)
 
 ## Depletable wood source for future lumber camps.
 @export var harvest_remaining: int = 10
@@ -39,9 +41,19 @@ const FALLEN_CHOP_PREFIXES: Array[String] = [
 const AXE_STRIKE_PLAY_SPEED := 10.0
 const FALL_ANIMATION_PLAY_SPEED := 10.0
 const FALLEN_CHOP_PLAY_SPEED := 20.0
+const TREE_TO_LOG_ROOT := "res://assets/sprites/tree_to_log_animation"
+const TREE_TO_LOG_PREFIXES: Array[String] = [
+	"logs_post_tree_fall",
+	"log_post_tree_fall",
+	"tree_to_log",
+]
+const TREE_TO_LOG_PLAY_SPEED := 10.0
+const TREE_TO_LOG_ANIM_END_FRAME := 2
+const LOG_PILE_PICKUPS := 3
 const CHOP_FOREGROUND_Z_INDEX := 4
 
-enum FallPhase { NONE, FALLING, FALLEN_CHOP }
+enum TreeLifePhase { STANDING, LOG_PILE, DEPLETED }
+enum FallPhase { NONE, FALLING, FALLEN_CHOP, TREE_TO_LOG }
 
 var _chopper: Node = null
 var _chop_overlay_active: bool = false
@@ -53,6 +65,9 @@ var _static_texture: Texture2D
 var _axe_strike_frames: Array[Texture2D] = []
 var _fall_frames: Array[Texture2D] = []
 var _fallen_chop_frames: Array[Texture2D] = []
+var _tree_to_log_frames: Array[Texture2D] = []
+var _life_phase: TreeLifePhase = TreeLifePhase.STANDING
+var _log_pile_pickups_remaining: int = 0
 var _trunk_anchor_cache: Dictionary = {}
 var _planted_root: Vector2 = Vector2.ZERO
 var _planted_root_initialized: bool = false
@@ -73,6 +88,7 @@ func _ready() -> void:
 	_load_axe_strike_frames()
 	_load_fall_frames()
 	_load_fallen_chop_frames()
+	_load_tree_to_log_frames()
 	_validate_variant_assets()
 	_setup_chop_foreground_sprite()
 
@@ -82,6 +98,8 @@ func _process(delta: float) -> void:
 			_advance_fall_animation(delta)
 		FallPhase.FALLEN_CHOP:
 			_advance_fallen_chop_animation(delta)
+		FallPhase.TREE_TO_LOG:
+			_advance_tree_to_log_animation(delta)
 		_:
 			if _axe_strike_active and not _axe_strike_frames.is_empty():
 				_axe_strike_elapsed += delta
@@ -96,6 +114,14 @@ func is_available_to(chopper: Node) -> bool:
 	_clear_stale_chopper()
 	if _fall_phase != FallPhase.NONE:
 		return false
+	if _life_phase == TreeLifePhase.DEPLETED:
+		return false
+	if _life_phase == TreeLifePhase.LOG_PILE:
+		if _log_pile_pickups_remaining <= 0:
+			return false
+		if _chopper == null:
+			return true
+		return _chopper == chopper
 	if _chopper == null:
 		return true
 	return _chopper == chopper
@@ -103,6 +129,10 @@ func is_available_to(chopper: Node) -> bool:
 func try_reserve(chopper: Node) -> bool:
 	_clear_stale_chopper()
 	if _fall_phase != FallPhase.NONE:
+		return false
+	if _life_phase == TreeLifePhase.DEPLETED:
+		return false
+	if _life_phase == TreeLifePhase.LOG_PILE and _log_pile_pickups_remaining <= 0:
 		return false
 	if _chopper != null and _chopper != chopper:
 		return false
@@ -117,7 +147,7 @@ func release_reservation(chopper: Node) -> void:
 	if _chopper == chopper:
 		_chopper = null
 		set_chopper_draws_behind_tree(false)
-		if _fall_phase == FallPhase.NONE:
+		if _fall_phase == FallPhase.NONE and _life_phase == TreeLifePhase.STANDING:
 			end_axe_strike()
 
 func get_tree_variant() -> String:
@@ -126,8 +156,17 @@ func get_tree_variant() -> String:
 func is_falling() -> bool:
 	return _fall_phase != FallPhase.NONE
 
+func is_log_pile() -> bool:
+	return _life_phase == TreeLifePhase.LOG_PILE and _log_pile_pickups_remaining > 0
+
 func is_in_fallen_chop() -> bool:
 	return _fall_phase == FallPhase.FALLEN_CHOP
+
+func is_in_tree_to_log() -> bool:
+	return _fall_phase == FallPhase.TREE_TO_LOG
+
+func get_log_pile_pickups_remaining() -> int:
+	return _log_pile_pickups_remaining
 
 func get_fallen_log_chop_position() -> Vector2:
 	return position + fallen_log_chop_offset
@@ -168,9 +207,11 @@ func get_chop_position() -> Vector2:
 	return position + Vector2(chop_stand_distance, chop_stand_north_offset)
 
 func is_depleted() -> bool:
-	return harvest_remaining <= 0
+	return _life_phase == TreeLifePhase.DEPLETED
 
 func harvest(amount: int = 1, chopper: Node = null) -> int:
+	if _life_phase == TreeLifePhase.LOG_PILE:
+		return _harvest_log_pile(chopper)
 	if chopper != null and _chopper != chopper:
 		return 0
 	if harvest_remaining <= 0:
@@ -180,6 +221,23 @@ func harvest(amount: int = 1, chopper: Node = null) -> int:
 	if harvest_remaining <= 0:
 		begin_fall_animation()
 	return taken
+
+func _harvest_log_pile(chopper: Node = null) -> int:
+	if _log_pile_pickups_remaining <= 0:
+		return 0
+	if chopper != null and _chopper != chopper:
+		return 0
+	_log_pile_pickups_remaining -= 1
+	_show_log_pile_frame(5 - _log_pile_pickups_remaining)
+	log_pile_pickup_taken.emit(_log_pile_pickups_remaining)
+	print(
+		"MatureTree: log pile pickup (%d remaining) showing logs_post_tree_fall_%d"
+		% [_log_pile_pickups_remaining, 5 - _log_pile_pickups_remaining]
+	)
+	if _log_pile_pickups_remaining <= 0:
+		_life_phase = TreeLifePhase.DEPLETED
+		_chopper = null
+	return 1
 
 func _load_axe_strike_frames() -> void:
 	if not _axe_strike_frames.is_empty():
@@ -265,6 +323,28 @@ func _load_fallen_chop_frames() -> void:
 	else:
 		_refresh_sort_textures()
 		_log_loaded_sequence("fallen_chop", _fallen_chop_frames, _fallen_chop_root_candidates)
+
+func _load_tree_to_log_frames() -> void:
+	if not _tree_to_log_frames.is_empty():
+		return
+
+	var roots: Array[String] = [TREE_TO_LOG_ROOT]
+	_tree_to_log_frames = CharacterWalk.load_png_sequence_from_candidates(
+		roots,
+		TREE_TO_LOG_PREFIXES,
+		true
+	)
+	if _tree_to_log_frames.is_empty():
+		push_warning(
+			"MatureTree: no tree-to-log frames found in %s"
+			% TREE_TO_LOG_ROOT
+		)
+	else:
+		_refresh_sort_textures()
+		print(
+			"MatureTree: loaded %d tree-to-log frames from %s"
+			% [_tree_to_log_frames.size(), TREE_TO_LOG_ROOT]
+		)
 
 func _pick_random_variant() -> void:
 	_replenish_variant_bag_if_needed()
@@ -385,9 +465,83 @@ func _advance_fallen_chop_animation(delta: float) -> void:
 	_fall_elapsed += delta
 	var frame_index := int(_fall_elapsed * FALLEN_CHOP_PLAY_SPEED)
 	if frame_index >= _fallen_chop_frames.size():
-		_finish_fall_sequence()
+		_begin_tree_to_log()
 		return
 	_set_tree_texture(_fallen_chop_frames[frame_index], true)
+
+func _begin_tree_to_log() -> void:
+	_load_tree_to_log_frames()
+	if _tree_to_log_frames.is_empty():
+		_begin_log_pile_phase()
+		return
+
+	_fall_phase = FallPhase.TREE_TO_LOG
+	_fall_elapsed = 0.0
+	_set_tree_to_log_frame(1)
+	print(
+		"MatureTree: started tree-to-log animation (%d frames, stops at frame %d)"
+		% [_tree_to_log_frames.size(), TREE_TO_LOG_ANIM_END_FRAME]
+	)
+
+func _advance_tree_to_log_animation(delta: float) -> void:
+	if _tree_to_log_frames.is_empty():
+		_begin_log_pile_phase()
+		return
+
+	_fall_elapsed += delta
+	var frame_index := int(_fall_elapsed * TREE_TO_LOG_PLAY_SPEED)
+	if frame_index >= TREE_TO_LOG_ANIM_END_FRAME:
+		_begin_log_pile_phase()
+		return
+	_set_tree_to_log_frame(frame_index + 1)
+
+func _begin_log_pile_phase() -> void:
+	_fall_phase = FallPhase.NONE
+	_life_phase = TreeLifePhase.LOG_PILE
+	_log_pile_pickups_remaining = LOG_PILE_PICKUPS
+	_show_log_pile_frame(TREE_TO_LOG_ANIM_END_FRAME)
+	log_pile_ready.emit()
+	print(
+		"MatureTree: log pile ready at logs_post_tree_fall_%d (%d pickups available)"
+		% [TREE_TO_LOG_ANIM_END_FRAME, _log_pile_pickups_remaining]
+	)
+
+func _show_log_pile_frame(frame_number: int) -> void:
+	var texture := _get_tree_to_log_texture(frame_number)
+	if texture == null:
+		push_warning("MatureTree: missing tree-to-log frame %d" % frame_number)
+		return
+	_set_tree_texture(texture, true)
+
+func _set_tree_to_log_frame(frame_number: int) -> void:
+	var texture := _get_tree_to_log_texture(frame_number)
+	if texture == null:
+		return
+	_set_tree_texture(texture, true)
+
+func _get_tree_to_log_texture(frame_number: int) -> Texture2D:
+	for texture in _tree_to_log_frames:
+		if texture == null:
+			continue
+		var path_frame := _get_png_frame_number(texture.resource_path)
+		if path_frame == frame_number:
+			return texture
+	if frame_number <= 0 or frame_number > _tree_to_log_frames.size():
+		return null
+	return _tree_to_log_frames[frame_number - 1]
+
+func _get_png_frame_number(path: String) -> int:
+	var basename := path.get_file().get_basename()
+	var digits := ""
+	for i in range(basename.length() - 1, -1, -1):
+		var character := basename[i]
+		if character >= "0" and character <= "9":
+			digits = character + digits
+		elif not digits.is_empty():
+			break
+	if digits.is_valid_int():
+		return digits.to_int()
+	return 0
 
 func _finish_fall_sequence() -> void:
 	if _fall_phase == FallPhase.NONE:
@@ -399,7 +553,7 @@ func _finish_fall_sequence() -> void:
 func _clear_stale_chopper() -> void:
 	if _chopper != null and not is_instance_valid(_chopper):
 		_chopper = null
-		if _fall_phase == FallPhase.NONE:
+		if _fall_phase == FallPhase.NONE and _life_phase == TreeLifePhase.STANDING:
 			end_axe_strike()
 		set_chopper_draws_behind_tree(false)
 
@@ -445,6 +599,9 @@ func _refresh_sort_textures() -> void:
 		if texture != null:
 			textures.append(texture)
 	for texture in _fallen_chop_frames:
+		if texture != null:
+			textures.append(texture)
+	for texture in _tree_to_log_frames:
 		if texture != null:
 			textures.append(texture)
 	set_meta("_y_sort_extra_textures", textures)
