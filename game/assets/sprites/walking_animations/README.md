@@ -1,5 +1,7 @@
 # Walking animations
 
+> **Preferred location:** `game/assets/sprites/npc_animations/walking_animations/`
+
 Drop your Aseprite frame exports into the direction folders below.
 
 ## File naming (use this for every direction)

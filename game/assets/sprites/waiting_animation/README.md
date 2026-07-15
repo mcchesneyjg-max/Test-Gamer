@@ -1,6 +1,8 @@
 # Waiting animation
 
-Drop your Aseprite frame exports into this folder.
+> **Preferred location:** `game/assets/sprites/npc_animations/waiting_animation/`
+
+Drop your Aseprite frame exports into that folder.
 
 ## File naming
 

@@ -5,7 +5,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent / "assets" / "sprites" / "walking_animations"
+SPRITES_ROOT = Path(__file__).resolve().parent.parent / "assets" / "sprites"
+ROOT_CANDIDATES = [
+    SPRITES_ROOT / "npc_animations" / "walking_animations",
+    SPRITES_ROOT / "walking_animations",
+]
 
 DIRECTION_FOLDERS = [
     "walk_north",
@@ -83,12 +87,28 @@ def file_matches_folder(basename: str, folder_name: str) -> bool:
     return True
 
 
+def resolve_walk_root() -> Path | None:
+    for candidate in ROOT_CANDIDATES:
+        if candidate.is_dir():
+            return candidate
+    return None
+
+
 def main() -> None:
-    print("Walk animation check:", ROOT)
+    root = resolve_walk_root()
+    if root is None:
+        print("Walk animation check: no folder found.")
+        for candidate in ROOT_CANDIDATES:
+            print(f"  checked: {candidate}")
+        print("\nCreate:")
+        print("  game/assets/sprites/npc_animations/walking_animations/")
+        raise SystemExit(1)
+
+    print("Walk animation check:", root)
     missing_any = False
 
     for folder_name in DIRECTION_FOLDERS:
-        folder = ROOT / folder_name
+        folder = root / folder_name
         if not folder.exists():
             print(f"  [skip] {folder_name}/ folder not present")
             continue
@@ -116,7 +136,7 @@ def main() -> None:
 
     if missing_any:
         print("\nAdd your PNG files, then commit them to git:")
-        print("  git add game/assets/sprites/walking_animations/")
+        print("  git add game/assets/sprites/npc_animations/walking_animations/")
         print("  git commit -m \"Add walk animation PNG frames\"")
         raise SystemExit(1)
 

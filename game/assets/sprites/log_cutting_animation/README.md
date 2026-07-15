@@ -1,8 +1,10 @@
 # Log cutting animation
 
-Drop your Aseprite frame exports into this folder for the lumberjack cutting a **fallen** log.
+> **Location:** `game/assets/sprites/npc_animations/log_cutting_animation/`
 
-If this folder is empty, the game falls back to `wood_cutting_animation/`.
+Drop your Aseprite frame exports into that folder for the lumberjack cutting a **fallen** log.
+
+If that folder is empty, the game falls back to `npc_animations/wood_cutting_animation/`.
 
 ## File naming
 
@@ -26,7 +28,7 @@ Used during the tree's `fallen_tree_chop_animation` phase:
 ## Upload your PNGs
 
 ```cmd
-git add game\assets\sprites\log_cutting_animation\*.png
+git add game\assets\sprites\npc_animations\log_cutting_animation\*.png
 git commit -m "Add log cutting animation frames"
 git push
 ```
