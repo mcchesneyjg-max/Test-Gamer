@@ -1,17 +1,29 @@
 class_name CharacterWalk
 extends RefCounted
 
-const WALK_ANIMATIONS_ROOT := "res://assets/sprites/walking_animations"
-const WAITING_ANIMATIONS_ROOT := "res://assets/sprites/waiting_animation"
+const NPC_ANIMATIONS_BASE := "res://assets/sprites/npc_animations"
+const LEGACY_SPRITES_BASE := "res://assets/sprites"
 const WAITING_PREFIX := "waiting_animation"
-const WOOD_CUTTING_ROOT := "res://assets/sprites/wood_cutting_animation"
 const WOOD_CUTTING_PREFIX := "wood_cutting"
-const LOG_CUTTING_ROOT := "res://assets/sprites/log_cutting_animation"
-const LOG_CUTTING_FALLBACK_ROOTS: Array[String] = [
-	LOG_CUTTING_ROOT,
-	WOOD_CUTTING_ROOT,
+const WALK_ANIMATIONS_ROOT_CANDIDATES: Array[String] = [
+	"%s/walking_animations" % NPC_ANIMATIONS_BASE,
+	"%s/walking_animations" % LEGACY_SPRITES_BASE,
 ]
-const LOG_CUTTING_FALLBACK_PREFIXES: Array[String] = [
+const WAITING_ANIMATIONS_ROOT_CANDIDATES: Array[String] = [
+	"%s/waiting_animation" % NPC_ANIMATIONS_BASE,
+	"%s/waiting_animation" % LEGACY_SPRITES_BASE,
+]
+const WOOD_CUTTING_ROOT_CANDIDATES: Array[String] = [
+	"%s/wood_cutting_animation" % NPC_ANIMATIONS_BASE,
+	"%s/wood_cutting_animation" % LEGACY_SPRITES_BASE,
+]
+const LOG_CUTTING_ROOT_CANDIDATES: Array[String] = [
+	"%s/log_cutting_animation" % NPC_ANIMATIONS_BASE,
+	"%s/log_cutting_animation" % LEGACY_SPRITES_BASE,
+	"%s/wood_cutting_animation" % NPC_ANIMATIONS_BASE,
+	"%s/wood_cutting_animation" % LEGACY_SPRITES_BASE,
+]
+const LOG_CUTTING_PREFIXES: Array[String] = [
 	"log_cutting",
 	"log_cutting_animation",
 	WOOD_CUTTING_PREFIX,
@@ -86,14 +98,17 @@ static func apply_shared(sprite: AnimatedSprite2D, walk_speed: float = 10.0) -> 
 		print("CharacterWalk: loaded %d frames for %s" % [frame_textures.size(), folder_name])
 
 	if not loaded_any:
-		push_warning("CharacterWalk: no walk animations found under %s" % WALK_ANIMATIONS_ROOT)
+		push_warning(
+			"CharacterWalk: no walk animations found. Checked: %s"
+			% ", ".join(WALK_ANIMATIONS_ROOT_CANDIDATES)
+		)
 		return
 
 	var waiting_frames := _load_waiting_frames()
 	if waiting_frames.is_empty():
 		push_warning(
-			"CharacterWalk: no waiting frames found in %s — using idle fallback. "
-			% WAITING_ANIMATIONS_ROOT
+			"CharacterWalk: no waiting frames found — using idle fallback. Checked: %s"
+			% ", ".join(WAITING_ANIMATIONS_ROOT_CANDIDATES)
 		)
 		_add_idle_fallback_animation(frames)
 	else:
@@ -103,8 +118,8 @@ static func apply_shared(sprite: AnimatedSprite2D, walk_speed: float = 10.0) -> 
 	var wood_cutting_frames := _load_wood_cutting_frames()
 	if wood_cutting_frames.is_empty():
 		push_warning(
-			"CharacterWalk: no wood cutting frames found in %s"
-			% WOOD_CUTTING_ROOT
+			"CharacterWalk: no wood cutting frames found. Checked: %s"
+			% ", ".join(WOOD_CUTTING_ROOT_CANDIDATES)
 		)
 	else:
 		_add_wood_cutting_animation(frames, wood_cutting_frames, walk_speed)
@@ -113,8 +128,8 @@ static func apply_shared(sprite: AnimatedSprite2D, walk_speed: float = 10.0) -> 
 	var log_cutting_frames := _load_log_cutting_frames()
 	if log_cutting_frames.is_empty():
 		push_warning(
-			"CharacterWalk: no log cutting frames found in %s (also checked %s)"
-			% [LOG_CUTTING_ROOT, WOOD_CUTTING_ROOT]
+			"CharacterWalk: no log cutting frames found. Checked: %s"
+			% ", ".join(LOG_CUTTING_ROOT_CANDIDATES)
 		)
 	else:
 		_add_log_cutting_animation(frames, log_cutting_frames, walk_speed)
@@ -227,10 +242,11 @@ static func update_chopping(sprite: AnimatedSprite2D, delta: float = 0.0) -> voi
 	_advance_chopping(sprite, delta)
 
 static func _load_direction_frames(folder_name: String) -> Array[Texture2D]:
-	for candidate in _folder_candidates(folder_name):
-		var frame_textures := _load_frame_folder("%s/%s" % [WALK_ANIMATIONS_ROOT, candidate], candidate)
-		if not frame_textures.is_empty():
-			return frame_textures
+	for walk_root in WALK_ANIMATIONS_ROOT_CANDIDATES:
+		for candidate in _folder_candidates(folder_name):
+			var frame_textures := _load_frame_folder("%s/%s" % [walk_root, candidate], candidate)
+			if not frame_textures.is_empty():
+				return frame_textures
 	return []
 
 static func _folder_candidates(folder_name: String) -> Array[String]:
@@ -340,15 +356,23 @@ static func _add_idle_fallback_animation(frames: SpriteFrames) -> void:
 		frames.add_frame(&"idle", frames.get_frame_texture(fallback, 0))
 
 static func _load_waiting_frames() -> Array[Texture2D]:
-	return _load_png_sequence(WAITING_ANIMATIONS_ROOT, WAITING_PREFIX)
+	return load_png_sequence_from_candidates(
+		WAITING_ANIMATIONS_ROOT_CANDIDATES,
+		[WAITING_PREFIX],
+		true
+	)
 
 static func _load_wood_cutting_frames() -> Array[Texture2D]:
-	return _load_png_sequence(WOOD_CUTTING_ROOT, WOOD_CUTTING_PREFIX)
+	return load_png_sequence_from_candidates(
+		WOOD_CUTTING_ROOT_CANDIDATES,
+		[WOOD_CUTTING_PREFIX],
+		true
+	)
 
 static func _load_log_cutting_frames() -> Array[Texture2D]:
 	return load_png_sequence_from_candidates(
-		LOG_CUTTING_FALLBACK_ROOTS,
-		LOG_CUTTING_FALLBACK_PREFIXES,
+		LOG_CUTTING_ROOT_CANDIDATES,
+		LOG_CUTTING_PREFIXES,
 		true
 	)
 
