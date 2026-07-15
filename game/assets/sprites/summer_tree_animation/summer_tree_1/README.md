@@ -30,10 +30,9 @@ Any numbered `.png` in each folder also works as a fallback.
 ## Playback sequence
 
 1. **Idle/chop** — `axe_strike_animation` frames while lumberjack chops
-2. **Fall** — all `fall_animation` frames play once
-3. **Hold** — final fall frame (`summer_tree_fall_frame_12`) held for **1.5 seconds**
-4. **Fallen chop** — `fallen_tree_chop_animation` plays once
-5. Tree removed, lumberjack carries log to camp
+2. **Fall** — all `fall_animation` frames play once at the same speed (including frame 12)
+3. **Fallen chop** — `fallen_tree_chop_animation` plays once
+4. Tree removed, lumberjack carries log to camp
 
 ## After replacing this folder
 
