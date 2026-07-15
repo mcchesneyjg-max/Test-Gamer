@@ -40,7 +40,6 @@ const FALLEN_CHOP_PREFIXES: Array[String] = [
 const AXE_STRIKE_PLAY_SPEED := 10.0
 const FALL_ANIMATION_PLAY_SPEED := 10.0
 const FALLEN_CHOP_PLAY_SPEED := 20.0
-const FALL_FRAME_MAX := 11
 const FALL_HOLD_SECONDS := 1.5
 const CHOP_FOREGROUND_Z_INDEX := 4
 
@@ -247,7 +246,6 @@ func _load_fall_frames() -> void:
 		FALL_ANIMATION_PREFIXES,
 		true
 	)
-	_fall_frames = _filter_fall_frames_to_max(_fall_frames)
 	if _fall_frames.is_empty():
 		push_warning(
 			"MatureTree: no fall frames found for %s. Checked: %s"
@@ -325,31 +323,6 @@ func _set_variant_paths(variant_name: String) -> void:
 	_fallen_chop_root_candidates.append(
 		"%s/%s/fallen_tree_chop_animation" % [ANIMATION_BASE_PATH, variant_name]
 	)
-
-func _filter_fall_frames_to_max(frames: Array[Texture2D]) -> Array[Texture2D]:
-	var filtered: Array[Texture2D] = []
-	for texture in frames:
-		var frame_number := _get_png_frame_number(texture.resource_path)
-		if frame_number <= 0 or frame_number > FALL_FRAME_MAX:
-			continue
-		filtered.append(texture)
-	filtered.sort_custom(func(a: Texture2D, b: Texture2D) -> bool:
-		return _get_png_frame_number(a.resource_path) < _get_png_frame_number(b.resource_path)
-	)
-	return filtered
-
-func _get_png_frame_number(path: String) -> int:
-	var basename := path.get_file().get_basename()
-	var digits := ""
-	for i in range(basename.length() - 1, -1, -1):
-		var character := basename[i]
-		if character >= "0" and character <= "9":
-			digits = character + digits
-		elif not digits.is_empty():
-			break
-	if digits.is_valid_int():
-		return digits.to_int()
-	return 0
 
 func _log_loaded_sequence(
 	sequence_name: String,
