@@ -30,7 +30,7 @@ Each fall frame anchors by its trunk base so updated art stays grounded through 
 
 1. Lumberjack chops until the tree's final log is gathered.
 2. The tree plays through all fall animation frames once (no loop).
-3. The final fall frame (`summer_tree_fall_frame_12`) is held for **1.5 seconds**.
+3. The final fall frame (`summer_tree_fall_frame_11`) is held for **1.5 seconds**.
 4. The `fallen_tree_chop_animation` plays once for this tree variant.
 5. The lumberjack keeps waiting through the full sequence.
 6. When the fallen-chop animation finishes, the tree is removed and the lumberjack carries the log back to camp.
