@@ -1,11 +1,14 @@
 extends Node2D
 
 signal fall_animation_finished
+signal fall_hold_started
+signal fallen_chop_started
 
 ## Depletable wood source for future lumber camps.
 @export var harvest_remaining: int = 10
 @export var chop_stand_distance: float = 14.0
 @export var chop_stand_north_offset: float = 0.0
+@export var fallen_log_chop_offset: Vector2 = Vector2.ZERO
 
 const TREE_VARIANT_NAMES: Array[String] = [
 	"summer_tree_1",
@@ -126,6 +129,15 @@ func get_tree_variant() -> String:
 
 func is_falling() -> bool:
 	return _fall_phase != FallPhase.NONE
+
+func is_in_fall_hold() -> bool:
+	return _fall_phase == FallPhase.HOLD
+
+func is_in_fallen_chop() -> bool:
+	return _fall_phase == FallPhase.FALLEN_CHOP
+
+func get_fallen_log_chop_position() -> Vector2:
+	return position + fallen_log_chop_offset
 
 func begin_axe_strike() -> void:
 	if _fall_phase != FallPhase.NONE or _axe_strike_frames.is_empty():
@@ -361,6 +373,7 @@ func _begin_fall_hold() -> void:
 	_fall_phase = FallPhase.HOLD
 	_fall_elapsed = 0.0
 	_set_tree_texture(_fall_frames[_fall_frames.size() - 1], true)
+	fall_hold_started.emit()
 	print("MatureTree: holding final fall frame for %.1fs" % FALL_HOLD_SECONDS)
 
 func _advance_fall_hold(delta: float) -> void:
@@ -376,6 +389,7 @@ func _advance_fall_hold(delta: float) -> void:
 	_fall_phase = FallPhase.FALLEN_CHOP
 	_fall_elapsed = 0.0
 	_set_tree_texture(_fallen_chop_frames[0], true)
+	fallen_chop_started.emit()
 	print(
 		"MatureTree: started fallen chop animation for %s (%d frames)"
 		% [_tree_variant, _fallen_chop_frames.size()]
