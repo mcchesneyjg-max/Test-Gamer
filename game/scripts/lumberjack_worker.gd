@@ -50,13 +50,10 @@ func _update_animation(delta: float) -> void:
 	if _state == State.CHOPPING and _waiting_for_tree_fall:
 		match _fall_wait_phase:
 			FallWaitPhase.WALK_TO_LOG:
-				if _is_at_fallen_log_position():
-					CharacterWalk.update_motion(_body, false, Vector2.ZERO, delta)
-				else:
-					var walk_offset := _last_move_offset
-					if walk_offset.length_squared() <= 0.001:
-						walk_offset = WEST
-					CharacterWalk.update_motion(_body, true, walk_offset, delta)
+				var walk_offset := _last_move_offset
+				if walk_offset.length_squared() <= 0.001:
+					walk_offset = WEST
+				CharacterWalk.update_motion(_body, true, walk_offset, delta)
 			FallWaitPhase.CUT_LOG:
 				CharacterWalk.update_log_cutting(_body, delta)
 		return
@@ -140,8 +137,7 @@ func _process_fall_wait(delta: float) -> void:
 			if _is_at_fallen_log_position():
 				position = _fallen_log_position
 				_move_direction = Vector2.ZERO
-				if _target_tree.has_method("is_in_fallen_chop") and _target_tree.is_in_fallen_chop():
-					_begin_fallen_log_cutting()
+				_begin_fallen_log_cutting()
 				return
 			_move_toward(_fallen_log_position, delta)
 		FallWaitPhase.CUT_LOG:
@@ -163,12 +159,6 @@ func _begin_fall_wait(harvested: int) -> void:
 	)
 	if _target_tree.has_signal("fall_animation_finished"):
 		_target_tree.fall_animation_finished.connect(_on_tree_fall_finished, CONNECT_ONE_SHOT)
-	if _target_tree.has_signal("fallen_chop_started"):
-		_target_tree.fallen_chop_started.connect(_on_fallen_chop_started, CONNECT_ONE_SHOT)
-
-func _on_fallen_chop_started() -> void:
-	if _fall_wait_phase == FallWaitPhase.WALK_TO_LOG and _is_at_fallen_log_position():
-		_begin_fallen_log_cutting()
 
 func _begin_fallen_log_cutting() -> void:
 	if _fall_wait_phase == FallWaitPhase.CUT_LOG:
