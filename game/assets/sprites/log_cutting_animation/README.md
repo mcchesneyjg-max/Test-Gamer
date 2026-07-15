@@ -20,7 +20,7 @@ Also accepted: `log_cutting_animation_1.png`, etc.
 
 Used during the tree's `fallen_tree_chop_animation` phase:
 
-1. Tree finishes falling and holds the final fall frame for 1.5 seconds
+1. Tree finishes falling (all fall frames at equal speed)
 2. Lumberjack walks west to the center of the fallen tree
 3. Lumberjack plays this log cutting animation (frames 1–N once, then loops from frame 4)
 4. Tree plays `fallen_tree_chop_animation` frames at the same time
