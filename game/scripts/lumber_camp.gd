@@ -12,7 +12,7 @@ const WORKER_OFFSETS: Array[Vector2] = [
 	Vector2(22, 42),
 ]
 
-@export var chop_interval: float = 8.0
+@export var chop_interval: float = 2.0
 @export var chop_radius_tiles: int = 6
 
 @onready var _storage = $StorageAreas
