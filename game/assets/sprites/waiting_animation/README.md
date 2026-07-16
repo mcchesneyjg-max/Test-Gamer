@@ -1,8 +1,8 @@
 # Waiting animation
 
-> **Preferred location:** `game/assets/sprites/npc_animations/waiting_animation/`
+> **Canonical location:** `game/assets/sprites/npc_animations/waiting_animation/`
 
-Drop your Aseprite frame exports into that folder.
+This legacy folder keeps documentation only. **Do not add PNGs here** — put frames in `npc_animations/waiting_animation/` instead.
 
 ## File naming
 
@@ -25,8 +25,8 @@ waiting_animation_12.png
 From your project folder in Command Prompt:
 
 ```cmd
-git pull origin main
-git add -A game\assets\sprites\waiting_animation\
+git pull --no-rebase origin main
+git add -A game\assets\sprites\npc_animations\waiting_animation\
 git commit -m "Update waiting animation frames"
 git push
 ```
