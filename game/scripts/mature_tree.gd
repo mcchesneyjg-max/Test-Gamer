@@ -456,10 +456,11 @@ func _finish_stump_cutting_animation() -> void:
 	stump_cutting_finished.emit()
 	remove_stump()
 
-func _load_tree_to_log_frames() -> void:
-	if not _tree_to_log_frames.is_empty():
+func _load_tree_to_log_frames(force_reload: bool = false) -> void:
+	if not force_reload and not _tree_to_log_frames.is_empty():
 		return
 
+	_tree_to_log_frames.clear()
 	var roots: Array[String] = [TREE_TO_LOG_ROOT]
 	_tree_to_log_frames = CharacterWalk.load_png_sequence_from_candidates(
 		roots,
@@ -602,7 +603,7 @@ func _advance_fallen_chop_animation(delta: float) -> void:
 	_set_tree_texture(_fallen_chop_frames[frame_index], true)
 
 func _begin_first_log_pickup_animation() -> void:
-	_load_tree_to_log_frames()
+	_load_tree_to_log_frames(true)
 	if _tree_to_log_frames.is_empty():
 		_complete_log_pickup_step()
 		return
@@ -635,6 +636,7 @@ func _finish_first_log_pickup_animation() -> void:
 	log_pickup_animation_finished.emit()
 
 func _begin_log_pile_phase() -> void:
+	_load_tree_to_log_frames(true)
 	_fall_phase = FallPhase.NONE
 	_life_phase = TreeLifePhase.LOG_PILE
 	_log_pile_pickups_remaining = LOG_PILE_PICKUPS
@@ -647,6 +649,7 @@ func _begin_log_pile_phase() -> void:
 	)
 
 func _show_log_pile_frame(frame_number: int) -> void:
+	_load_tree_to_log_frames(true)
 	var texture := _get_tree_to_log_texture(frame_number)
 	if texture == null:
 		push_warning("MatureTree: missing tree-to-log frame %d" % frame_number)

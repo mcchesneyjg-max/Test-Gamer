@@ -27,9 +27,22 @@ Also accepted: `log_post_tree_fall_N.png`, `tree_to_log_N.png`, or any numbered 
 
 The lumberjack does **not** carry logs during standing-tree chopping or during tree animations. Logs are only collected after the pile is ready (frame 2) and on return trips to the pile.
 
-## Upload
+## Re-uploading new art
+
+Replace the PNGs in this folder, then:
 
 ```cmd
+git add -A game\assets\sprites\tree_to_log_animation\
+git commit -m "Update tree to log animation frames"
+git push
+```
+
+Reload the Godot project (**Project → Reload Current Project**). The game reloads every PNG from disk when the log pile appears or updates, so new artwork is picked up automatically on the next tree.
+
+## First upload
+
+```cmd
+git pull --no-rebase origin main
 git add game\assets\sprites\tree_to_log_animation\*.png
 git commit -m "Add tree to log animation frames"
 git push
