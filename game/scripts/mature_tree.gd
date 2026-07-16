@@ -5,6 +5,7 @@ signal fallen_chop_started
 signal log_pile_ready
 signal log_pile_pickup_taken(remaining: int)
 signal log_pickup_animation_finished
+signal stump_cutting_finished
 
 ## Depletable wood source for future lumber camps.
 @export var harvest_remaining: int = 10
@@ -49,6 +50,12 @@ const TREE_TO_LOG_PREFIXES: Array[String] = [
 	"tree_to_log",
 ]
 const TREE_TO_LOG_PLAY_SPEED := 10.0
+const STUMP_CUTTING_ROOT := "res://assets/sprites/stump_cutting_animation"
+const STUMP_CUTTING_PREFIXES: Array[String] = [
+	"stump_cutting_animation",
+	"stump_cutting",
+]
+const STUMP_CUTTING_PLAY_SPEED := 10.0
 const TREE_TO_LOG_ANIM_END_FRAME := 2
 const LOG_PILE_PICKUPS := 3
 const CHOP_FOREGROUND_Z_INDEX := 4
@@ -68,6 +75,9 @@ var _axe_strike_frames: Array[Texture2D] = []
 var _fall_frames: Array[Texture2D] = []
 var _fallen_chop_frames: Array[Texture2D] = []
 var _tree_to_log_frames: Array[Texture2D] = []
+var _stump_cutting_frames: Array[Texture2D] = []
+var _stump_cutting_active: bool = false
+var _stump_cutting_elapsed: float = 0.0
 var _life_phase: TreeLifePhase = TreeLifePhase.STANDING
 var _log_pile_pickups_remaining: int = 0
 var _pickup_animating: bool = false
@@ -96,6 +106,10 @@ func _ready() -> void:
 	_setup_chop_foreground_sprite()
 
 func _process(delta: float) -> void:
+	if _stump_cutting_active:
+		_advance_stump_cutting_animation(delta)
+		return
+
 	match _fall_phase:
 		FallPhase.FALLING:
 			_advance_fall_animation(delta)
@@ -259,6 +273,30 @@ func remove_stump() -> void:
 	print("MatureTree: removed depleted stump at %s" % position)
 	queue_free()
 
+func begin_stump_cutting_animation() -> bool:
+	if not is_depleted_stump() or _stump_cutting_active:
+		return false
+
+	_load_stump_cutting_frames()
+	if _stump_cutting_frames.is_empty():
+		push_warning(
+			"MatureTree: no stump cutting frames found in %s"
+			% STUMP_CUTTING_ROOT
+		)
+		return false
+
+	_stump_cutting_active = true
+	_stump_cutting_elapsed = 0.0
+	_set_tree_texture(_stump_cutting_frames[0], true)
+	print(
+		"MatureTree: started stump cutting animation (%d frames)"
+		% _stump_cutting_frames.size()
+	)
+	return true
+
+func is_stump_cutting_animating() -> bool:
+	return _stump_cutting_active
+
 func harvest(amount: int = 1, chopper: Node = null) -> int:
 	if _life_phase == TreeLifePhase.LOG_PILE:
 		if try_begin_log_pickup(chopper):
@@ -373,6 +411,49 @@ func _load_fallen_chop_frames() -> void:
 	else:
 		_refresh_sort_textures()
 		_log_loaded_sequence("fallen_chop", _fallen_chop_frames, _fallen_chop_root_candidates)
+
+func _load_stump_cutting_frames() -> void:
+	if not _stump_cutting_frames.is_empty():
+		return
+
+	var roots: Array[String] = [STUMP_CUTTING_ROOT]
+	_stump_cutting_frames = CharacterWalk.load_png_sequence_from_candidates(
+		roots,
+		STUMP_CUTTING_PREFIXES,
+		true
+	)
+	if _stump_cutting_frames.is_empty():
+		push_warning(
+			"MatureTree: no stump cutting frames found in %s"
+			% STUMP_CUTTING_ROOT
+		)
+	else:
+		_refresh_sort_textures()
+		print(
+			"MatureTree: loaded %d stump cutting frames from %s"
+			% [_stump_cutting_frames.size(), STUMP_CUTTING_ROOT]
+		)
+
+func _advance_stump_cutting_animation(delta: float) -> void:
+	if _stump_cutting_frames.is_empty():
+		_finish_stump_cutting_animation()
+		return
+
+	_stump_cutting_elapsed += delta
+	var frame_index := int(_stump_cutting_elapsed * STUMP_CUTTING_PLAY_SPEED)
+	if frame_index >= _stump_cutting_frames.size():
+		_finish_stump_cutting_animation()
+		return
+	_set_tree_texture(_stump_cutting_frames[frame_index], true)
+
+func _finish_stump_cutting_animation() -> void:
+	if not _stump_cutting_active:
+		return
+
+	_stump_cutting_active = false
+	_stump_worker = null
+	stump_cutting_finished.emit()
+	remove_stump()
 
 func _load_tree_to_log_frames() -> void:
 	if not _tree_to_log_frames.is_empty():
@@ -664,6 +745,9 @@ func _refresh_sort_textures() -> void:
 		if texture != null:
 			textures.append(texture)
 	for texture in _tree_to_log_frames:
+		if texture != null:
+			textures.append(texture)
+	for texture in _stump_cutting_frames:
 		if texture != null:
 			textures.append(texture)
 	set_meta("_y_sort_extra_textures", textures)

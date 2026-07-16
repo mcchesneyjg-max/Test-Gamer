@@ -5,7 +5,6 @@ enum State { IDLE, TO_STUMP, REMOVING_STUMP, TO_SITE, PLANTING, TO_HOME }
 const ARRIVE_DISTANCE := 8.0
 const PLANT_DURATION := 0.9
 const STUMP_REMOVAL_FALLBACK_DURATION := 1.2
-const STUMP_REMOVAL_CHOP_CYCLES := 3
 
 @export var move_speed: float = 49.13
 @export var stump_removal_east_offset: float = 10.0
@@ -20,7 +19,7 @@ var _action_timer: float = 0.0
 var _move_direction := Vector2.ZERO
 var _last_move_offset := Vector2.ZERO
 var _using_log_cut_fallback: bool = false
-var _stump_chop_cycles_done: int = 0
+var _using_stump_sprite_animation: bool = false
 
 @onready var _body: AnimatedSprite2D = $Body
 
@@ -84,6 +83,10 @@ func _process_to_stump(delta: float) -> void:
 	_begin_stump_removal()
 
 func _process_removing_stump(delta: float) -> void:
+	if _using_stump_sprite_animation:
+		position = _work_site
+		return
+
 	if not _is_stump_valid():
 		_return_idle()
 		return
@@ -94,11 +97,11 @@ func _process_removing_stump(delta: float) -> void:
 		_action_timer -= delta
 		if _action_timer > 0.0:
 			return
-		_on_stump_chop_cycle_finished()
+		_finish_stump_removal()
 		return
 
 	if CharacterWalk.poll_log_cutting_intro_finished(_body):
-		_on_stump_chop_cycle_finished()
+		_finish_stump_removal()
 
 func _process_to_site(delta: float) -> void:
 	_move_toward(_plant_site, delta)
@@ -155,24 +158,37 @@ func _try_start_job() -> void:
 	_move_direction = Vector2.ZERO
 
 func _begin_stump_removal() -> void:
-	_stump_chop_cycles_done = 0
+	_using_stump_sprite_animation = false
 	_using_log_cut_fallback = _body.sprite_frames == null or not _body.sprite_frames.has_animation(&"log_cutting")
 	if _using_log_cut_fallback:
 		_action_timer = STUMP_REMOVAL_FALLBACK_DURATION
 	else:
 		CharacterWalk.reset_log_cutting(_body)
+
+	if _is_stump_valid() and _target_stump.has_method("begin_stump_cutting_animation"):
+		if _target_stump.begin_stump_cutting_animation():
+			_using_stump_sprite_animation = true
+			_connect_stump_cutting_finished_signal()
+
 	_state = State.REMOVING_STUMP
 	_move_direction = Vector2.ZERO
 
-func _on_stump_chop_cycle_finished() -> void:
-	_stump_chop_cycles_done += 1
-	if _stump_chop_cycles_done < STUMP_REMOVAL_CHOP_CYCLES:
-		if _using_log_cut_fallback:
-			_action_timer = STUMP_REMOVAL_FALLBACK_DURATION
-		else:
-			CharacterWalk.reset_log_cutting(_body)
+func _connect_stump_cutting_finished_signal() -> void:
+	if not _is_stump_valid():
 		return
-	_finish_stump_removal()
+	if not _target_stump.has_signal("stump_cutting_finished"):
+		return
+	if _target_stump.stump_cutting_finished.is_connected(_on_stump_cutting_finished):
+		_target_stump.stump_cutting_finished.disconnect(_on_stump_cutting_finished)
+	_target_stump.stump_cutting_finished.connect(_on_stump_cutting_finished, CONNECT_ONE_SHOT)
+
+func _on_stump_cutting_finished() -> void:
+	_using_stump_sprite_animation = false
+	_target_stump = null
+	_work_site = Vector2.ZERO
+	_using_log_cut_fallback = false
+	_state = State.TO_HOME
+	_move_direction = Vector2.ZERO
 
 func _finish_stump_removal() -> void:
 	if _is_stump_valid() and _target_stump.has_method("remove_stump"):
@@ -180,7 +196,7 @@ func _finish_stump_removal() -> void:
 	_target_stump = null
 	_work_site = Vector2.ZERO
 	_using_log_cut_fallback = false
-	_stump_chop_cycles_done = 0
+	_using_stump_sprite_animation = false
 	_state = State.TO_HOME
 	_move_direction = Vector2.ZERO
 
@@ -190,7 +206,7 @@ func _return_idle() -> void:
 	_work_site = Vector2.ZERO
 	_target_stump = null
 	_using_log_cut_fallback = false
-	_stump_chop_cycles_done = 0
+	_using_stump_sprite_animation = false
 	_state = State.IDLE
 	_idle_timer = 0.25
 	_move_direction = Vector2.ZERO
