@@ -32,7 +32,7 @@ func setup(camp: Node2D) -> void:
 
 func _ready() -> void:
 	add_to_group("lumberjack_worker")
-	CharacterWalk.apply_shared(_body, 10.0, 40.0)
+	CharacterWalk.apply_shared(_body, 10.0)
 	_cargo.visible = false
 
 func _process(delta: float) -> void:

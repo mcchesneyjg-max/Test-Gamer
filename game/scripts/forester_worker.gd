@@ -26,7 +26,7 @@ func setup(lodge: Node2D) -> void:
 
 func _ready() -> void:
 	add_to_group("forester_worker")
-	CharacterWalk.apply_shared(_body, 10.0, 40.0)
+	CharacterWalk.apply_shared(_body, 10.0)
 
 func _process(delta: float) -> void:
 	_last_move_offset = Vector2.ZERO
