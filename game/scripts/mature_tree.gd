@@ -277,7 +277,7 @@ func begin_stump_cutting_animation() -> bool:
 	if not is_depleted_stump() or _stump_cutting_active:
 		return false
 
-	_load_stump_cutting_frames()
+	_load_stump_cutting_frames(true)
 	if _stump_cutting_frames.is_empty():
 		push_warning(
 			"MatureTree: no stump cutting frames found in %s"
@@ -412,10 +412,11 @@ func _load_fallen_chop_frames() -> void:
 		_refresh_sort_textures()
 		_log_loaded_sequence("fallen_chop", _fallen_chop_frames, _fallen_chop_root_candidates)
 
-func _load_stump_cutting_frames() -> void:
-	if not _stump_cutting_frames.is_empty():
+func _load_stump_cutting_frames(force_reload: bool = false) -> void:
+	if not force_reload and not _stump_cutting_frames.is_empty():
 		return
 
+	_stump_cutting_frames.clear()
 	var roots: Array[String] = [STUMP_CUTTING_ROOT]
 	_stump_cutting_frames = CharacterWalk.load_png_sequence_from_candidates(
 		roots,
