@@ -56,6 +56,8 @@ static func footprint_world_position(tilemap: TileMap, top_left: Vector2i) -> Ve
 
 func _ready() -> void:
 	_level = clampi(level, 1, 3)
+	if _footprint_initialized:
+		_apply_placement_position()
 	_apply_level_visual()
 	ForesterLodgeRegistry.register_lodge(self)
 	_update_spawn_label()
@@ -73,8 +75,7 @@ func _process(_delta: float) -> void:
 func initialize_placement(top_left: Vector2i) -> void:
 	_footprint_top_left = top_left
 	_footprint_initialized = true
-	if _tilemap != null:
-		position = footprint_world_position(_tilemap, top_left)
+	_apply_placement_position()
 
 func get_min_zone_tile_count() -> int:
 	return min_zone_tiles
@@ -124,7 +125,11 @@ func get_plant_zone() -> Rect2i:
 	return _plant_zone
 
 func get_lodge_tile() -> Vector2i:
-	return _footprint_top_left + Vector2i(1, 1)
+	if _footprint_initialized:
+		return _footprint_top_left + Vector2i(1, 1)
+	if _tilemap != null:
+		return _tilemap.local_to_map(position)
+	return _footprint_top_left
 
 func get_zone_status_text() -> String:
 	if not _has_plant_zone:
@@ -132,14 +137,13 @@ func get_zone_status_text() -> String:
 	return "Zone: %dx%d (%d tiles)" % [_plant_zone.size.x, _plant_zone.size.y, _plant_zone.size.x * _plant_zone.size.y]
 
 func validate_plant_zone(zone: Rect2i) -> String:
-	_ensure_footprint_initialized()
 	var normalized := _normalize_zone(zone)
 	var tile_count := normalized.size.x * normalized.size.y
 	if tile_count < min_zone_tiles:
 		return "Zone too small (min %d tiles)" % min_zone_tiles
 	if tile_count > max_zone_tiles:
 		return "Zone too large (max %d tiles)" % max_zone_tiles
-	if not _zone_includes_footprint(normalized):
+	if not normalized.has_point(get_lodge_tile()):
 		return "Zone must include the forester lodge"
 	return ""
 
@@ -410,22 +414,11 @@ func _normalize_zone(zone: Rect2i) -> Rect2i:
 	var y1 := maxi(zone.position.y, zone.position.y + zone.size.y - 1)
 	return Rect2i(x0, y0, x1 - x0 + 1, y1 - y0 + 1)
 
-func _ensure_footprint_initialized() -> void:
-	if _footprint_initialized:
+func _apply_placement_position() -> void:
+	var tilemap := _tilemap if _tilemap != null else get_parent() as TileMap
+	if tilemap == null:
 		return
-	if _tilemap == null:
-		return
-	_footprint_top_left = _tilemap.local_to_map(position) - Vector2i(1, 1)
-	_footprint_initialized = true
-
-func _zone_includes_footprint(zone: Rect2i) -> bool:
-	var footprint := get_footprint_rect()
-	return (
-		zone.position.x <= footprint.position.x
-		and zone.position.y <= footprint.position.y
-		and zone.position.x + zone.size.x >= footprint.position.x + footprint.size.x
-		and zone.position.y + zone.size.y >= footprint.position.y + footprint.size.y
-	)
+	position = footprint_world_position(tilemap, _footprint_top_left)
 
 func _prune_invalid_saplings() -> void:
 	for i in range(_spawned_saplings.size() - 1, -1, -1):
