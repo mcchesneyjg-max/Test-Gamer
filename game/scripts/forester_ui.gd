@@ -144,7 +144,8 @@ func _update_draw_preview() -> void:
 	if _draw_anchor.x < -999999 or _selected_lodge == null:
 		return
 	var zone := _rect_from_tiles(_draw_anchor, _draw_current)
-	var is_valid := _selected_lodge.validate_plant_zone(zone).is_empty()
+	var validation_error: String = _selected_lodge.validate_plant_zone(zone)
+	var is_valid := validation_error.is_empty()
 	_zone_overlay.set_preview_zone(zone, true, is_valid)
 
 func _rect_from_tiles(a: Vector2i, b: Vector2i) -> Rect2i:
