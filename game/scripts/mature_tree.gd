@@ -60,7 +60,7 @@ const STUMP_CUTTING_PLAY_SPEED := 10.0
 const CHOP_FOREGROUND_Z_INDEX := 4
 
 enum TreeLifePhase { STANDING, LOG_PILE, DEPLETED }
-enum FallPhase { NONE, FALLING }
+enum FallPhase { NONE, FALLING, FALLEN_CHOP }
 
 var _chopper: Node = null
 var _stump_worker: Node = null
@@ -111,6 +111,8 @@ func _process(delta: float) -> void:
 	match _fall_phase:
 		FallPhase.FALLING:
 			_advance_fall_animation(delta)
+		FallPhase.FALLEN_CHOP:
+			_advance_fallen_chop_animation(delta)
 		_:
 			if _axe_strike_active and not _axe_strike_frames.is_empty():
 				_axe_strike_elapsed += delta
@@ -172,7 +174,7 @@ func is_log_pile() -> bool:
 	return _life_phase == TreeLifePhase.LOG_PILE and _log_pile_pickups_remaining > 0
 
 func is_in_fallen_chop() -> bool:
-	return false
+	return _fall_phase == FallPhase.FALLEN_CHOP
 
 func is_in_tree_to_log() -> bool:
 	return _life_phase == TreeLifePhase.LOG_PILE and _log_pile_pickups_remaining > 0
@@ -387,10 +389,11 @@ func _load_fall_frames() -> void:
 		_refresh_sort_textures()
 		_log_loaded_sequence("fall", _fall_frames, _fall_animation_root_candidates)
 
-func _load_fallen_chop_frames() -> void:
-	if not _fallen_chop_frames.is_empty():
+func _load_fallen_chop_frames(force_reload: bool = false) -> void:
+	if not force_reload and not _fallen_chop_frames.is_empty():
 		return
 
+	_fallen_chop_frames.clear()
 	_fallen_chop_frames = CharacterWalk.load_png_sequence_from_candidates(
 		_fallen_chop_root_candidates,
 		FALLEN_CHOP_PREFIXES,
@@ -564,9 +567,40 @@ func _advance_fall_animation(delta: float) -> void:
 	_fall_elapsed += delta
 	var frame_index := int(_fall_elapsed * FALL_ANIMATION_PLAY_SPEED)
 	if frame_index >= _fall_frames.size():
-		_begin_log_pile_phase()
+		_begin_fallen_chop()
 		return
 	_set_tree_texture(_fall_frames[frame_index], true)
+
+func _begin_fallen_chop() -> void:
+	_load_fallen_chop_frames(true)
+	if _fallen_chop_frames.is_empty():
+		push_warning(
+			"MatureTree: no fallen chop frames for %s — skipping to log pile"
+			% _tree_variant
+		)
+		_begin_log_pile_phase()
+		return
+
+	_fall_phase = FallPhase.FALLEN_CHOP
+	_fall_elapsed = 0.0
+	_set_tree_texture(_fallen_chop_frames[0], true)
+	fallen_chop_started.emit()
+	print(
+		"MatureTree: started fallen chop animation for %s (%d frames)"
+		% [_tree_variant, _fallen_chop_frames.size()]
+	)
+
+func _advance_fallen_chop_animation(delta: float) -> void:
+	if _fallen_chop_frames.is_empty():
+		_begin_log_pile_phase()
+		return
+
+	_fall_elapsed += delta
+	var frame_index := int(_fall_elapsed * FALLEN_CHOP_PLAY_SPEED)
+	if frame_index >= _fallen_chop_frames.size():
+		_begin_log_pile_phase()
+		return
+	_set_tree_texture(_fallen_chop_frames[frame_index], true)
 
 func _begin_log_pile_phase() -> void:
 	_fall_phase = FallPhase.NONE

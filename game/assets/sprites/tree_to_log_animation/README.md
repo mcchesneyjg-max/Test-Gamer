@@ -17,10 +17,11 @@ Also accepted: `log_post_tree_fall_N.png`, `tree_to_log_N.png`, or any numbered 
 
 ## In-game behavior
 
-1. As soon as the tree **fall animation** finishes, the tree-to-log pile appears as `logs_post_tree_fall_2` while the lumberjack walks over.
-2. When the lumberjack picks up the **first** log, the image switches to `logs_post_tree_fall_3`.
-3. **Second** pickup → `logs_post_tree_fall_4`.
-4. **Third** (final) pickup → `logs_post_tree_fall_5`, then the pile is depleted.
+1. Tree **fall animation** finishes, then the full **fallen_tree_chop_animation** plays on the tree (all frames in that folder).
+2. When fallen chop completes, the log pile appears as `logs_post_tree_fall_2`.
+3. When the lumberjack picks up the **first** log, the image switches to `logs_post_tree_fall_3`.
+4. **Second** pickup → `logs_post_tree_fall_4`.
+5. **Third** (final) pickup → `logs_post_tree_fall_5`, then the pile is depleted.
 
 Each pickup also plays the bending-down pickup animation on the worker before the frame changes.
 
