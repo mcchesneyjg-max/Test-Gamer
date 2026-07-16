@@ -11,6 +11,7 @@ bending_down_pickup_1.png
 bending_down_pickup_2.png
 bending_down_pickup_3.png
 ...
+bending_down_pickup_10.png
 ```
 
 Also accepted: `bending_down_pickup_animation_N.png`, or any numbered PNG in the folder.
@@ -27,9 +28,19 @@ Applies to:
 - **Lumberjack** — picking up logs from a fallen log pile
 - **Hauler** — picking up logs from a lumber camp output pile
 
-## Upload your PNGs (required — merging the PR is not enough)
+## Re-uploading new art
 
-From your project folder in Command Prompt:
+Replace the PNGs in this folder, then:
+
+```cmd
+git add -A game\assets\sprites\npc_animations\bending_down_pickup\
+git commit -m "Update bending down pickup animation frames"
+git push
+```
+
+Reload the Godot project (**Project → Reload Current Project**). The game reloads every PNG from disk when a character starts bending down to pick up a log, so new frame counts and artwork are picked up automatically on the next pickup.
+
+## First upload
 
 ```cmd
 git pull --no-rebase origin main
@@ -38,6 +49,8 @@ git commit -m "Add bending down pickup animation frames"
 git push
 ```
 
+Then reload the Godot project (**Project → Reload Current Project**).
+
 ## Test in Godot
 
 1. **Project → Reload Current Project**
@@ -45,6 +58,6 @@ git push
 3. Watch a lumberjack or hauler pick up a log
 4. Check the **Output** panel — you should see:
    ```
-   CharacterWalk: loaded N bending down pickup frames
+   CharacterWalk: began bending down pickup (10 frames)
    ```
-   If you see a warning about "no bending down pickup frames found", the PNGs are missing or misnamed.
+   If pickup skips the bend, the PNGs are missing or misnamed.
