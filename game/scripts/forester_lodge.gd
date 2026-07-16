@@ -42,6 +42,7 @@ var _pending_zone_wake: bool = false
 var _plant_zone: Rect2i = Rect2i()
 var _has_plant_zone: bool = false
 var _footprint_top_left: Vector2i = Vector2i.ZERO
+var _footprint_initialized: bool = false
 var _level: int = 1
 
 static func get_footprint_size() -> Vector2i:
@@ -55,6 +56,8 @@ static func footprint_world_position(tilemap: TileMap, top_left: Vector2i) -> Ve
 
 func _ready() -> void:
 	_level = clampi(level, 1, 3)
+	if _footprint_initialized:
+		_apply_placement_position()
 	_apply_level_visual()
 	ForesterLodgeRegistry.register_lodge(self)
 	_update_spawn_label()
@@ -71,8 +74,14 @@ func _process(_delta: float) -> void:
 
 func initialize_placement(top_left: Vector2i) -> void:
 	_footprint_top_left = top_left
-	if _tilemap != null:
-		position = footprint_world_position(_tilemap, top_left)
+	_footprint_initialized = true
+	_apply_placement_position()
+
+func get_min_zone_tile_count() -> int:
+	return min_zone_tiles
+
+func get_max_zone_tile_count() -> int:
+	return max_zone_tiles
 
 func get_level_name() -> String:
 	match _level:
@@ -116,7 +125,11 @@ func get_plant_zone() -> Rect2i:
 	return _plant_zone
 
 func get_lodge_tile() -> Vector2i:
-	return _footprint_top_left + Vector2i(1, 1)
+	if _footprint_initialized:
+		return _footprint_top_left + Vector2i(1, 1)
+	if _tilemap != null:
+		return _tilemap.local_to_map(position)
+	return _footprint_top_left
 
 func get_zone_status_text() -> String:
 	if not _has_plant_zone:
@@ -126,14 +139,12 @@ func get_zone_status_text() -> String:
 func validate_plant_zone(zone: Rect2i) -> String:
 	var normalized := _normalize_zone(zone)
 	var tile_count := normalized.size.x * normalized.size.y
-	var required_min_tiles := maxi(min_zone_tiles, get_footprint_tiles().size())
-	if tile_count < required_min_tiles:
-		return "Zone too small (min %d tiles)" % required_min_tiles
+	if tile_count < min_zone_tiles:
+		return "Zone too small (min %d tiles)" % min_zone_tiles
 	if tile_count > max_zone_tiles:
 		return "Zone too large (max %d tiles)" % max_zone_tiles
-	for tile in get_footprint_tiles():
-		if not normalized.has_point(tile):
-			return "Zone must include the forester lodge"
+	if not normalized.has_point(get_lodge_tile()):
+		return "Zone must include the forester lodge"
 	return ""
 
 func set_plant_zone(zone: Rect2i) -> String:
@@ -402,6 +413,12 @@ func _normalize_zone(zone: Rect2i) -> Rect2i:
 	var x1 := maxi(zone.position.x, zone.position.x + zone.size.x - 1)
 	var y1 := maxi(zone.position.y, zone.position.y + zone.size.y - 1)
 	return Rect2i(x0, y0, x1 - x0 + 1, y1 - y0 + 1)
+
+func _apply_placement_position() -> void:
+	var tilemap := _tilemap if _tilemap != null else get_parent() as TileMap
+	if tilemap == null:
+		return
+	position = footprint_world_position(tilemap, _footprint_top_left)
 
 func _prune_invalid_saplings() -> void:
 	for i in range(_spawned_saplings.size() - 1, -1, -1):
