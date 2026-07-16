@@ -1,8 +1,10 @@
 # Walking animations
 
-> **Preferred location:** `game/assets/sprites/npc_animations/walking_animations/`
+> **Canonical location:** `game/assets/sprites/npc_animations/walking_animations/`
 
-Drop your Aseprite frame exports into the direction folders below.
+This legacy folder keeps documentation only. **Do not add PNGs here** — put frames in `npc_animations/walking_animations/` instead.
+
+Drop your Aseprite frame exports into the direction folders under `npc_animations/walking_animations/`.
 
 ## File naming (use this for every direction)
 
@@ -55,9 +57,9 @@ Each PNG is one full frame (not a sprite sheet). Use a **transparent background*
 1. Save PNGs in the matching folder (the `.png` files must be present — `.import` files alone are not enough)
 2. Commit the PNGs to git:
    ```cmd
-   git add game/assets/sprites/walking_animations/walk_south/*.png
-   git add game/assets/sprites/walking_animations/walk_south_east/*.png
-   git add game/assets/sprites/walking_animations/walk_south_west/*.png
+   git add game/assets/sprites/npc_animations/walking_animations/walk_south/*.png
+   git add game/assets/sprites/npc_animations/walking_animations/walk_south_east/*.png
+   git add game/assets/sprites/npc_animations/walking_animations/walk_south_west/*.png
    git commit -m "Add walk south animation frames"
    git push
    ```

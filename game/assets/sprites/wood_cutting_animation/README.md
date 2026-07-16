@@ -1,8 +1,8 @@
 # Wood cutting animation
 
-> **Preferred location:** `game/assets/sprites/npc_animations/wood_cutting_animation/`
+> **Canonical location:** `game/assets/sprites/npc_animations/wood_cutting_animation/`
 
-Drop your Aseprite frame exports into that folder.
+This legacy folder keeps documentation only. **Do not add PNGs here** — put frames in `npc_animations/wood_cutting_animation/` instead.
 
 ## File naming
 
@@ -25,7 +25,7 @@ Also accepted: `wood_cutting_animation_1.png`, etc.
 Paste files into this folder first, then:
 
 ```cmd
-git add game\assets\sprites\wood_cutting_animation\*.png
+git add game\assets\sprites\npc_animations\wood_cutting_animation\*.png
 git commit -m "Add wood cutting animation frames"
 git push
 ```
