@@ -27,6 +27,11 @@ var _stump_chop_cycles_done: int = 0
 func setup(lodge: Node2D) -> void:
 	_lodge = lodge
 
+func on_plant_zone_ready() -> void:
+	_idle_timer = 0.0
+	if _state == State.IDLE:
+		_try_start_job()
+
 func _ready() -> void:
 	add_to_group("forester_worker")
 	CharacterWalk.apply_shared(_body, 10.0)
@@ -122,6 +127,8 @@ func _process_to_home(delta: float) -> void:
 
 func _try_start_job() -> void:
 	if not _is_lodge_valid() or not _lodge.has_plant_zone():
+		return
+	if _lodge.has_method("has_work_in_zone") and not _lodge.has_work_in_zone(self):
 		return
 
 	var stump: Node2D = _lodge.find_stump_in_zone(position, self)

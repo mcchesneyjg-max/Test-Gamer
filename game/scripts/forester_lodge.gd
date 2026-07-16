@@ -137,6 +137,7 @@ func set_plant_zone(zone: Rect2i) -> String:
 	_has_plant_zone = true
 	plant_zone_changed.emit(_plant_zone)
 	_update_spawn_label()
+	_notify_worker_zone_ready()
 	return ""
 
 func clear_plant_zone() -> void:
@@ -153,6 +154,15 @@ func can_plant_sapling() -> bool:
 	_prune_invalid_saplings()
 	return _has_plant_zone and _spawned_saplings.size() < max_saplings
 
+func has_work_in_zone(for_worker: Node2D = null) -> bool:
+	if not _has_plant_zone:
+		return false
+	if _has_stump_in_zone(for_worker):
+		return true
+	if can_plant_sapling() and find_plant_site() != Vector2.ZERO:
+		return true
+	return false
+
 func find_stump_in_zone(from_world_pos: Vector2, for_worker: Node2D = null) -> Node2D:
 	if not _has_plant_zone or _tilemap == null:
 		return null
@@ -166,8 +176,7 @@ func find_stump_in_zone(from_world_pos: Vector2, for_worker: Node2D = null) -> N
 			continue
 		if worker != null and not tree.is_stump_available_to(worker):
 			continue
-		var tree_tile := _tilemap.local_to_map(tree.position)
-		if not _plant_zone.has_point(tree_tile):
+		if not _tree_is_in_plant_zone(tree):
 			continue
 		var distance := from_world_pos.distance_squared_to(tree.position)
 		if distance < nearest_distance:
@@ -224,6 +233,44 @@ func _spawn_worker() -> void:
 	_worker.setup(self)
 	_worker.position = position + Vector2(0, -6)
 	_tilemap.add_child(_worker)
+	if not plant_zone_changed.is_connected(_notify_worker_zone_ready):
+		plant_zone_changed.connect(_notify_worker_zone_ready)
+	if _has_plant_zone:
+		_notify_worker_zone_ready()
+
+func _notify_worker_zone_ready() -> void:
+	if not is_instance_valid(_worker):
+		return
+	if _worker.has_method("on_plant_zone_ready"):
+		_worker.on_plant_zone_ready()
+
+func _has_stump_in_zone(for_worker: Node2D = null) -> bool:
+	if not _has_plant_zone or _tilemap == null:
+		return false
+
+	var worker := for_worker if for_worker != null else _worker
+	for tree in TreeRegistry.get_active_trees():
+		if not tree.has_method("is_stump_available_to"):
+			continue
+		if worker != null and not tree.is_stump_available_to(worker):
+			continue
+		if not _tree_is_in_plant_zone(tree):
+			continue
+		return true
+	return false
+
+func _tree_is_in_plant_zone(tree: Node2D) -> bool:
+	if _tilemap == null or tree == null:
+		return false
+
+	var trunk_tile := _tilemap.local_to_map(tree.position)
+	if _plant_zone.has_point(trunk_tile):
+		return true
+	if tree.has_method("get_fallen_log_chop_position"):
+		var log_tile := _tilemap.local_to_map(tree.get_fallen_log_chop_position())
+		if _plant_zone.has_point(log_tile):
+			return true
+	return false
 
 func _find_spawn_tile() -> Vector2i:
 	if not _has_plant_zone:
@@ -285,10 +332,18 @@ func _is_tile_occupied(tile_coords: Vector2i) -> bool:
 
 func _is_too_close_to_vegetation(tile_coords: Vector2i) -> bool:
 	for tree in TreeRegistry.get_active_trees():
-		if _chebyshev_distance(tile_coords, _tilemap.local_to_map(tree.position)) < vegetation_spacing_tiles:
+		if tree.has_method("is_depleted_stump") and tree.is_depleted_stump():
+			continue
+		var tree_tile := _tilemap.local_to_map(tree.position)
+		if not _plant_zone.has_point(tree_tile):
+			continue
+		if _chebyshev_distance(tile_coords, tree_tile) < vegetation_spacing_tiles:
 			return true
 	for sapling in SaplingRegistry.get_active_saplings():
-		if _chebyshev_distance(tile_coords, _tilemap.local_to_map(sapling.position)) < vegetation_spacing_tiles:
+		var sapling_tile := _tilemap.local_to_map(sapling.position)
+		if not _plant_zone.has_point(sapling_tile):
+			continue
+		if _chebyshev_distance(tile_coords, sapling_tile) < vegetation_spacing_tiles:
 			return true
 	return false
 
