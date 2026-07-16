@@ -50,7 +50,6 @@ const TREE_TO_LOG_PREFIXES: Array[String] = [
 	"tree_to_log",
 ]
 const LOG_PILE_START_FRAME := 2
-const LOG_PILE_FINAL_FRAME := 5
 const LOG_PILE_PICKUPS := 3
 const STUMP_CUTTING_ROOT := "res://assets/sprites/stump_cutting_animation"
 const STUMP_CUTTING_PREFIXES: Array[String] = [
@@ -61,7 +60,7 @@ const STUMP_CUTTING_PLAY_SPEED := 10.0
 const CHOP_FOREGROUND_Z_INDEX := 4
 
 enum TreeLifePhase { STANDING, LOG_PILE, DEPLETED }
-enum FallPhase { NONE, FALLING, FALLEN_CHOP }
+enum FallPhase { NONE, FALLING }
 
 var _chopper: Node = null
 var _stump_worker: Node = null
@@ -112,8 +111,6 @@ func _process(delta: float) -> void:
 	match _fall_phase:
 		FallPhase.FALLING:
 			_advance_fall_animation(delta)
-		FallPhase.FALLEN_CHOP:
-			_advance_fallen_chop_animation(delta)
 		_:
 			if _axe_strike_active and not _axe_strike_frames.is_empty():
 				_axe_strike_elapsed += delta
@@ -175,10 +172,10 @@ func is_log_pile() -> bool:
 	return _life_phase == TreeLifePhase.LOG_PILE and _log_pile_pickups_remaining > 0
 
 func is_in_fallen_chop() -> bool:
-	return _fall_phase == FallPhase.FALLEN_CHOP
+	return false
 
 func is_in_tree_to_log() -> bool:
-	return false
+	return _life_phase == TreeLifePhase.LOG_PILE and _log_pile_pickups_remaining > 0
 
 func get_log_pile_pickups_remaining() -> int:
 	return _log_pile_pickups_remaining
@@ -321,7 +318,7 @@ func _complete_log_pickup_step() -> void:
 		_chopper = null
 
 func _log_pile_frame_after_pickup(remaining: int) -> int:
-	return LOG_PILE_FINAL_FRAME - remaining
+	return LOG_PILE_START_FRAME + (LOG_PILE_PICKUPS - remaining)
 
 func _load_axe_strike_frames() -> void:
 	if not _axe_strike_frames.is_empty():
@@ -567,36 +564,9 @@ func _advance_fall_animation(delta: float) -> void:
 	_fall_elapsed += delta
 	var frame_index := int(_fall_elapsed * FALL_ANIMATION_PLAY_SPEED)
 	if frame_index >= _fall_frames.size():
-		_begin_fallen_chop()
-		return
-	_set_tree_texture(_fall_frames[frame_index], true)
-
-func _begin_fallen_chop() -> void:
-	_load_fallen_chop_frames()
-	if _fallen_chop_frames.is_empty():
-		_finish_fall_sequence()
-		return
-
-	_fall_phase = FallPhase.FALLEN_CHOP
-	_fall_elapsed = 0.0
-	_set_tree_texture(_fallen_chop_frames[0], true)
-	fallen_chop_started.emit()
-	print(
-		"MatureTree: started fallen chop animation for %s (%d frames)"
-		% [_tree_variant, _fallen_chop_frames.size()]
-	)
-
-func _advance_fallen_chop_animation(delta: float) -> void:
-	if _fallen_chop_frames.is_empty():
-		_finish_fall_sequence()
-		return
-
-	_fall_elapsed += delta
-	var frame_index := int(_fall_elapsed * FALLEN_CHOP_PLAY_SPEED)
-	if frame_index >= _fallen_chop_frames.size():
 		_begin_log_pile_phase()
 		return
-	_set_tree_texture(_fallen_chop_frames[frame_index], true)
+	_set_tree_texture(_fall_frames[frame_index], true)
 
 func _begin_log_pile_phase() -> void:
 	_fall_phase = FallPhase.NONE
@@ -605,7 +575,7 @@ func _begin_log_pile_phase() -> void:
 	_show_log_pile_frame(LOG_PILE_START_FRAME)
 	log_pile_ready.emit()
 	print(
-		"MatureTree: log pile ready at logs_post_tree_fall_%d (%d pickups available)"
+		"MatureTree: tree-to-log started at logs_post_tree_fall_%d (%d logs to pick up)"
 		% [LOG_PILE_START_FRAME, _log_pile_pickups_remaining]
 	)
 
@@ -621,12 +591,13 @@ func _get_tree_to_log_texture(frame_number: int) -> Texture2D:
 	for texture in _tree_to_log_frames:
 		if texture == null:
 			continue
-		var path_frame := _get_png_frame_number(texture.resource_path)
-		if path_frame == frame_number:
+		if _get_png_frame_number(texture.resource_path) == frame_number:
 			return texture
-	if frame_number <= 0 or frame_number > _tree_to_log_frames.size():
-		return null
-	return _tree_to_log_frames[frame_number - 1]
+
+	var explicit_path := "%s/logs_post_tree_fall_%d.png" % [TREE_TO_LOG_ROOT, frame_number]
+	if ResourceLoader.exists(explicit_path):
+		return load(explicit_path) as Texture2D
+	return null
 
 func _get_png_frame_number(path: String) -> int:
 	var basename := path.get_file().get_basename()

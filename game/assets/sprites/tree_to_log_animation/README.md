@@ -17,8 +17,8 @@ Also accepted: `log_post_tree_fall_N.png`, `tree_to_log_N.png`, or any numbered 
 
 ## In-game behavior
 
-1. After the fallen-tree chop animation finishes, the pile appears as `logs_post_tree_fall_2`.
-2. When a lumberjack picks up the **first** log, the image switches to `logs_post_tree_fall_3`.
+1. As soon as the tree **fall animation** finishes, the tree-to-log pile appears as `logs_post_tree_fall_2` while the lumberjack walks over.
+2. When the lumberjack picks up the **first** log, the image switches to `logs_post_tree_fall_3`.
 3. **Second** pickup → `logs_post_tree_fall_4`.
 4. **Third** (final) pickup → `logs_post_tree_fall_5`, then the pile is depleted.
 
