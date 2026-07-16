@@ -26,6 +26,7 @@ var _waiting_for_tree_fall: bool = false
 var _fall_wait_phase: FallWaitPhase = FallWaitPhase.WALK_TO_LOG
 var _target_is_log_pile: bool = false
 var _awaiting_log_pickup_animation: bool = false
+var _awaiting_bend_pickup: bool = false
 
 @onready var _body: AnimatedSprite2D = $Body
 @onready var _cargo: Sprite2D = $Cargo
@@ -52,6 +53,13 @@ func _process(delta: float) -> void:
 	_update_animation(delta)
 
 func _update_animation(delta: float) -> void:
+	if _awaiting_bend_pickup:
+		CharacterWalk.update_bending_down_pickup(_body, delta)
+		if CharacterWalk.is_bending_down_pickup_finished(_body):
+			_awaiting_bend_pickup = false
+			_execute_log_pickup_from_pile()
+		return
+
 	if _state == State.CHOPPING and _waiting_for_tree_fall:
 		match _fall_wait_phase:
 			FallWaitPhase.WALK_TO_LOG:
@@ -189,6 +197,15 @@ func _on_log_pickup_animation_finished() -> void:
 	_complete_log_pickup()
 
 func _pickup_log_from_pile() -> void:
+	if _awaiting_bend_pickup:
+		return
+	if CharacterWalk.has_bending_down_pickup(_body):
+		CharacterWalk.reset_bending_down_pickup(_body)
+		_awaiting_bend_pickup = true
+		return
+	_execute_log_pickup_from_pile()
+
+func _execute_log_pickup_from_pile() -> void:
 	if not _is_tree_valid():
 		_return_idle()
 		return
@@ -227,6 +244,7 @@ func _complete_log_pickup() -> void:
 	_target_tree = null
 	_target_is_log_pile = false
 	_awaiting_log_pickup_animation = false
+	_awaiting_bend_pickup = false
 	_state = State.TO_CAMP
 	_move_direction = Vector2.ZERO
 
@@ -234,6 +252,7 @@ func _abort_fall_wait() -> void:
 	_waiting_for_tree_fall = false
 	_fall_wait_phase = FallWaitPhase.WALK_TO_LOG
 	_awaiting_log_pickup_animation = false
+	_awaiting_bend_pickup = false
 	_release_tree_reservation()
 	_target_tree = null
 	_target_is_log_pile = false
@@ -262,6 +281,7 @@ func _try_start_job() -> void:
 
 	_target_is_log_pile = _tree_is_log_pile()
 	_awaiting_log_pickup_animation = false
+	_awaiting_bend_pickup = false
 	_state = State.TO_TREE
 	_move_direction = Vector2.ZERO
 
@@ -291,6 +311,7 @@ func _return_idle() -> void:
 	_target_tree = null
 	_target_is_log_pile = false
 	_awaiting_log_pickup_animation = false
+	_awaiting_bend_pickup = false
 	_state = State.IDLE
 	_idle_timer = 0.25
 	_move_direction = Vector2.ZERO

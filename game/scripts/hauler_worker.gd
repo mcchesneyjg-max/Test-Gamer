@@ -15,6 +15,7 @@ var _idle_timer: float = 0.0
 var _move_direction := Vector2.ZERO
 var _last_move_offset := Vector2.ZERO
 var _travel_target := Vector2.ZERO
+var _awaiting_bend_pickup: bool = false
 
 @onready var _body: AnimatedSprite2D = $Body
 @onready var _cargo: Sprite2D = $Cargo
@@ -39,6 +40,13 @@ func _process(delta: float) -> void:
 	_update_animation(delta)
 
 func _update_animation(delta: float) -> void:
+	if _awaiting_bend_pickup:
+		CharacterWalk.update_bending_down_pickup(_body, delta)
+		if CharacterWalk.is_bending_down_pickup_finished(_body):
+			_awaiting_bend_pickup = false
+			_execute_cargo_pickup()
+		return
+
 	var is_walking := _last_move_offset.length_squared() > 0.001
 	CharacterWalk.update_motion(_body, is_walking, _last_move_offset, delta)
 
@@ -138,6 +146,21 @@ func _find_best_destination() -> Node2D:
 	return best
 
 func _pickup_cargo() -> void:
+	if _awaiting_bend_pickup:
+		return
+	if not _is_source_reachable():
+		_return_idle()
+		return
+	if not _source.has_output_ready():
+		_return_idle()
+		return
+	if CharacterWalk.has_bending_down_pickup(_body):
+		CharacterWalk.reset_bending_down_pickup(_body)
+		_awaiting_bend_pickup = true
+		return
+	_execute_cargo_pickup()
+
+func _execute_cargo_pickup() -> void:
 	if not _is_source_reachable():
 		_return_idle()
 		return
@@ -178,6 +201,7 @@ func _deliver_cargo() -> void:
 func _return_idle() -> void:
 	_source = null
 	_destination = null
+	_awaiting_bend_pickup = false
 	_state = State.IDLE
 	_idle_timer = 0.2
 	_move_direction = Vector2.ZERO
