@@ -5,6 +5,7 @@ enum State { IDLE, TO_STUMP, REMOVING_STUMP, TO_SITE, PLANTING, TO_HOME }
 const ARRIVE_DISTANCE := 8.0
 const PLANT_DURATION := 0.9
 const STUMP_REMOVAL_FALLBACK_DURATION := 1.2
+const STUMP_REMOVAL_CHOP_CYCLES := 3
 
 @export var move_speed: float = 49.13
 
@@ -18,6 +19,7 @@ var _action_timer: float = 0.0
 var _move_direction := Vector2.ZERO
 var _last_move_offset := Vector2.ZERO
 var _using_log_cut_fallback: bool = false
+var _stump_chop_cycles_done: int = 0
 
 @onready var _body: AnimatedSprite2D = $Body
 
@@ -86,11 +88,11 @@ func _process_removing_stump(delta: float) -> void:
 		_action_timer -= delta
 		if _action_timer > 0.0:
 			return
-		_finish_stump_removal()
+		_on_stump_chop_cycle_finished()
 		return
 
 	if CharacterWalk.poll_log_cutting_intro_finished(_body):
-		_finish_stump_removal()
+		_on_stump_chop_cycle_finished()
 
 func _process_to_site(delta: float) -> void:
 	_move_toward(_plant_site, delta)
@@ -145,6 +147,7 @@ func _try_start_job() -> void:
 	_move_direction = Vector2.ZERO
 
 func _begin_stump_removal() -> void:
+	_stump_chop_cycles_done = 0
 	_using_log_cut_fallback = _body.sprite_frames == null or not _body.sprite_frames.has_animation(&"log_cutting")
 	if _using_log_cut_fallback:
 		_action_timer = STUMP_REMOVAL_FALLBACK_DURATION
@@ -153,12 +156,23 @@ func _begin_stump_removal() -> void:
 	_state = State.REMOVING_STUMP
 	_move_direction = Vector2.ZERO
 
+func _on_stump_chop_cycle_finished() -> void:
+	_stump_chop_cycles_done += 1
+	if _stump_chop_cycles_done < STUMP_REMOVAL_CHOP_CYCLES:
+		if _using_log_cut_fallback:
+			_action_timer = STUMP_REMOVAL_FALLBACK_DURATION
+		else:
+			CharacterWalk.reset_log_cutting(_body)
+		return
+	_finish_stump_removal()
+
 func _finish_stump_removal() -> void:
 	if _is_stump_valid() and _target_stump.has_method("remove_stump"):
 		_target_stump.remove_stump()
 	_target_stump = null
 	_work_site = Vector2.ZERO
 	_using_log_cut_fallback = false
+	_stump_chop_cycles_done = 0
 	_state = State.TO_HOME
 	_move_direction = Vector2.ZERO
 
@@ -168,6 +182,7 @@ func _return_idle() -> void:
 	_work_site = Vector2.ZERO
 	_target_stump = null
 	_using_log_cut_fallback = false
+	_stump_chop_cycles_done = 0
 	_state = State.IDLE
 	_idle_timer = 0.25
 	_move_direction = Vector2.ZERO
