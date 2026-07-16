@@ -49,19 +49,19 @@ const TREE_TO_LOG_PREFIXES: Array[String] = [
 	"log_post_tree_fall",
 	"tree_to_log",
 ]
-const TREE_TO_LOG_PLAY_SPEED := 10.0
+const LOG_PILE_START_FRAME := 2
+const LOG_PILE_FINAL_FRAME := 5
+const LOG_PILE_PICKUPS := 3
 const STUMP_CUTTING_ROOT := "res://assets/sprites/stump_cutting_animation"
 const STUMP_CUTTING_PREFIXES: Array[String] = [
 	"stump_cutting_animation",
 	"stump_cutting",
 ]
 const STUMP_CUTTING_PLAY_SPEED := 10.0
-const TREE_TO_LOG_ANIM_END_FRAME := 2
-const LOG_PILE_PICKUPS := 3
 const CHOP_FOREGROUND_Z_INDEX := 4
 
 enum TreeLifePhase { STANDING, LOG_PILE, DEPLETED }
-enum FallPhase { NONE, FALLING, FALLEN_CHOP, TREE_TO_LOG }
+enum FallPhase { NONE, FALLING, FALLEN_CHOP }
 
 var _chopper: Node = null
 var _stump_worker: Node = null
@@ -80,7 +80,6 @@ var _stump_cutting_active: bool = false
 var _stump_cutting_elapsed: float = 0.0
 var _life_phase: TreeLifePhase = TreeLifePhase.STANDING
 var _log_pile_pickups_remaining: int = 0
-var _pickup_animating: bool = false
 var _trunk_anchor_cache: Dictionary = {}
 var _planted_root: Vector2 = Vector2.ZERO
 var _planted_root_initialized: bool = false
@@ -115,8 +114,6 @@ func _process(delta: float) -> void:
 			_advance_fall_animation(delta)
 		FallPhase.FALLEN_CHOP:
 			_advance_fallen_chop_animation(delta)
-		FallPhase.TREE_TO_LOG:
-			_advance_tree_to_log_animation(delta)
 		_:
 			if _axe_strike_active and not _axe_strike_frames.is_empty():
 				_axe_strike_elapsed += delta
@@ -181,27 +178,23 @@ func is_in_fallen_chop() -> bool:
 	return _fall_phase == FallPhase.FALLEN_CHOP
 
 func is_in_tree_to_log() -> bool:
-	return _fall_phase == FallPhase.TREE_TO_LOG
+	return false
 
 func get_log_pile_pickups_remaining() -> int:
 	return _log_pile_pickups_remaining
 
 func is_log_pickup_animating() -> bool:
-	return _pickup_animating
+	return false
 
 func try_begin_log_pickup(chopper: Node = null) -> bool:
 	if _life_phase != TreeLifePhase.LOG_PILE:
 		return false
-	if _log_pile_pickups_remaining <= 0 or _pickup_animating:
+	if _log_pile_pickups_remaining <= 0:
 		return false
 	if chopper != null and _chopper != null and _chopper != chopper:
 		return false
 	if chopper != null:
 		_chopper = chopper
-
-	if _log_pile_pickups_remaining == LOG_PILE_PICKUPS:
-		_begin_first_log_pickup_animation()
-		return true
 
 	_complete_log_pickup_step()
 	return true
@@ -300,7 +293,7 @@ func is_stump_cutting_animating() -> bool:
 func harvest(amount: int = 1, chopper: Node = null) -> int:
 	if _life_phase == TreeLifePhase.LOG_PILE:
 		if try_begin_log_pickup(chopper):
-			return 0 if _pickup_animating else 1
+			return 1
 		return 0
 	if chopper != null and _chopper != chopper:
 		return 0
@@ -317,15 +310,18 @@ func _complete_log_pickup_step() -> void:
 		return
 
 	_log_pile_pickups_remaining -= 1
-	_show_log_pile_frame(5 - _log_pile_pickups_remaining)
+	_show_log_pile_frame(_log_pile_frame_after_pickup(_log_pile_pickups_remaining))
 	log_pile_pickup_taken.emit(_log_pile_pickups_remaining)
 	print(
 		"MatureTree: log pile pickup (%d remaining) showing logs_post_tree_fall_%d"
-		% [_log_pile_pickups_remaining, 5 - _log_pile_pickups_remaining]
+		% [_log_pile_pickups_remaining, _log_pile_frame_after_pickup(_log_pile_pickups_remaining)]
 	)
 	if _log_pile_pickups_remaining <= 0:
 		_life_phase = TreeLifePhase.DEPLETED
 		_chopper = null
+
+func _log_pile_frame_after_pickup(remaining: int) -> int:
+	return LOG_PILE_FINAL_FRAME - remaining
 
 func _load_axe_strike_frames() -> void:
 	if not _axe_strike_frames.is_empty():
@@ -456,10 +452,11 @@ func _finish_stump_cutting_animation() -> void:
 	stump_cutting_finished.emit()
 	remove_stump()
 
-func _load_tree_to_log_frames() -> void:
-	if not _tree_to_log_frames.is_empty():
+func _load_tree_to_log_frames(force_reload: bool = false) -> void:
+	if not force_reload and not _tree_to_log_frames.is_empty():
 		return
 
+	_tree_to_log_frames.clear()
 	var roots: Array[String] = [TREE_TO_LOG_ROOT]
 	_tree_to_log_frames = CharacterWalk.load_png_sequence_from_candidates(
 		roots,
@@ -601,61 +598,22 @@ func _advance_fallen_chop_animation(delta: float) -> void:
 		return
 	_set_tree_texture(_fallen_chop_frames[frame_index], true)
 
-func _begin_first_log_pickup_animation() -> void:
-	_load_tree_to_log_frames()
-	if _tree_to_log_frames.is_empty():
-		_complete_log_pickup_step()
-		return
-
-	_pickup_animating = true
-	_fall_phase = FallPhase.TREE_TO_LOG
-	_fall_elapsed = 0.0
-	_set_tree_to_log_frame(1)
-	print(
-		"MatureTree: playing first log pickup animation (frames 1-%d)"
-		% TREE_TO_LOG_ANIM_END_FRAME
-	)
-
-func _advance_tree_to_log_animation(delta: float) -> void:
-	if not _pickup_animating or _tree_to_log_frames.is_empty():
-		return
-
-	_fall_elapsed += delta
-	var frame_index := int(_fall_elapsed * TREE_TO_LOG_PLAY_SPEED)
-	if frame_index >= TREE_TO_LOG_ANIM_END_FRAME:
-		_finish_first_log_pickup_animation()
-		return
-	_set_tree_to_log_frame(frame_index + 1)
-
-func _finish_first_log_pickup_animation() -> void:
-	_pickup_animating = false
-	_fall_phase = FallPhase.NONE
-	_set_tree_to_log_frame(TREE_TO_LOG_ANIM_END_FRAME)
-	_complete_log_pickup_step()
-	log_pickup_animation_finished.emit()
-
 func _begin_log_pile_phase() -> void:
 	_fall_phase = FallPhase.NONE
 	_life_phase = TreeLifePhase.LOG_PILE
 	_log_pile_pickups_remaining = LOG_PILE_PICKUPS
-	_pickup_animating = false
-	_show_log_pile_frame(1)
+	_show_log_pile_frame(LOG_PILE_START_FRAME)
 	log_pile_ready.emit()
 	print(
-		"MatureTree: log pile ready at logs_post_tree_fall_1 (%d pickups available)"
-		% _log_pile_pickups_remaining
+		"MatureTree: log pile ready at logs_post_tree_fall_%d (%d pickups available)"
+		% [LOG_PILE_START_FRAME, _log_pile_pickups_remaining]
 	)
 
 func _show_log_pile_frame(frame_number: int) -> void:
+	_load_tree_to_log_frames(true)
 	var texture := _get_tree_to_log_texture(frame_number)
 	if texture == null:
 		push_warning("MatureTree: missing tree-to-log frame %d" % frame_number)
-		return
-	_set_tree_texture(texture, true)
-
-func _set_tree_to_log_frame(frame_number: int) -> void:
-	var texture := _get_tree_to_log_texture(frame_number)
-	if texture == null:
 		return
 	_set_tree_texture(texture, true)
 
