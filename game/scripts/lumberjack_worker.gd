@@ -22,6 +22,7 @@ var _last_move_offset := Vector2.ZERO
 var _waiting_for_tree_fall: bool = false
 var _fall_wait_phase: FallWaitPhase = FallWaitPhase.WALK_TO_LOG
 var _target_is_log_pile: bool = false
+var _awaiting_log_pickup_animation: bool = false
 
 @onready var _body: AnimatedSprite2D = $Body
 @onready var _cargo: Sprite2D = $Cargo
@@ -143,6 +144,8 @@ func _process_fall_wait(delta: float) -> void:
 			_move_toward(_fallen_log_position, delta)
 		FallWaitPhase.CUT_LOG:
 			position = _fallen_log_position
+			if _tree_is_log_pile():
+				_pickup_log_from_pile()
 
 func _begin_fall_wait() -> void:
 	_set_tree_chop_overlay(false)
@@ -157,8 +160,7 @@ func _begin_fall_wait() -> void:
 		"LumberjackWorker: walking west to fallen log at %s"
 		% _fallen_log_position
 	)
-	if _target_tree.has_signal("log_pile_ready"):
-		_target_tree.log_pile_ready.connect(_on_log_pile_ready, CONNECT_ONE_SHOT)
+	_connect_log_pickup_animation_signal()
 
 func _begin_fallen_log_cutting() -> void:
 	if _fall_wait_phase == FallWaitPhase.CUT_LOG:
@@ -167,17 +169,43 @@ func _begin_fallen_log_cutting() -> void:
 	_fall_wait_phase = FallWaitPhase.CUT_LOG
 	print("LumberjackWorker: started log cutting animation at fallen tree")
 
-func _on_log_pile_ready() -> void:
+func _connect_log_pickup_animation_signal() -> void:
+	if not _is_tree_valid():
+		return
+	if not _target_tree.has_signal("log_pickup_animation_finished"):
+		return
+	if _target_tree.log_pickup_animation_finished.is_connected(_on_log_pickup_animation_finished):
+		return
+	_target_tree.log_pickup_animation_finished.connect(_on_log_pickup_animation_finished)
+
+func _on_log_pickup_animation_finished() -> void:
+	_awaiting_log_pickup_animation = false
 	_complete_log_pickup()
 
 func _pickup_log_from_pile() -> void:
 	if not _is_tree_valid():
 		_return_idle()
 		return
+	if _awaiting_log_pickup_animation:
+		return
+	if _target_tree.has_method("is_log_pickup_animating") and _target_tree.is_log_pickup_animating():
+		_awaiting_log_pickup_animation = true
+		return
 
-	var harvested: int = _target_tree.harvest(1, self)
-	if harvested <= 0:
-		_return_idle()
+	_connect_log_pickup_animation_signal()
+	var pickup_started := false
+	if _target_tree.has_method("try_begin_log_pickup"):
+		pickup_started = _target_tree.try_begin_log_pickup(self)
+	elif _target_tree.has_method("harvest"):
+		pickup_started = _target_tree.harvest(1, self) > 0
+
+	if not pickup_started:
+		if not (_target_tree.has_method("is_log_pickup_animating") and _target_tree.is_log_pickup_animating()):
+			_return_idle()
+		return
+
+	if _target_tree.has_method("is_log_pickup_animating") and _target_tree.is_log_pickup_animating():
+		_awaiting_log_pickup_animation = true
 		return
 
 	_complete_log_pickup()
@@ -192,12 +220,14 @@ func _complete_log_pickup() -> void:
 	_release_tree_reservation()
 	_target_tree = null
 	_target_is_log_pile = false
+	_awaiting_log_pickup_animation = false
 	_state = State.TO_CAMP
 	_move_direction = Vector2.ZERO
 
 func _abort_fall_wait() -> void:
 	_waiting_for_tree_fall = false
 	_fall_wait_phase = FallWaitPhase.WALK_TO_LOG
+	_awaiting_log_pickup_animation = false
 	_release_tree_reservation()
 	_target_tree = null
 	_target_is_log_pile = false
@@ -225,6 +255,7 @@ func _try_start_job() -> void:
 		return
 
 	_target_is_log_pile = _tree_is_log_pile()
+	_awaiting_log_pickup_animation = false
 	_state = State.TO_TREE
 	_move_direction = Vector2.ZERO
 
@@ -253,6 +284,7 @@ func _return_idle() -> void:
 	_release_tree_reservation()
 	_target_tree = null
 	_target_is_log_pile = false
+	_awaiting_log_pickup_animation = false
 	_state = State.IDLE
 	_idle_timer = 0.25
 	_move_direction = Vector2.ZERO

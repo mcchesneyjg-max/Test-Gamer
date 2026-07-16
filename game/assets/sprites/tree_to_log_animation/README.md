@@ -18,11 +18,12 @@ Also accepted: `log_post_tree_fall_N.png`, `tree_to_log_N.png`, or any numbered 
 
 ## Playback sequence
 
-1. After `fallen_tree_chop_animation` finishes, frames **1–2** play at equal speed
-2. Animation **stops on frame 2** — lumberjack picks up the first log
-3. Frame **3** stays until the lumberjack returns and picks up another log
-4. Frame **4** stays until the next pickup
-5. Frame **5** stays permanently — no more logs can be gathered from this tree
+1. After `fallen_tree_chop_animation` finishes, the pile rests on frame **1**
+2. When the lumberjack gathers the first log, frames **1–2** play at equal speed
+3. Animation **stops on frame 2** — lumberjack carries that log back to camp
+4. Frame **3** stays until the lumberjack returns and picks up another log
+5. Frame **4** stays until the next pickup
+6. Frame **5** stays permanently — no more logs can be gathered from this tree
 
 The lumberjack does **not** carry logs during standing-tree chopping or during tree animations. Logs are only collected after the pile is ready (frame 2) and on return trips to the pile.
 
