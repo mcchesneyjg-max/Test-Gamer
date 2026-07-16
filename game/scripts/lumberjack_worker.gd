@@ -199,8 +199,7 @@ func _on_log_pickup_animation_finished() -> void:
 func _pickup_log_from_pile() -> void:
 	if _awaiting_bend_pickup:
 		return
-	if CharacterWalk.has_bending_down_pickup(_body):
-		CharacterWalk.reset_bending_down_pickup(_body)
+	if CharacterWalk.begin_bending_down_pickup(_body):
 		_awaiting_bend_pickup = true
 		return
 	_execute_log_pickup_from_pile()

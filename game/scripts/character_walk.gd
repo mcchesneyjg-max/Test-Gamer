@@ -217,7 +217,31 @@ static func reset_log_cutting(sprite: AnimatedSprite2D) -> void:
 	sprite.set_meta(META_LOG_CUT_INTRO_FINISHED, false)
 
 static func has_bending_down_pickup(sprite: AnimatedSprite2D) -> bool:
-	return sprite.sprite_frames != null and sprite.sprite_frames.has_animation(&"bending_down_pickup")
+	return not _load_bending_down_pickup_frames().is_empty()
+
+static func begin_bending_down_pickup(sprite: AnimatedSprite2D) -> bool:
+	if sprite.sprite_frames == null:
+		return false
+
+	var bending_frames := _load_bending_down_pickup_frames()
+	if bending_frames.is_empty():
+		return false
+
+	var frames := sprite.sprite_frames
+	if frames.has_animation(&"bending_down_pickup"):
+		frames.remove_animation(&"bending_down_pickup")
+
+	var walk_speed: float = float(sprite.get_meta(META_PLAY_SPEED, 10.0))
+	_add_bending_down_pickup_animation(frames, bending_frames, walk_speed)
+	reset_bending_down_pickup(sprite)
+	sprite.animation = &"bending_down_pickup"
+	sprite.stop()
+	sprite.frame = 0
+	print(
+		"CharacterWalk: began bending down pickup (%d frames)"
+		% bending_frames.size()
+	)
+	return true
 
 static func reset_bending_down_pickup(sprite: AnimatedSprite2D) -> void:
 	sprite.set_meta(META_BENDING_DOWN_PICKUP_ELAPSED, 0.0)
