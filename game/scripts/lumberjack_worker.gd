@@ -7,9 +7,10 @@ const ARRIVE_DISTANCE := 8.0
 const WEST := Vector2(-1.0, 0.0)
 
 @export var move_speed: float = 49.13
-@export var standing_chop_east_offset: float = 6.0
+@export var standing_chop_west_offset: float = 3.0
 @export var fallen_log_extra_west: float = 10.0
 @export var fall_animation_extra_west: float = 6.0
+@export var fallen_log_chop_extra_west: float = 4.0
 
 var _camp: Node2D
 var _state: State = State.IDLE
@@ -154,7 +155,10 @@ func _begin_fall_wait() -> void:
 	_end_tree_axe_strike()
 	CharacterWalk.reset_chopping(_body)
 	_waiting_for_tree_fall = true
-	_fallen_log_position = _get_fallen_log_walk_target() + Vector2(-fall_animation_extra_west, 0.0)
+	_fallen_log_position = _get_fallen_log_walk_target() + Vector2(
+		-(fall_animation_extra_west + fallen_log_chop_extra_west),
+		0.0
+	)
 	_fall_wait_phase = FallWaitPhase.WALK_TO_LOG
 	_move_direction = WEST
 	_last_move_offset = WEST
@@ -315,7 +319,7 @@ func _get_chop_position() -> Vector2:
 		base_position = _target_tree.get_chop_position()
 	elif _is_tree_valid():
 		base_position = _target_tree.position
-	return base_position + Vector2(standing_chop_east_offset, 0.0)
+	return base_position + Vector2(-standing_chop_west_offset, 0.0)
 
 func _get_fallen_log_walk_target() -> Vector2:
 	var base_position := _get_fallen_log_chop_position()
