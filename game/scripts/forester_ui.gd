@@ -79,7 +79,7 @@ func _on_draw_zone_pressed() -> void:
 	_panel.visible = false
 	_hint_label.text = (
 		"Draw planting zone: green = valid, red = invalid "
-		+ "(must cover lodge, %d-%d tiles). Esc to cancel."
+		+ "(must include lodge, %d-%d tiles). Esc to cancel."
 		% [_selected_lodge.get_min_zone_tile_count(), _selected_lodge.get_max_zone_tile_count()]
 	)
 	_hint_label.visible = true
@@ -147,7 +147,7 @@ func _update_draw_preview() -> void:
 	var is_valid := validation_error.is_empty()
 	if is_valid:
 		_hint_label.text = (
-			"Release to set zone (%d-%d tiles, must cover lodge). Esc to cancel."
+			"Release to set zone (%d-%d tiles, must include lodge). Esc to cancel."
 			% [_selected_lodge.get_min_zone_tile_count(), _selected_lodge.get_max_zone_tile_count()]
 		)
 	else:
