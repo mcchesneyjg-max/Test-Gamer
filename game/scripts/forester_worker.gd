@@ -8,6 +8,7 @@ const STUMP_REMOVAL_FALLBACK_DURATION := 1.2
 const STUMP_REMOVAL_CHOP_CYCLES := 3
 
 @export var move_speed: float = 49.13
+@export var stump_removal_east_offset: float = 10.0
 
 var _lodge: Node2D
 var _state: State = State.IDLE
@@ -126,7 +127,7 @@ func _try_start_job() -> void:
 	var stump: Node2D = _lodge.find_stump_in_zone(position, self)
 	if stump != null:
 		_target_stump = stump
-		_work_site = _lodge.get_stump_work_position(stump)
+		_work_site = _lodge.get_stump_work_position(stump) + Vector2(stump_removal_east_offset, 0.0)
 		_plant_site = Vector2.ZERO
 		_state = State.TO_STUMP
 		_move_direction = Vector2.ZERO
