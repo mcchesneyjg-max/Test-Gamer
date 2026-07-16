@@ -39,16 +39,16 @@ const FALLEN_CHOP_PREFIXES: Array[String] = [
 	"summer_tree_fallen_chop",
 	"fallen_chop",
 ]
-const AXE_STRIKE_PLAY_SPEED := 40.0
-const FALL_ANIMATION_PLAY_SPEED := 40.0
-const FALLEN_CHOP_PLAY_SPEED := 80.0
+const AXE_STRIKE_PLAY_SPEED := 10.0
+const FALL_ANIMATION_PLAY_SPEED := 10.0
+const FALLEN_CHOP_PLAY_SPEED := 10.0
 const TREE_TO_LOG_ROOT := "res://assets/sprites/tree_to_log_animation"
 const TREE_TO_LOG_PREFIXES: Array[String] = [
 	"logs_post_tree_fall",
 	"log_post_tree_fall",
 	"tree_to_log",
 ]
-const TREE_TO_LOG_PLAY_SPEED := 40.0
+const TREE_TO_LOG_PLAY_SPEED := 10.0
 const TREE_TO_LOG_ANIM_END_FRAME := 2
 const LOG_PILE_PICKUPS := 3
 const CHOP_FOREGROUND_Z_INDEX := 4
