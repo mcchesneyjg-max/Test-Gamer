@@ -66,10 +66,9 @@ func _refresh_panel_labels() -> void:
 	if _selected_lodge.has_plant_zone():
 		_status_label.text = "Workers clear stumps and plant saplings inside the drawn zone."
 	else:
-		var required_min_tiles := maxi(_selected_lodge.min_zone_tiles, _selected_lodge.get_footprint_tiles().size())
 		_status_label.text = (
 			"Draw a zone (%d-%d tiles). Lodge must be inside."
-			% [required_min_tiles, _selected_lodge.max_zone_tiles]
+			% [_selected_lodge.get_min_zone_tile_count(), _selected_lodge.get_max_zone_tile_count()]
 		)
 
 func _on_draw_zone_pressed() -> void:
@@ -80,8 +79,8 @@ func _on_draw_zone_pressed() -> void:
 	_panel.visible = false
 	_hint_label.text = (
 		"Draw planting zone: green = valid, red = invalid "
-		+ "(must include lodge, %d-%d tiles). Esc to cancel."
-		% [maxi(_selected_lodge.min_zone_tiles, _selected_lodge.get_footprint_tiles().size()), _selected_lodge.max_zone_tiles]
+		+ "(must cover lodge, %d-%d tiles). Esc to cancel."
+		% [_selected_lodge.get_min_zone_tile_count(), _selected_lodge.get_max_zone_tile_count()]
 	)
 	_hint_label.visible = true
 
@@ -146,6 +145,13 @@ func _update_draw_preview() -> void:
 	var zone := _rect_from_tiles(_draw_anchor, _draw_current)
 	var validation_error: String = _selected_lodge.validate_plant_zone(zone)
 	var is_valid := validation_error.is_empty()
+	if is_valid:
+		_hint_label.text = (
+			"Release to set zone (%d-%d tiles, must cover lodge). Esc to cancel."
+			% [_selected_lodge.get_min_zone_tile_count(), _selected_lodge.get_max_zone_tile_count()]
+		)
+	else:
+		_hint_label.text = "%s — adjust zone. Esc to cancel." % validation_error
 	_zone_overlay.set_preview_zone(zone, true, is_valid)
 
 func _rect_from_tiles(a: Vector2i, b: Vector2i) -> Rect2i:
