@@ -10,7 +10,7 @@ const WEST := Vector2(-1.0, 0.0)
 @export var standing_chop_east_offset: float = 6.0
 @export var fallen_log_extra_west: float = 10.0
 @export var fall_animation_extra_west: float = 6.0
-@export var fine_west_offset: float = 1.0
+@export var fine_west_offset: float = 0.5
 
 var _camp: Node2D
 var _state: State = State.IDLE
