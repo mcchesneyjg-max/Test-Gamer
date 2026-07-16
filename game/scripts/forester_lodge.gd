@@ -38,6 +38,7 @@ signal level_changed(level: int)
 
 var _spawned_saplings: Array[Node2D] = []
 var _worker: Node2D
+var _pending_zone_wake: bool = false
 var _plant_zone: Rect2i = Rect2i()
 var _has_plant_zone: bool = false
 var _footprint_top_left: Vector2i = Vector2i.ZERO
@@ -122,17 +123,25 @@ func get_zone_status_text() -> String:
 		return "No planting zone"
 	return "Zone: %dx%d (%d tiles)" % [_plant_zone.size.x, _plant_zone.size.y, _plant_zone.size.x * _plant_zone.size.y]
 
-func set_plant_zone(zone: Rect2i) -> String:
+func validate_plant_zone(zone: Rect2i) -> String:
 	var normalized := _normalize_zone(zone)
 	var tile_count := normalized.size.x * normalized.size.y
-	if tile_count < min_zone_tiles:
-		return "Zone too small (min %d tiles)" % min_zone_tiles
+	var required_min_tiles := maxi(min_zone_tiles, get_footprint_tiles().size())
+	if tile_count < required_min_tiles:
+		return "Zone too small (min %d tiles)" % required_min_tiles
 	if tile_count > max_zone_tiles:
 		return "Zone too large (max %d tiles)" % max_zone_tiles
 	for tile in get_footprint_tiles():
 		if not normalized.has_point(tile):
 			return "Zone must include the forester lodge"
+	return ""
 
+func set_plant_zone(zone: Rect2i) -> String:
+	var error := validate_plant_zone(zone)
+	if not error.is_empty():
+		return error
+
+	var normalized := _normalize_zone(zone)
 	_plant_zone = normalized
 	_has_plant_zone = true
 	plant_zone_changed.emit(_plant_zone)
@@ -235,12 +244,14 @@ func _spawn_worker() -> void:
 	_tilemap.add_child(_worker)
 	if not plant_zone_changed.is_connected(_notify_worker_zone_ready):
 		plant_zone_changed.connect(_notify_worker_zone_ready)
-	if _has_plant_zone:
+	if _has_plant_zone or _pending_zone_wake:
 		_notify_worker_zone_ready()
 
 func _notify_worker_zone_ready() -> void:
 	if not is_instance_valid(_worker):
+		_pending_zone_wake = true
 		return
+	_pending_zone_wake = false
 	if _worker.has_method("on_plant_zone_ready"):
 		_worker.on_plant_zone_ready()
 

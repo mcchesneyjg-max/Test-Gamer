@@ -28,6 +28,8 @@ func setup(lodge: Node2D) -> void:
 
 func on_plant_zone_ready() -> void:
 	_idle_timer = 0.0
+	if _state == State.TO_HOME and _is_lodge_valid() and position.distance_to(_lodge.position) <= ARRIVE_DISTANCE:
+		_return_idle()
 	if _state == State.IDLE:
 		_try_start_job()
 

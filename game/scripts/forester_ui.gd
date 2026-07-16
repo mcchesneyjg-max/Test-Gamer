@@ -66,7 +66,11 @@ func _refresh_panel_labels() -> void:
 	if _selected_lodge.has_plant_zone():
 		_status_label.text = "Workers clear stumps and plant saplings inside the drawn zone."
 	else:
-		_status_label.text = "Draw a zone (max %d tiles). Lodge must be inside." % _selected_lodge.max_zone_tiles
+		var required_min_tiles := maxi(_selected_lodge.min_zone_tiles, _selected_lodge.get_footprint_tiles().size())
+		_status_label.text = (
+			"Draw a zone (%d-%d tiles). Lodge must be inside."
+			% [required_min_tiles, _selected_lodge.max_zone_tiles]
+		)
 
 func _on_draw_zone_pressed() -> void:
 	if _selected_lodge == null:
@@ -74,7 +78,11 @@ func _on_draw_zone_pressed() -> void:
 	_draw_mode = true
 	_draw_anchor = Vector2i(-999999, -999999)
 	_panel.visible = false
-	_hint_label.text = "Draw planting zone: green = valid size, red = too large (max %d tiles). Lodge must be inside. Esc to cancel." % _selected_lodge.max_zone_tiles
+	_hint_label.text = (
+		"Draw planting zone: green = valid, red = invalid "
+		+ "(must include lodge, %d-%d tiles). Esc to cancel."
+		% [maxi(_selected_lodge.min_zone_tiles, _selected_lodge.get_footprint_tiles().size()), _selected_lodge.max_zone_tiles]
+	)
 	_hint_label.visible = true
 
 func _cancel_draw_mode() -> void:
@@ -114,8 +122,16 @@ func _commit_draw_zone(end_tile: Vector2i) -> void:
 		return
 
 	var zone := _rect_from_tiles(_draw_anchor, end_tile)
+	var error: String = _selected_lodge.validate_plant_zone(zone)
 	_zone_overlay.clear_preview()
-	var error: String = _selected_lodge.set_plant_zone(zone)
+	if not error.is_empty():
+		_cancel_draw_mode()
+		_status_label.text = error
+		_refresh_panel_labels()
+		_panel.visible = true
+		return
+
+	error = _selected_lodge.set_plant_zone(zone)
 	_cancel_draw_mode()
 	if error.is_empty():
 		_status_label.text = "Zone set! Workers will plant inside it."
@@ -125,12 +141,11 @@ func _commit_draw_zone(end_tile: Vector2i) -> void:
 	_panel.visible = true
 
 func _update_draw_preview() -> void:
-	if _draw_anchor.x < -999999:
+	if _draw_anchor.x < -999999 or _selected_lodge == null:
 		return
 	var zone := _rect_from_tiles(_draw_anchor, _draw_current)
-	var tile_count := zone.size.x * zone.size.y
-	var within_limit: bool = tile_count <= _selected_lodge.max_zone_tiles
-	_zone_overlay.set_preview_zone(zone, true, within_limit)
+	var is_valid := _selected_lodge.validate_plant_zone(zone).is_empty()
+	_zone_overlay.set_preview_zone(zone, true, is_valid)
 
 func _rect_from_tiles(a: Vector2i, b: Vector2i) -> Rect2i:
 	return GridPlacement.cardinal_rect_from_tiles(a, b)
