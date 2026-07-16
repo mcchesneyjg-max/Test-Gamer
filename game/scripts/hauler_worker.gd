@@ -154,8 +154,7 @@ func _pickup_cargo() -> void:
 	if not _source.has_output_ready():
 		_return_idle()
 		return
-	if CharacterWalk.has_bending_down_pickup(_body):
-		CharacterWalk.reset_bending_down_pickup(_body)
+	if CharacterWalk.begin_bending_down_pickup(_body):
 		_awaiting_bend_pickup = true
 		return
 	_execute_cargo_pickup()
