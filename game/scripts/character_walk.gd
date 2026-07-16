@@ -39,6 +39,7 @@ const META_CHOP_ELAPSED := "character_walk_chop_elapsed"
 const META_CHOP_AXE_TRIGGERED := "character_walk_chop_axe_triggered"
 const META_LOG_CUT_PHASE := "character_walk_log_cut_phase"
 const META_LOG_CUT_ELAPSED := "character_walk_log_cut_elapsed"
+const META_LOG_CUT_INTRO_FINISHED := "character_walk_log_cut_intro_finished"
 const CHOP_LOOP_START_FRAME := 3
 const CHOP_AXE_STRIKE_TRIGGER_FRAME := 6
 const DIRECTION_TO_FOLDER := {
@@ -190,6 +191,17 @@ static func poll_axe_strike_trigger(sprite: AnimatedSprite2D) -> bool:
 static func reset_log_cutting(sprite: AnimatedSprite2D) -> void:
 	sprite.set_meta(META_LOG_CUT_PHASE, "intro")
 	sprite.set_meta(META_LOG_CUT_ELAPSED, 0.0)
+	sprite.set_meta(META_LOG_CUT_INTRO_FINISHED, false)
+
+static func poll_log_cutting_intro_finished(sprite: AnimatedSprite2D) -> bool:
+	if sprite.get_meta(META_LOG_CUT_INTRO_FINISHED, false):
+		return false
+	if sprite.sprite_frames == null or sprite.animation != &"log_cutting":
+		return false
+	if sprite.get_meta(META_LOG_CUT_PHASE, "intro") != "loop":
+		return false
+	sprite.set_meta(META_LOG_CUT_INTRO_FINISHED, true)
+	return true
 
 static func update_log_cutting(sprite: AnimatedSprite2D, delta: float = 0.0) -> void:
 	sprite.flip_h = false

@@ -153,6 +153,40 @@ func can_plant_sapling() -> bool:
 	_prune_invalid_saplings()
 	return _has_plant_zone and _spawned_saplings.size() < max_saplings
 
+func find_stump_in_zone(from_world_pos: Vector2, for_worker: Node2D = null) -> Node2D:
+	if not _has_plant_zone or _tilemap == null:
+		return null
+
+	var worker := for_worker if for_worker != null else _worker
+	var nearest: Node2D = null
+	var nearest_distance := INF
+
+	for tree in TreeRegistry.get_active_trees():
+		if not tree.has_method("is_stump_available_to"):
+			continue
+		if worker != null and not tree.is_stump_available_to(worker):
+			continue
+		var tree_tile := _tilemap.local_to_map(tree.position)
+		if not _plant_zone.has_point(tree_tile):
+			continue
+		var distance := from_world_pos.distance_squared_to(tree.position)
+		if distance < nearest_distance:
+			nearest_distance = distance
+			nearest = tree
+
+	if nearest != null and worker != null and nearest.has_method("try_reserve_stump_removal"):
+		if not nearest.try_reserve_stump_removal(worker):
+			return null
+
+	return nearest
+
+func get_stump_work_position(stump: Node2D) -> Vector2:
+	if stump != null and stump.has_method("get_fallen_log_chop_position"):
+		return stump.get_fallen_log_chop_position()
+	if stump != null:
+		return stump.position
+	return Vector2.ZERO
+
 func find_plant_site() -> Vector2:
 	var tile_coords := _find_spawn_tile()
 	if tile_coords.x < 0:
