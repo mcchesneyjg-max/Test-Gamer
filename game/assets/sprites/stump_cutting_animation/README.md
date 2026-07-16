@@ -23,7 +23,19 @@ When the forester lodge worker arrives at a depleted `logs_post_tree_fall_5` stu
 2. The forester plays log cutting at the same time
 3. When the **last stump frame** finishes, the stump disappears
 
-## Upload
+## Re-uploading new art
+
+Replace the PNGs in this folder, then:
+
+```cmd
+git add game\assets\sprites\stump_cutting_animation\*.png
+git commit -m "Update stump cutting animation frames"
+git push
+```
+
+Reload the Godot project (**Project → Reload Current Project**). The game reloads every PNG from disk when stump cutting begins, so new frame counts and artwork are picked up automatically.
+
+## First upload
 
 ```cmd
 git add game\assets\sprites\stump_cutting_animation\*.png
