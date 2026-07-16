@@ -28,6 +28,14 @@ const LOG_CUTTING_PREFIXES: Array[String] = [
 	"log_cutting_animation",
 	WOOD_CUTTING_PREFIX,
 ]
+const BENDING_DOWN_PICKUP_ROOT_CANDIDATES: Array[String] = [
+	"%s/bending_down_pickup" % NPC_ANIMATIONS_BASE,
+	"%s/bending_down_pickup" % LEGACY_SPRITES_BASE,
+]
+const BENDING_DOWN_PICKUP_PREFIXES: Array[String] = [
+	"bending_down_pickup",
+	"bending_down_pickup_animation",
+]
 const WAIT_HOLD_SECONDS := 4.0
 const META_WAS_WALKING := "character_walk_was_walking"
 const META_WAIT_PHASE := "character_walk_wait_phase"
@@ -40,6 +48,8 @@ const META_CHOP_AXE_TRIGGERED := "character_walk_chop_axe_triggered"
 const META_LOG_CUT_PHASE := "character_walk_log_cut_phase"
 const META_LOG_CUT_ELAPSED := "character_walk_log_cut_elapsed"
 const META_LOG_CUT_INTRO_FINISHED := "character_walk_log_cut_intro_finished"
+const META_BENDING_DOWN_PICKUP_ELAPSED := "character_walk_bending_down_pickup_elapsed"
+const META_BENDING_DOWN_PICKUP_FINISHED := "character_walk_bending_down_pickup_finished"
 const CHOP_LOOP_START_FRAME := 3
 const CHOP_AXE_STRIKE_TRIGGER_FRAME := 6
 const DIRECTION_TO_FOLDER := {
@@ -142,6 +152,19 @@ static func apply_shared(
 		_add_log_cutting_animation(frames, log_cutting_frames, effective_chop_speed)
 		print("CharacterWalk: loaded %d log cutting frames" % log_cutting_frames.size())
 
+	var bending_down_pickup_frames := _load_bending_down_pickup_frames()
+	if bending_down_pickup_frames.is_empty():
+		push_warning(
+			"CharacterWalk: no bending down pickup frames found. Checked: %s"
+			% ", ".join(BENDING_DOWN_PICKUP_ROOT_CANDIDATES)
+		)
+	else:
+		_add_bending_down_pickup_animation(frames, bending_down_pickup_frames, walk_speed)
+		print(
+			"CharacterWalk: loaded %d bending down pickup frames"
+			% bending_down_pickup_frames.size()
+		)
+
 	sprite.sprite_frames = frames
 	sprite.flip_h = false
 	sprite.set_meta(META_PLAY_SPEED, walk_speed)
@@ -192,6 +215,31 @@ static func reset_log_cutting(sprite: AnimatedSprite2D) -> void:
 	sprite.set_meta(META_LOG_CUT_PHASE, "intro")
 	sprite.set_meta(META_LOG_CUT_ELAPSED, 0.0)
 	sprite.set_meta(META_LOG_CUT_INTRO_FINISHED, false)
+
+static func has_bending_down_pickup(sprite: AnimatedSprite2D) -> bool:
+	return sprite.sprite_frames != null and sprite.sprite_frames.has_animation(&"bending_down_pickup")
+
+static func reset_bending_down_pickup(sprite: AnimatedSprite2D) -> void:
+	sprite.set_meta(META_BENDING_DOWN_PICKUP_ELAPSED, 0.0)
+	sprite.set_meta(META_BENDING_DOWN_PICKUP_FINISHED, false)
+
+static func is_bending_down_pickup_finished(sprite: AnimatedSprite2D) -> bool:
+	return sprite.get_meta(META_BENDING_DOWN_PICKUP_FINISHED, false)
+
+static func update_bending_down_pickup(sprite: AnimatedSprite2D, delta: float = 0.0) -> void:
+	sprite.flip_h = false
+	if sprite.sprite_frames == null:
+		return
+
+	if not sprite.sprite_frames.has_animation(&"bending_down_pickup"):
+		sprite.set_meta(META_BENDING_DOWN_PICKUP_FINISHED, true)
+		return
+
+	if sprite.animation != &"bending_down_pickup":
+		reset_bending_down_pickup(sprite)
+		sprite.animation = &"bending_down_pickup"
+	sprite.stop()
+	_advance_bending_down_pickup(sprite, delta)
 
 static func poll_log_cutting_intro_finished(sprite: AnimatedSprite2D) -> bool:
 	if sprite.get_meta(META_LOG_CUT_INTRO_FINISHED, false):
@@ -308,6 +356,35 @@ static func _add_log_cutting_animation(
 	for texture in log_cutting_frames:
 		frames.add_frame(&"log_cutting", texture)
 
+static func _add_bending_down_pickup_animation(
+	frames: SpriteFrames,
+	bending_down_pickup_frames: Array[Texture2D],
+	walk_speed: float
+) -> void:
+	frames.add_animation(&"bending_down_pickup")
+	frames.set_animation_loop(&"bending_down_pickup", false)
+	frames.set_animation_speed(&"bending_down_pickup", walk_speed)
+	for texture in bending_down_pickup_frames:
+		frames.add_frame(&"bending_down_pickup", texture)
+
+static func _advance_bending_down_pickup(sprite: AnimatedSprite2D, delta: float) -> void:
+	var frame_count := sprite.sprite_frames.get_frame_count(&"bending_down_pickup")
+	if frame_count <= 0:
+		sprite.set_meta(META_BENDING_DOWN_PICKUP_FINISHED, true)
+		return
+
+	var elapsed: float = float(sprite.get_meta(META_BENDING_DOWN_PICKUP_ELAPSED, 0.0)) + delta
+	var play_speed: float = float(sprite.get_meta(META_PLAY_SPEED, 10.0))
+	var frame_index := int(elapsed * play_speed)
+
+	if frame_index >= frame_count:
+		sprite.frame = frame_count - 1
+		sprite.set_meta(META_BENDING_DOWN_PICKUP_FINISHED, true)
+	else:
+		sprite.frame = frame_index
+
+	sprite.set_meta(META_BENDING_DOWN_PICKUP_ELAPSED, elapsed)
+
 static func _advance_log_cutting(sprite: AnimatedSprite2D, delta: float) -> void:
 	_advance_intro_loop_animation(
 		sprite,
@@ -392,6 +469,13 @@ static func _load_log_cutting_frames() -> Array[Texture2D]:
 	return load_png_sequence_from_candidates(
 		LOG_CUTTING_ROOT_CANDIDATES,
 		LOG_CUTTING_PREFIXES,
+		true
+	)
+
+static func _load_bending_down_pickup_frames() -> Array[Texture2D]:
+	return load_png_sequence_from_candidates(
+		BENDING_DOWN_PICKUP_ROOT_CANDIDATES,
+		BENDING_DOWN_PICKUP_PREFIXES,
 		true
 	)
 
