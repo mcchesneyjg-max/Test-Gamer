@@ -57,6 +57,7 @@ enum TreeLifePhase { STANDING, LOG_PILE, DEPLETED }
 enum FallPhase { NONE, FALLING, FALLEN_CHOP, TREE_TO_LOG }
 
 var _chopper: Node = null
+var _stump_worker: Node = null
 var _chop_overlay_active: bool = false
 var _tree_variant: String = ""
 var _axe_strike_root_candidates: Array[String] = []
@@ -110,6 +111,7 @@ func _process(delta: float) -> void:
 
 func _exit_tree() -> void:
 	_chopper = null
+	_stump_worker = null
 	TreeRegistry.unregister_tree(self)
 
 func is_available_to(chopper: Node) -> bool:
@@ -230,6 +232,32 @@ func get_chop_position() -> Vector2:
 
 func is_depleted() -> bool:
 	return _life_phase == TreeLifePhase.DEPLETED
+
+func is_depleted_stump() -> bool:
+	return _life_phase == TreeLifePhase.DEPLETED
+
+func is_stump_available_to(worker: Node) -> bool:
+	_clear_stale_stump_worker()
+	return is_depleted_stump() and (_stump_worker == null or _stump_worker == worker)
+
+func try_reserve_stump_removal(worker: Node) -> bool:
+	_clear_stale_stump_worker()
+	if not is_depleted_stump():
+		return false
+	if _stump_worker != null and _stump_worker != worker:
+		return false
+	_stump_worker = worker
+	return true
+
+func release_stump_reservation(worker: Node) -> void:
+	if _stump_worker == worker:
+		_stump_worker = null
+
+func remove_stump() -> void:
+	if not is_depleted_stump():
+		return
+	print("MatureTree: removed depleted stump at %s" % position)
+	queue_free()
 
 func harvest(amount: int = 1, chopper: Node = null) -> int:
 	if _life_phase == TreeLifePhase.LOG_PILE:
@@ -586,6 +614,10 @@ func _clear_stale_chopper() -> void:
 		if _fall_phase == FallPhase.NONE and _life_phase == TreeLifePhase.STANDING:
 			end_axe_strike()
 		set_chopper_draws_behind_tree(false)
+
+func _clear_stale_stump_worker() -> void:
+	if _stump_worker != null and not is_instance_valid(_stump_worker):
+		_stump_worker = null
 
 func _setup_chop_foreground_sprite() -> void:
 	_foreground_sprite.z_as_relative = false
