@@ -9,6 +9,7 @@ const WEST := Vector2(-1.0, 0.0)
 @export var move_speed: float = 49.13
 @export var standing_chop_east_offset: float = 6.0
 @export var fallen_log_extra_west: float = 14.0
+@export var fallen_log_second_pickup_extra_west: float = 8.0
 @export var fall_animation_extra_west: float = 6.0
 @export var fine_west_offset: float = 1.0
 
@@ -343,7 +344,18 @@ func _get_chop_position() -> Vector2:
 
 func _get_fallen_log_walk_target() -> Vector2:
 	var base_position := _get_fallen_log_chop_position()
-	return base_position + Vector2(-fallen_log_extra_west, 0.0)
+	return base_position + Vector2(-_get_log_pile_west_offset(), 0.0)
+
+func _get_log_pile_west_offset() -> float:
+	var remaining := _get_log_pile_pickups_remaining()
+	if remaining == 2:
+		return fallen_log_extra_west + fallen_log_second_pickup_extra_west
+	return fallen_log_extra_west
+
+func _get_log_pile_pickups_remaining() -> int:
+	if _is_tree_valid() and _target_tree.has_method("get_log_pile_pickups_remaining"):
+		return _target_tree.get_log_pile_pickups_remaining()
+	return 3
 
 func _get_fallen_log_chop_position() -> Vector2:
 	if _is_tree_valid() and _target_tree.has_method("get_fallen_log_chop_position"):
