@@ -4,6 +4,8 @@ A Godot 4 pixel strategy game: build a city and supply chains, then defend again
 
 See [GAME_DESIGN.md](GAME_DESIGN.md) for the pitch and two-phase gameplay loop.
 
+**Windows command cheat sheet:** [GAME_DEV_COMMANDS.md](GAME_DEV_COMMANDS.md) — git pull, save your Godot tweaks, upload art, avoid overwrites.
+
 The playable map is a **250×250 tile grid** with **32×32 pixel tiles** (8000×8000 pixels).
 
 ## Open the Godot project
