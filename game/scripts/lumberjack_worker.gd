@@ -8,8 +8,8 @@ const WEST := Vector2(-1.0, 0.0)
 
 @export var move_speed: float = 49.13
 @export var standing_chop_east_offset: float = 6.0
-@export var fallen_log_extra_west: float = 14.0
-@export var fallen_log_second_pickup_extra_west: float = 8.0
+@export var fallen_log_extra_west: float = 30.0
+@export var fallen_log_second_pickup_extra_west: float = 35.0
 @export var fall_animation_extra_west: float = 6.0
 @export var fine_west_offset: float = 1.0
 
