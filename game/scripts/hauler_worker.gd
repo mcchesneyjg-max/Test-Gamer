@@ -173,7 +173,7 @@ func _execute_cargo_pickup() -> void:
 		return
 
 	_cargo_amount = taken
-	_cargo.visible = true
+	_sync_cargo_visual()
 	_state = State.TO_DEST
 	_move_direction = Vector2.ZERO
 	_travel_target = _get_destination_position(_destination)
@@ -188,7 +188,7 @@ func _deliver_cargo() -> void:
 		_cargo_amount -= delivered
 
 	if _cargo_amount <= 0:
-		_cargo.visible = false
+		_sync_cargo_visual()
 		_return_idle()
 	elif _find_best_destination() != null:
 		_state = State.TO_DEST
@@ -254,3 +254,11 @@ func _is_destination_valid() -> bool:
 		and _destination.has_method("can_accept_logs")
 		and _destination.can_accept_logs()
 	)
+
+func _sync_cargo_visual() -> void:
+	var carrying := _cargo_amount > 0
+	CharacterWalk.set_carrying_log(_body, carrying)
+	if CharacterWalk.has_walk_with_log_animations(_body):
+		_cargo.visible = false
+	else:
+		_cargo.visible = carrying
