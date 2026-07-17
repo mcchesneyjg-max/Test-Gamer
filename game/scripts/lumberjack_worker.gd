@@ -239,7 +239,7 @@ func _complete_log_pickup() -> void:
 	_set_tree_chop_overlay(false)
 	_end_tree_axe_strike()
 	_cargo_amount = 1
-	_cargo.visible = true
+	_sync_cargo_visual()
 	_release_tree_reservation()
 	_target_tree = null
 	_target_is_log_pile = false
@@ -295,7 +295,7 @@ func _deliver_log() -> void:
 		_cargo_amount -= deposited
 
 	if _cargo_amount <= 0:
-		_cargo.visible = false
+		_sync_cargo_visual()
 	_return_idle()
 
 func _end_tree_axe_strike() -> void:
@@ -385,3 +385,11 @@ func _is_camp_valid() -> bool:
 
 func _is_tree_valid() -> bool:
 	return _target_tree != null and is_instance_valid(_target_tree) and _target_tree.has_method("harvest")
+
+func _sync_cargo_visual() -> void:
+	var carrying := _cargo_amount > 0
+	CharacterWalk.set_carrying_log(_body, carrying)
+	if CharacterWalk.has_walk_with_log_animations(_body):
+		_cargo.visible = false
+	else:
+		_cargo.visible = carrying

@@ -9,6 +9,9 @@ const WALK_ANIMATIONS_ROOT_CANDIDATES: Array[String] = [
 	"%s/walking_animations" % NPC_ANIMATIONS_BASE,
 	"%s/walking_animations" % LEGACY_SPRITES_BASE,
 ]
+const WALK_WITH_LOG_ROOT_CANDIDATES: Array[String] = [
+	"%s/walking_with_log" % NPC_ANIMATIONS_BASE,
+]
 const WAITING_ANIMATIONS_ROOT_CANDIDATES: Array[String] = [
 	"%s/waiting_animation" % NPC_ANIMATIONS_BASE,
 	"%s/waiting_animation" % LEGACY_SPRITES_BASE,
@@ -50,6 +53,8 @@ const META_LOG_CUT_ELAPSED := "character_walk_log_cut_elapsed"
 const META_LOG_CUT_INTRO_FINISHED := "character_walk_log_cut_intro_finished"
 const META_BENDING_DOWN_PICKUP_ELAPSED := "character_walk_bending_down_pickup_elapsed"
 const META_BENDING_DOWN_PICKUP_FINISHED := "character_walk_bending_down_pickup_finished"
+const META_CARRYING_LOG := "character_walk_carrying_log"
+const META_HAS_WALK_WITH_LOG := "character_walk_has_walk_with_log"
 const CHOP_LOOP_START_FRAME := 3
 const CHOP_AXE_STRIKE_TRIGGER_FRAME := 6
 const DIRECTION_TO_FOLDER := {
@@ -62,11 +67,25 @@ const DIRECTION_TO_FOLDER := {
 	"w": "walk_west",
 	"nw": "walk_north_west",
 }
+const DIRECTION_TO_LOG_FOLDER := {
+	"n": "walk_log_north",
+	"ne": "walk_log_north_east",
+	"e": "walk_log_east",
+	"se": "walk_log_south_east",
+	"s": "walk_log_south",
+	"sw": "walk_log_south_west",
+	"w": "walk_log_west",
+	"nw": "walk_log_north_west",
+}
 const FOLDER_ALIASES := {
 	"walk_north_east": ["walk_northeast"],
 	"walk_north_west": ["walk_northwest"],
 	"walk_south_east": ["walk_southeast"],
 	"walk_south_west": ["walk_southwest"],
+	"walk_log_north_east": ["walk_lognortheast"],
+	"walk_log_north_west": ["walk_lognorthwest"],
+	"walk_log_south_east": ["walk_logsoutheast"],
+	"walk_log_south_west": ["walk_logsouthwest"],
 }
 const ALL_DIRECTION_FOLDERS: Array[String] = [
 	"walk_north",
@@ -87,6 +106,26 @@ const FOLDER_FILENAME_PREFIXES := {
 	"walk_south_east": ["walk_south_east", "walk_southeast", "walksoutheast"],
 	"walk_south_west": ["walk_south_west", "walk_southwest", "walksouthwest"],
 	"walk_west": ["walk_west"],
+}
+const ALL_LOG_DIRECTION_FOLDERS: Array[String] = [
+	"walk_log_north",
+	"walk_log_north_east",
+	"walk_log_north_west",
+	"walk_log_east",
+	"walk_log_south",
+	"walk_log_south_east",
+	"walk_log_south_west",
+	"walk_log_west",
+]
+const LOG_FOLDER_FILENAME_PREFIXES := {
+	"walk_log_north": ["walk_log_north"],
+	"walk_log_north_east": ["walk_log_north_east", "walk_lognortheast"],
+	"walk_log_north_west": ["walk_log_north_west", "walk_lognorthwest"],
+	"walk_log_east": ["walk_log_east"],
+	"walk_log_south": ["walk_log_south"],
+	"walk_log_south_east": ["walk_log_south_east", "walk_logsoutheast"],
+	"walk_log_south_west": ["walk_log_south_west", "walk_logsouthwest"],
+	"walk_log_west": ["walk_log_west"],
 }
 const ANGLE_INDEX_TO_DIRECTION := ["e", "se", "s", "sw", "w", "nw", "n", "ne"]
 
@@ -112,6 +151,22 @@ static func apply_shared(
 		for texture in frame_textures:
 			frames.add_frame(animation_name, texture)
 		loaded_any = true
+		print("CharacterWalk: loaded %d frames for %s" % [frame_textures.size(), folder_name])
+
+	var loaded_log_walk := false
+	for direction_key in DIRECTION_TO_LOG_FOLDER.keys():
+		var folder_name: String = DIRECTION_TO_LOG_FOLDER[direction_key]
+		var frame_textures := _load_log_direction_frames(folder_name)
+		if frame_textures.is_empty():
+			continue
+
+		var animation_name := StringName(folder_name)
+		frames.add_animation(animation_name)
+		frames.set_animation_loop(animation_name, true)
+		frames.set_animation_speed(animation_name, walk_speed)
+		for texture in frame_textures:
+			frames.add_frame(animation_name, texture)
+		loaded_log_walk = true
 		print("CharacterWalk: loaded %d frames for %s" % [frame_textures.size(), folder_name])
 
 	if not loaded_any:
@@ -169,6 +224,8 @@ static func apply_shared(
 	sprite.flip_h = false
 	sprite.set_meta(META_PLAY_SPEED, walk_speed)
 	sprite.set_meta(META_CHOP_PLAY_SPEED, effective_chop_speed)
+	sprite.set_meta(META_CARRYING_LOG, false)
+	sprite.set_meta(META_HAS_WALK_WITH_LOG, loaded_log_walk)
 	_reset_waiting_state(sprite)
 	_start_waiting(sprite)
 	_apply_entity_y_sort(sprite)
@@ -187,7 +244,11 @@ static func update_motion(
 	sprite.set_meta(META_WAS_WALKING, true)
 
 	var direction := _direction_suffix_from_offset(move_offset)
-	var folder_name: String = DIRECTION_TO_FOLDER.get(direction, "")
+	var folder_name := _walk_folder_for_direction_on_sprite(
+		sprite,
+		direction,
+		is_carrying_log(sprite)
+	)
 	var animation_name := StringName(folder_name)
 	if folder_name.is_empty() or not sprite.sprite_frames.has_animation(animation_name):
 		_update_waiting(sprite, delta)
@@ -195,6 +256,20 @@ static func update_motion(
 
 	if sprite.animation != animation_name:
 		sprite.play(animation_name)
+
+static func is_carrying_log(sprite: AnimatedSprite2D) -> bool:
+	return sprite.get_meta(META_CARRYING_LOG, false)
+
+static func has_walk_with_log_animations(sprite: AnimatedSprite2D) -> bool:
+	return sprite.get_meta(META_HAS_WALK_WITH_LOG, false)
+
+static func set_carrying_log(sprite: AnimatedSprite2D, carrying: bool) -> void:
+	var was_carrying := is_carrying_log(sprite)
+	if was_carrying == carrying:
+		return
+
+	sprite.set_meta(META_CARRYING_LOG, carrying)
+	_refresh_active_walk_animation(sprite, carrying)
 
 static func reset_chopping(sprite: AnimatedSprite2D) -> void:
 	sprite.set_meta(META_CHOP_PHASE, "intro")
@@ -335,7 +410,25 @@ static func update_chopping(sprite: AnimatedSprite2D, delta: float = 0.0) -> voi
 static func _load_direction_frames(folder_name: String) -> Array[Texture2D]:
 	for walk_root in WALK_ANIMATIONS_ROOT_CANDIDATES:
 		for candidate in _folder_candidates(folder_name):
-			var frame_textures := _load_frame_folder("%s/%s" % [walk_root, candidate], candidate)
+			var frame_textures := _load_frame_folder(
+				"%s/%s" % [walk_root, candidate],
+				candidate,
+				FOLDER_FILENAME_PREFIXES,
+				ALL_DIRECTION_FOLDERS
+			)
+			if not frame_textures.is_empty():
+				return frame_textures
+	return []
+
+static func _load_log_direction_frames(folder_name: String) -> Array[Texture2D]:
+	for walk_root in WALK_WITH_LOG_ROOT_CANDIDATES:
+		for candidate in _folder_candidates(folder_name):
+			var frame_textures := _load_frame_folder(
+				"%s/%s" % [walk_root, candidate],
+				candidate,
+				LOG_FOLDER_FILENAME_PREFIXES,
+				ALL_LOG_DIRECTION_FOLDERS
+			)
 			if not frame_textures.is_empty():
 				return frame_textures
 	return []
@@ -724,7 +817,12 @@ static func _start_waiting(sprite: AnimatedSprite2D) -> void:
 	elif sprite.sprite_frames.has_animation(&"idle"):
 		sprite.play(&"idle")
 
-static func _load_frame_folder(folder_path: String, folder_name: String) -> Array[Texture2D]:
+static func _load_frame_folder(
+	folder_path: String,
+	folder_name: String,
+	prefix_map: Dictionary = FOLDER_FILENAME_PREFIXES,
+	all_folders: Array = ALL_DIRECTION_FOLDERS
+) -> Array[Texture2D]:
 	var textures: Array[Texture2D] = []
 	var dir := DirAccess.open(folder_path)
 	if dir == null:
@@ -735,7 +833,12 @@ static func _load_frame_folder(folder_path: String, folder_name: String) -> Arra
 	var file_name := dir.get_next()
 	while file_name != "":
 		if not dir.current_is_dir() and file_name.to_lower().ends_with(".png"):
-			if _file_matches_folder(file_name.get_basename(), folder_name):
+			if _file_matches_folder(
+				file_name.get_basename(),
+				folder_name,
+				prefix_map,
+				all_folders
+			):
 				file_names.append(file_name)
 		file_name = dir.get_next()
 	dir.list_dir_end()
@@ -760,8 +863,13 @@ static func _load_frame_folder(folder_path: String, folder_name: String) -> Arra
 
 	return textures
 
-static func _file_matches_folder(basename: String, folder_name: String) -> bool:
-	var prefixes: Array = FOLDER_FILENAME_PREFIXES.get(folder_name, [folder_name])
+static func _file_matches_folder(
+	basename: String,
+	folder_name: String,
+	prefix_map: Dictionary = FOLDER_FILENAME_PREFIXES,
+	all_folders: Array = ALL_DIRECTION_FOLDERS
+) -> bool:
+	var prefixes: Array = prefix_map.get(folder_name, [folder_name])
 	var matched_prefix := ""
 
 	for prefix in prefixes:
@@ -772,16 +880,53 @@ static func _file_matches_folder(basename: String, folder_name: String) -> bool:
 	if matched_prefix.is_empty():
 		return false
 
-	for other_folder in ALL_DIRECTION_FOLDERS:
+	for other_folder in all_folders:
 		if other_folder == folder_name:
 			continue
 		if not other_folder.begins_with("%s_" % folder_name):
 			continue
-		for other_prefix in FOLDER_FILENAME_PREFIXES.get(other_folder, [other_folder]):
+		for other_prefix in prefix_map.get(other_folder, [other_folder]):
 			if basename.begins_with("%s_" % other_prefix):
 				return false
 
 	return true
+
+static func _walk_folder_for_direction_on_sprite(sprite: AnimatedSprite2D, direction: String, carrying_log: bool) -> String:
+	if carrying_log and sprite.get_meta(META_HAS_WALK_WITH_LOG, false):
+		var log_folder: String = DIRECTION_TO_LOG_FOLDER.get(direction, "")
+		if (
+			not log_folder.is_empty()
+			and sprite.sprite_frames != null
+			and sprite.sprite_frames.has_animation(StringName(log_folder))
+		):
+			return log_folder
+	return DIRECTION_TO_FOLDER.get(direction, "")
+
+static func _refresh_active_walk_animation(sprite: AnimatedSprite2D, carrying: bool) -> void:
+	if sprite.sprite_frames == null:
+		return
+
+	var current := String(sprite.animation)
+	var direction := _direction_key_for_walk_folder(current)
+	if direction.is_empty():
+		return
+
+	var folder_name := _walk_folder_for_direction_on_sprite(sprite, direction, carrying)
+	if folder_name.is_empty():
+		return
+
+	var animation_name := StringName(folder_name)
+	if sprite.sprite_frames.has_animation(animation_name):
+		sprite.play(animation_name)
+
+static func _direction_key_for_walk_folder(folder_name: String) -> String:
+	for direction_key in DIRECTION_TO_FOLDER.keys():
+		if DIRECTION_TO_FOLDER[direction_key] == folder_name:
+			return direction_key
+	for direction_key in DIRECTION_TO_LOG_FOLDER.keys():
+		if DIRECTION_TO_LOG_FOLDER[direction_key] == folder_name:
+			return direction_key
+	return ""
 
 static func _frame_sort_key(filename: String) -> int:
 	var base := filename.get_basename()
