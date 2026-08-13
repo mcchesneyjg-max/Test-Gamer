@@ -88,12 +88,8 @@ func _begin_draw_mode() -> void:
 	_draw_anchor = Vector2i(-999999, -999999)
 	_panel.visible = false
 	_hint_label.text = (
-		"Draw log storage: drag horizontally for 1-%d pile slots (%dx%d tiles each). Esc to cancel."
-		% [
-			LogStorageAreaScript.MAX_PILE_SLOTS,
-			LogStorageAreaScript.PILE_SLOT_TILES.x,
-			LogStorageAreaScript.PILE_SLOT_TILES.y,
-		]
+		"Draw log storage: drag horizontally for 1-%d pile slots. Esc to cancel."
+		% LogStorageAreaScript.MAX_PILE_SLOTS
 	)
 	_hint_label.visible = true
 

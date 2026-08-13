@@ -5,7 +5,6 @@ signal storage_changed(current_amount: int, capacity_amount: int)
 const TILE_SIZE := 32
 const STAGES_PER_PILE := 18
 const MAX_PILE_SLOTS := 5
-const PILE_SLOT_TILES := Vector2i(3, 2)
 const PILE_VISUAL_OVERLAP := 16.0
 const LOG_PILE_ROOT := "res://assets/sprites/stacked_resources/logs"
 const LOG_PILE_PREFIXES: Array[String] = ["log_pile"]
@@ -20,44 +19,74 @@ var _pile_textures: Array[Texture2D] = []
 var _pile_sprites: Array[Sprite2D] = []
 var _registered: bool = false
 
+static var _metrics_loaded: bool = false
+static var _pile_width_px: float = 48.0
+static var _pile_height_px: float = 32.0
+static var _pile_step_px: float = 32.0
+
+static func _ensure_pile_metrics() -> void:
+	if _metrics_loaded:
+		return
+	_metrics_loaded = true
+	var roots: Array[String] = [LOG_PILE_ROOT]
+	var textures: Array[Texture2D] = CharacterWalk.load_png_sequence_from_candidates(
+		roots,
+		LOG_PILE_PREFIXES,
+		true
+	)
+	if not textures.is_empty():
+		_pile_width_px = float(textures[0].get_width())
+		_pile_height_px = float(textures[0].get_height())
+	_pile_step_px = maxf(_pile_width_px - PILE_VISUAL_OVERLAP, _pile_width_px * 0.35)
+
+static func zone_size_for_pile_count(pile_count: int) -> Vector2i:
+	_ensure_pile_metrics()
+	var count: int = clampi(pile_count, 1, MAX_PILE_SLOTS)
+	var total_width_px: float = _pile_width_px + maxf(count - 1, 0) * _pile_step_px
+	var width_tiles: int = maxi(1, ceili(total_width_px / float(TILE_SIZE)))
+	var height_tiles: int = maxi(1, ceili(_pile_height_px / float(TILE_SIZE)))
+	return Vector2i(width_tiles, height_tiles)
+
+static func pile_count_from_drag_width(raw_width_tiles: int) -> int:
+	_ensure_pile_metrics()
+	var raw_width_px: float = raw_width_tiles * TILE_SIZE
+	var pile_count: int = 1 + ceili(maxf(raw_width_px - _pile_width_px, 0) / _pile_step_px)
+	return clampi(pile_count, 1, MAX_PILE_SLOTS)
+
 static func get_pile_slot_tiles() -> Vector2i:
-	return PILE_SLOT_TILES
+	return zone_size_for_pile_count(1)
 
 static func get_min_zone_size() -> Vector2i:
-	return PILE_SLOT_TILES
+	return zone_size_for_pile_count(1)
 
 static func get_max_zone_size() -> Vector2i:
-	return Vector2i(PILE_SLOT_TILES.x * MAX_PILE_SLOTS, PILE_SLOT_TILES.y)
+	return zone_size_for_pile_count(MAX_PILE_SLOTS)
 
 static func pile_count_for_zone(zone: Rect2i) -> int:
-	if zone.size.y != PILE_SLOT_TILES.y:
+	_ensure_pile_metrics()
+	var expected_height: int = zone_size_for_pile_count(1).y
+	if zone.size.y != expected_height:
 		return 0
-	if zone.size.x % PILE_SLOT_TILES.x != 0:
+	var pile_count: int = pile_count_from_drag_width(zone.size.x)
+	if zone.size != zone_size_for_pile_count(pile_count):
 		return 0
-	var count := zone.size.x / PILE_SLOT_TILES.x
-	if count < 1 or count > MAX_PILE_SLOTS:
-		return 0
-	return count
+	return pile_count
 
 static func snap_zone_from_tiles(anchor: Vector2i, current: Vector2i) -> Rect2i:
-	var raw_width := absi(current.x - anchor.x) + 1
-	var pile_count := clampi(
-		ceili(float(raw_width) / float(PILE_SLOT_TILES.x)),
-		1,
-		MAX_PILE_SLOTS
-	)
-	var snapped_width := pile_count * PILE_SLOT_TILES.x
-	var snapped_height := PILE_SLOT_TILES.y
+	_ensure_pile_metrics()
+	var raw_width_tiles: int = absi(current.x - anchor.x) + 1
+	var pile_count: int = pile_count_from_drag_width(raw_width_tiles)
+	var zone_size: Vector2i = zone_size_for_pile_count(pile_count)
 
-	var left_x := anchor.x
+	var left_x: int = anchor.x
 	if current.x < anchor.x:
-		left_x = anchor.x - snapped_width + 1
+		left_x = anchor.x - zone_size.x + 1
 
-	var top_y := anchor.y
+	var top_y: int = anchor.y
 	if current.y < anchor.y:
-		top_y = anchor.y - snapped_height + 1
+		top_y = anchor.y - zone_size.y + 1
 
-	return Rect2i(left_x, top_y, snapped_width, snapped_height)
+	return Rect2i(left_x, top_y, zone_size.x, zone_size.y)
 
 func _ready() -> void:
 	_load_pile_textures()
@@ -95,7 +124,7 @@ func can_accept_logs() -> bool:
 func deposit_logs(amount: int) -> int:
 	if amount <= 0 or not can_accept_logs():
 		return 0
-	var added := mini(amount, get_capacity() - _delivery_count)
+	var added: int = mini(amount, get_capacity() - _delivery_count)
 	if added <= 0:
 		return 0
 	_delivery_count += added
@@ -111,21 +140,23 @@ func set_stored_logs(amount: int) -> void:
 	LogStorageAreaRegistry.notify_storage_changed()
 
 func get_delivery_position() -> Vector2:
-	var center_x := _zone.size.x * TILE_SIZE * 0.5
-	var south_y := _zone.size.y * TILE_SIZE + 14.0
+	var center_x: float = _zone.size.x * TILE_SIZE * 0.5
+	var south_y: float = _zone.size.y * TILE_SIZE + 14.0
 	return position + Vector2(center_x, south_y)
 
 func get_spawn_position(index: int) -> Vector2:
-	var delivery := get_delivery_position()
-	var spacing := 10.0
+	var delivery: Vector2 = get_delivery_position()
+	var spacing: float = 10.0
 	return delivery + Vector2(-16.0 + index * spacing, 10.0)
 
 func validate_zone(zone: Rect2i, tilemap: TileMap) -> String:
-	var pile_count := pile_count_for_zone(zone)
+	var pile_count: int = pile_count_for_zone(zone)
 	if pile_count <= 0:
+		var min_size: Vector2i = get_min_zone_size()
+		var max_size: Vector2i = get_max_zone_size()
 		return (
-			"Storage area must be %dx%d tiles per pile slot (1-%d slots wide)."
-			% [PILE_SLOT_TILES.x, PILE_SLOT_TILES.y, MAX_PILE_SLOTS]
+			"Storage area must fit %d-%d pile slots (about %dx%d to %dx%d tiles)."
+			% [1, MAX_PILE_SLOTS, min_size.x, min_size.y, max_size.x, max_size.y]
 		)
 
 	for tile_coords in GridPlacement.footprint_tiles(zone.position, zone.size):
@@ -206,7 +237,7 @@ func _slot_sprite_position(slot_index: int) -> Vector2:
 	var zone_width: float = _zone.size.x * TILE_SIZE
 	var origin_x: float = (zone_width - total_span) * 0.5
 	var x: float = origin_x + pile_width * 0.5 + slot_index * step
-	var y: float = PILE_SLOT_TILES.y * TILE_SIZE
+	var y: float = _pile_display_height()
 	return Vector2(x, y)
 
 func _pile_display_width() -> float:
@@ -214,6 +245,12 @@ func _pile_display_width() -> float:
 		return float(_pile_textures[0].get_width())
 	var fallback: Texture2D = preload("res://assets/sprites/wood_log.png")
 	return float(fallback.get_width())
+
+func _pile_display_height() -> float:
+	if not _pile_textures.is_empty():
+		return float(_pile_textures[0].get_height())
+	var fallback: Texture2D = preload("res://assets/sprites/wood_log.png")
+	return float(fallback.get_height())
 
 func _refresh_pile_visuals() -> void:
 	for slot_index in _pile_sprites.size():
