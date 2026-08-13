@@ -6,6 +6,7 @@ const TILE_SIZE := 32
 const STAGES_PER_PILE := 18
 const MAX_PILE_SLOTS := 5
 const PILE_SLOT_TILES := Vector2i(3, 2)
+const PILE_VISUAL_GAP := 2.0
 const LOG_PILE_ROOT := "res://assets/sprites/stacked_resources/logs"
 const LOG_PILE_PREFIXES: Array[String] = ["log_pile"]
 
@@ -199,12 +200,20 @@ func _build_pile_sprites() -> void:
 		_pile_sprites.append(sprite)
 
 func _slot_sprite_position(slot_index: int) -> Vector2:
-	var slot_offset_x := slot_index * PILE_SLOT_TILES.x * TILE_SIZE
-	var slot_width := PILE_SLOT_TILES.x * TILE_SIZE
-	var slot_height := PILE_SLOT_TILES.y * TILE_SIZE
-	var x := slot_offset_x + slot_width * 0.5
-	var y := slot_height
+	var pile_width := _pile_display_width()
+	var step := pile_width + PILE_VISUAL_GAP
+	var total_span := _pile_slot_count * pile_width + maxf(_pile_slot_count - 1, 0) * PILE_VISUAL_GAP
+	var zone_width := _zone.size.x * TILE_SIZE
+	var origin_x := (zone_width - total_span) * 0.5
+	var x := origin_x + pile_width * 0.5 + slot_index * step
+	var y := PILE_SLOT_TILES.y * TILE_SIZE
 	return Vector2(x, y)
+
+func _pile_display_width() -> float:
+	if not _pile_textures.is_empty():
+		return float(_pile_textures[0].get_width())
+	var fallback: Texture2D = preload("res://assets/sprites/wood_log.png")
+	return float(fallback.get_width())
 
 func _refresh_pile_visuals() -> void:
 	for slot_index in _pile_sprites.size():

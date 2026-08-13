@@ -64,7 +64,7 @@ func _close_panel() -> void:
 
 func _refresh_panel_labels() -> void:
 	if _selected_area != null and is_instance_valid(_selected_area):
-		var slots := LogStorageAreaScript.pile_count_for_zone(_selected_area.get_zone())
+		var slots: int = LogStorageAreaScript.pile_count_for_zone(_selected_area.get_zone())
 		_storage_label.text = "Stored: %d / %d logs (%d pile slots)" % [
 			_selected_area.get_stored_logs(),
 			_selected_area.get_capacity(),
@@ -157,10 +157,10 @@ func _assign_storage_zone(zone: Rect2i) -> String:
 		return "Map not ready."
 
 	if _selected_area != null and is_instance_valid(_selected_area):
-		var stored := _selected_area.get_stored_logs()
+		var stored: int = _selected_area.get_stored_logs()
 		_selected_area.queue_free()
 		_selected_area = null
-		var area := _spawn_storage_area(zone)
+		var area: Node2D = _spawn_storage_area(zone)
 		if area == null:
 			return "Could not create log storage area."
 		area.set_stored_logs(stored)
@@ -171,7 +171,7 @@ func _assign_storage_zone(zone: Rect2i) -> String:
 		if is_instance_valid(existing):
 			existing.queue_free()
 
-	var new_area := _spawn_storage_area(zone)
+	var new_area: Node2D = _spawn_storage_area(zone)
 	if new_area == null:
 		return "Could not create log storage area."
 	_selected_area = new_area
