@@ -200,13 +200,13 @@ func _build_pile_sprites() -> void:
 		_pile_sprites.append(sprite)
 
 func _slot_sprite_position(slot_index: int) -> Vector2:
-	var pile_width := _pile_display_width()
-	var step := pile_width + PILE_VISUAL_GAP
-	var total_span := _pile_slot_count * pile_width + maxf(_pile_slot_count - 1, 0) * PILE_VISUAL_GAP
-	var zone_width := _zone.size.x * TILE_SIZE
-	var origin_x := (zone_width - total_span) * 0.5
-	var x := origin_x + pile_width * 0.5 + slot_index * step
-	var y := PILE_SLOT_TILES.y * TILE_SIZE
+	var pile_width: float = _pile_display_width()
+	var step: float = maxf(pile_width - PILE_VISUAL_OVERLAP, pile_width * 0.35)
+	var total_span: float = pile_width + maxf(_pile_slot_count - 1, 0) * step
+	var zone_width: float = _zone.size.x * TILE_SIZE
+	var origin_x: float = (zone_width - total_span) * 0.5
+	var x: float = origin_x + pile_width * 0.5 + slot_index * step
+	var y: float = PILE_SLOT_TILES.y * TILE_SIZE
 	return Vector2(x, y)
 
 func _pile_display_width() -> float:
