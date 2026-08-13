@@ -70,12 +70,12 @@ func _refresh_panel_labels() -> void:
 			_selected_area.get_capacity(),
 			slots,
 		]
-		_status_label.text = "Haulers spawn from and deliver logs here."
-		_draw_button.text = "Redraw Storage Area"
+		_status_label.text = "Haulers deliver to the nearest storage with space."
+		_draw_button.text = "Draw Another Storage Area"
 	else:
-		_storage_label.text = "No log storage area yet"
+		_storage_label.text = "No log storage area selected"
 		_status_label.text = (
-			"Draw a storage area (%d-%d pile slots wide) or Shift+right-click on the map."
+			"Draw a storage area (%d-%d pile slots). You can place multiple on the map."
 			% [1, LogStorageAreaScript.MAX_PILE_SLOTS]
 		)
 		_draw_button.text = "Draw Log Storage Area"
@@ -138,10 +138,14 @@ func _commit_draw_zone(_end_tile: Vector2i) -> void:
 			_panel.visible = true
 		return
 
+	var was_redraw: bool = _selected_area != null and is_instance_valid(_selected_area)
 	error = _assign_storage_zone(zone)
 	_cancel_draw_mode()
 	if error.is_empty():
-		_status_label.text = "Log storage set! Haulers will spawn and deliver here."
+		if was_redraw:
+			_status_label.text = "Log storage area redrawn."
+		else:
+			_status_label.text = "Log storage area added."
 	else:
 		_status_label.text = error
 	if _selected_area != null and is_instance_valid(_selected_area):
@@ -162,10 +166,6 @@ func _assign_storage_zone(zone: Rect2i) -> String:
 		area.set_stored_logs(stored)
 		_selected_area = area
 		return ""
-
-	for existing in LogStorageAreaRegistry.get_active_areas():
-		if is_instance_valid(existing):
-			existing.queue_free()
 
 	var new_area: Node2D = _spawn_storage_area(zone)
 	if new_area == null:
