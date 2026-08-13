@@ -75,8 +75,7 @@ func _refresh_panel_labels() -> void:
 	else:
 		_storage_label.text = "No log storage area selected"
 		_status_label.text = (
-			"Draw a storage area (%d-%d pile slots). You can place multiple on the map."
-			% [1, LogStorageAreaScript.MAX_PILE_SLOTS]
+			"Draw a storage area: 4 tiles = 1 pile, 6 = 2, 8 = 3, 10 = 4, 12 = 5 piles."
 		)
 		_draw_button.text = "Draw Log Storage Area"
 
@@ -88,8 +87,12 @@ func _begin_draw_mode() -> void:
 	_draw_anchor = Vector2i(-999999, -999999)
 	_panel.visible = false
 	_hint_label.text = (
-		"Draw log storage: drag horizontally for 1-%d pile slots. Esc to cancel."
-		% LogStorageAreaScript.MAX_PILE_SLOTS
+		"Draw log storage: drag %d-%d tiles wide for 1-%d pile slots. Esc to cancel."
+		% [
+			LogStorageAreaScript.MIN_ZONE_WIDTH_TILES,
+			LogStorageAreaScript.MAX_ZONE_WIDTH_TILES,
+			LogStorageAreaScript.MAX_PILE_SLOTS,
+		]
 	)
 	_hint_label.visible = true
 
@@ -193,8 +196,13 @@ func _update_draw_preview() -> void:
 
 	if is_valid:
 		_hint_label.text = (
-			"Release to set storage (%d pile slot%s, capacity %d). Esc to cancel."
-			% [pile_count, "s" if pile_count != 1 else "", pile_count * LogStorageAreaScript.STAGES_PER_PILE]
+			"Release to set storage (%d pile slot%s, %d tiles wide, capacity %d). Esc to cancel."
+			% [
+				pile_count,
+				"s" if pile_count != 1 else "",
+				zone.size.x,
+				pile_count * LogStorageAreaScript.STAGES_PER_PILE,
+			]
 		)
 	else:
 		_hint_label.text = "%s — adjust outline. Esc to cancel." % validation_error

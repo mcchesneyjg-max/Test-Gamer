@@ -21,7 +21,7 @@ The playable map is a **250×250 tile grid** with **32×32 pixel tiles** (8000×
 - **T** — debug: add 1 wood log to log storage
 - **Left click** — place the selected building from the build menu (bottom of screen)
 - **Build menu** — Tree, Lumber Camp, Haulers, Forester, Log Storage, Cancel
-- **Log Storage** — select from menu, then drag a rectangle on the map (1–5 pile slots)
+- **Log Storage** — select from menu, then drag on the map (4 tiles = 1 pile, up to 12 tiles = 5 piles)
 - **Left click forester lodge** — open menu → **Draw Planting Zone** or **Upgrade Lodge**
 - **Left click log storage area** — view storage stats or redraw the zone
 - Forester lodge has **3 exterior levels** (same 4×4 tiles; building art grows larger when upgraded)
