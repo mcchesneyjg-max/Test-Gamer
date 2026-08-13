@@ -39,8 +39,6 @@ func _unhandled_input(event: InputEvent) -> void:
 				_try_place_lumber_camp()
 
 func _try_place_tree() -> void:
-	if ForesterLodgeRegistry.get_lodge_count() > 0:
-		return
 	var tile_coords := GridPlacement.mouse_tile_coords(_tilemap)
 	if not _is_valid_placement_tile(tile_coords):
 		return

@@ -6,7 +6,7 @@ const TILE_SIZE := 32
 const STAGES_PER_PILE := 18
 const MAX_PILE_SLOTS := 5
 const PILE_SLOT_TILES := Vector2i(3, 2)
-const PILE_VISUAL_GAP := 2.0
+const PILE_VISUAL_OVERLAP := 16.0
 const LOG_PILE_ROOT := "res://assets/sprites/stacked_resources/logs"
 const LOG_PILE_PREFIXES: Array[String] = ["log_pile"]
 
