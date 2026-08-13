@@ -7,6 +7,7 @@ const ARRIVE_DISTANCE := 18.0
 @export var move_speed: float = 52.02
 
 var _station: Node2D
+var _home_base: Node2D
 var _state: State = State.IDLE
 var _source: Node2D
 var _destination: Node2D
@@ -20,8 +21,13 @@ var _awaiting_bend_pickup: bool = false
 @onready var _body: AnimatedSprite2D = $Body
 @onready var _cargo: Sprite2D = $Cargo
 
-func setup(station: Node2D, _body_color: Color = Color.WHITE) -> void:
+func setup(station: Node2D, _body_color: Color = Color.WHITE, home_base: Node2D = null) -> void:
 	_station = station
+	_home_base = home_base if home_base != null else station
+
+func set_home_base(home_base: Node2D) -> void:
+	if home_base != null and is_instance_valid(home_base):
+		_home_base = home_base
 
 func _ready() -> void:
 	add_to_group("hauler_worker")
@@ -51,9 +57,9 @@ func _update_animation(delta: float) -> void:
 	CharacterWalk.update_motion(_body, is_walking, _last_move_offset, delta)
 
 func _process_idle(delta: float) -> void:
-	if _station != null and is_instance_valid(_station):
-		if position.distance_to(_station.position) > 14.0:
-			_move_toward(_station.position, delta * 0.6)
+	var idle_target := _get_idle_position()
+	if idle_target != Vector2.ZERO and position.distance_to(idle_target) > 14.0:
+		_move_toward(idle_target, delta * 0.6)
 
 	_idle_timer -= delta
 	if _idle_timer > 0.0:
@@ -134,6 +140,17 @@ func _find_best_source() -> Node2D:
 func _find_best_destination() -> Node2D:
 	var best: Node2D = null
 	var best_distance := INF
+
+	for area in LogStorageAreaRegistry.get_active_areas():
+		if not area.has_method("can_accept_logs") or not area.can_accept_logs():
+			continue
+		var distance := position.distance_to(_get_destination_position(area))
+		if distance < best_distance:
+			best_distance = distance
+			best = area
+
+	if best != null:
+		return best
 
 	for warehouse in WarehouseRegistry.get_active_warehouses():
 		if not warehouse.has_method("can_accept_logs") or not warehouse.can_accept_logs():
@@ -232,7 +249,20 @@ func _is_near_pickup(source: Node2D) -> bool:
 func _get_destination_position(destination: Node2D) -> Vector2:
 	if destination.has_method("get_delivery_position"):
 		return destination.get_delivery_position()
-	return destination.position
+	if destination.get_parent() == get_parent():
+		return destination.position
+	return destination.global_position
+
+func _get_idle_position() -> Vector2:
+	if _home_base != null and is_instance_valid(_home_base):
+		if _home_base.has_method("get_spawn_position"):
+			return _home_base.get_spawn_position(0)
+		if _home_base.get_parent() == get_parent():
+			return _home_base.position
+		return _home_base.global_position
+	if _station != null and is_instance_valid(_station):
+		return _station.position
+	return Vector2.ZERO
 
 func _move_toward(target_position: Vector2, delta: float) -> void:
 	var movement := GridMovement.step_toward(position, target_position, move_speed, delta, _move_direction)

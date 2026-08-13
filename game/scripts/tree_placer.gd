@@ -3,6 +3,7 @@ extends Node2D
 @onready var _tilemap: TileMap = $"../TileMap"
 @onready var _forester_ui: CanvasLayer = $"../ForesterUi"
 @onready var _lumber_camp_ui: CanvasLayer = $"../LumberCampUi"
+@onready var _warehouse_ui: CanvasLayer = $"../WarehouseUi"
 
 const MATURE_TREE_SCENE := preload("res://scenes/mature_tree.tscn")
 const LUMBER_CAMP_SCENE := preload("res://scenes/lumber_camp.tscn")
@@ -15,9 +16,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if _lumber_camp_ui and _lumber_camp_ui.handle_input(event):
 		return
+	if _warehouse_ui and _warehouse_ui.handle_input(event):
+		return
 	if _forester_ui and _forester_ui.is_blocking_placement():
 		return
 	if _lumber_camp_ui and _lumber_camp_ui.is_blocking_placement():
+		return
+	if _warehouse_ui and _warehouse_ui.is_blocking_placement():
 		return
 
 	if event is InputEventMouseButton and event.pressed:
@@ -114,6 +119,9 @@ func _is_tile_occupied(tile_coords: Vector2i) -> bool:
 			return true
 	for lodge in ForesterLodgeRegistry.get_active_lodges():
 		if lodge.has_method("occupies_tile") and lodge.occupies_tile(tile_coords):
+			return true
+	for area in LogStorageAreaRegistry.get_active_areas():
+		if area.has_method("occupies_tile") and area.occupies_tile(tile_coords):
 			return true
 	for sapling in SaplingRegistry.get_active_saplings():
 		if _tilemap.local_to_map(sapling.position) == tile_coords:

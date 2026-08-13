@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://log-storage-area"]
+
+[ext_resource type="Script" path="res://scripts/log_storage_area.gd" id="1_area"]
+
+[node name="LogStorageArea" type="Node2D"]
+z_index = 2
+script = ExtResource("1_area")
+
+[node name="PileSlots" type="Node2D" parent="."]

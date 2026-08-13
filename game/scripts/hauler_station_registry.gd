@@ -33,3 +33,8 @@ func get_total_haulers() -> int:
 func _emit_counts() -> void:
 	station_count_changed.emit(_stations.size())
 	hauler_workforce_changed.emit(get_total_haulers())
+
+func notify_log_storage_available() -> void:
+	for station in _stations:
+		if station.has_method("_reposition_workers_to_storage"):
+			station._reposition_workers_to_storage()
