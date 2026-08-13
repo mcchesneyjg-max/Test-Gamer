@@ -19,7 +19,7 @@ The playable map is a **250×250 tile grid** with **32×32 pixel tiles** (8000×
 - **Mouse wheel** — zoom in and out (camera follows the player)
 - Buildings and planting zones snap to the **cardinal tile grid** (north/south/east/west tiles only)
 - **T** — debug: add 1 wood log to log storage
-- **Left click** — place a mature tree on the map (disabled once a Forester Lodge exists)
+- **Left click** — place a mature tree on grass (not on buildings or log storage zones)
 - **Right click** — place a lumber camp (lumberjack walks to trees, chops, drags logs back)
 - **Shift + Right click** — draw a log storage area on the map (1–5 pile slots)
 - **Ctrl + Right click** — place a hauler station on the map
