@@ -5,6 +5,8 @@ signal storage_changed(current_amount: int, capacity_amount: int)
 const TILE_SIZE := 32
 const STAGES_PER_PILE := 18
 const MAX_PILE_SLOTS := 5
+const MIN_ZONE_WIDTH_TILES := 4
+const MAX_ZONE_WIDTH_TILES := 12
 const PILE_VISUAL_OVERLAP := 16.0
 const LOG_PILE_ROOT := "res://assets/sprites/stacked_resources/logs"
 const LOG_PILE_PREFIXES: Array[String] = ["log_pile"]
@@ -39,19 +41,26 @@ static func _ensure_pile_metrics() -> void:
 		_pile_height_px = float(textures[0].get_height())
 	_pile_step_px = maxf(_pile_width_px - PILE_VISUAL_OVERLAP, _pile_width_px * 0.35)
 
+static func zone_width_for_pile_count(pile_count: int) -> int:
+	var count: int = clampi(pile_count, 1, MAX_PILE_SLOTS)
+	return MIN_ZONE_WIDTH_TILES + (count - 1) * 2
+
 static func zone_size_for_pile_count(pile_count: int) -> Vector2i:
 	_ensure_pile_metrics()
-	var count: int = clampi(pile_count, 1, MAX_PILE_SLOTS)
-	var total_width_px: float = _pile_width_px + maxf(count - 1, 0) * _pile_step_px
-	var width_tiles: int = maxi(1, ceili(total_width_px / float(TILE_SIZE)))
+	var width_tiles: int = zone_width_for_pile_count(pile_count)
 	var height_tiles: int = maxi(1, ceili(_pile_height_px / float(TILE_SIZE)))
 	return Vector2i(width_tiles, height_tiles)
 
 static func pile_count_from_drag_width(raw_width_tiles: int) -> int:
-	_ensure_pile_metrics()
-	var raw_width_px: float = raw_width_tiles * TILE_SIZE
-	var pile_count: int = 1 + ceili(maxf(raw_width_px - _pile_width_px, 0) / _pile_step_px)
-	return clampi(pile_count, 1, MAX_PILE_SLOTS)
+	var best_count: int = 1
+	var best_distance: int = 999999
+	for pile_count in range(1, MAX_PILE_SLOTS + 1):
+		var zone_width: int = zone_width_for_pile_count(pile_count)
+		var distance: int = absi(raw_width_tiles - zone_width)
+		if distance < best_distance:
+			best_distance = distance
+			best_count = pile_count
+	return best_count
 
 static func get_pile_slot_tiles() -> Vector2i:
 	return zone_size_for_pile_count(1)
@@ -152,11 +161,9 @@ func get_spawn_position(index: int) -> Vector2:
 func validate_zone(zone: Rect2i, tilemap: TileMap) -> String:
 	var pile_count: int = pile_count_for_zone(zone)
 	if pile_count <= 0:
-		var min_size: Vector2i = get_min_zone_size()
-		var max_size: Vector2i = get_max_zone_size()
 		return (
-			"Storage area must fit %d-%d pile slots (about %dx%d to %dx%d tiles)."
-			% [1, MAX_PILE_SLOTS, min_size.x, min_size.y, max_size.x, max_size.y]
+			"Storage area must fit %d-%d pile slots (%d-%d tiles wide)."
+			% [1, MAX_PILE_SLOTS, MIN_ZONE_WIDTH_TILES, MAX_ZONE_WIDTH_TILES]
 		)
 
 	for tile_coords in GridPlacement.footprint_tiles(zone.position, zone.size):
