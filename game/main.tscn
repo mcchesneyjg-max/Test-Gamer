@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://forester-ui" path="res://scenes/forester_ui.tscn" id="8_forester_ui"]
 [ext_resource type="PackedScene" uid="uid://lumber-camp-ui" path="res://scenes/lumber_camp_ui.tscn" id="11_lumber_camp_ui"]
 [ext_resource type="PackedScene" uid="uid://log-storage-ui" path="res://scenes/log_storage_ui.tscn" id="12_log_storage_ui"]
+[ext_resource type="PackedScene" uid="uid://building-menu-ui" path="res://scenes/building_menu_ui.tscn" id="13_building_menu_ui"]
 [ext_resource type="Script" path="res://scripts/forester_zone_overlay.gd" id="9_zone_overlay"]
 [ext_resource type="PackedScene" uid="uid://city-siege-player" path="res://scenes/player.tscn" id="10_player"]
 
@@ -41,3 +42,5 @@ script = ExtResource("3_map")
 [node name="LumberCampUi" parent="." instance=ExtResource("11_lumber_camp_ui")]
 
 [node name="LogStorageUi" parent="." instance=ExtResource("12_log_storage_ui")]
+
+[node name="BuildingMenuUi" parent="." instance=ExtResource("13_building_menu_ui")]

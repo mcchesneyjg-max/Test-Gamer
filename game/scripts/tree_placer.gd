@@ -1,4 +1,7 @@
 extends Node2D
+class_name TreePlacer
+
+enum PlacementMode { NONE, TREE, LUMBER_CAMP, HAULER_STATION, FORESTER_LODGE }
 
 @onready var _tilemap: TileMap = $"../TileMap"
 @onready var _forester_ui: CanvasLayer = $"../ForesterUi"
@@ -9,6 +12,17 @@ const MATURE_TREE_SCENE := preload("res://scenes/mature_tree.tscn")
 const LUMBER_CAMP_SCENE := preload("res://scenes/lumber_camp.tscn")
 const HAULER_STATION_SCENE := preload("res://scenes/hauler_station.tscn")
 const FORESTER_LODGE_SCENE := preload("res://scenes/forester_lodge.tscn")
+
+var _placement_mode: PlacementMode = PlacementMode.NONE
+
+func get_placement_mode() -> PlacementMode:
+	return _placement_mode
+
+func set_placement_mode(mode: PlacementMode) -> void:
+	_placement_mode = mode
+
+func clear_placement_mode() -> void:
+	_placement_mode = PlacementMode.NONE
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _forester_ui and _forester_ui.handle_input(event):
@@ -24,19 +38,21 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _log_storage_ui and _log_storage_ui.is_blocking_placement():
 		return
 
-	if event is InputEventMouseButton and event.pressed:
-		if event.button_index == MOUSE_BUTTON_LEFT:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_try_place_selected()
+
+func _try_place_selected() -> void:
+	match _placement_mode:
+		PlacementMode.TREE:
 			_try_place_tree()
-		elif event.button_index == MOUSE_BUTTON_RIGHT:
-			if event.alt_pressed:
-				_try_place_forester_lodge()
-			elif event.ctrl_pressed:
-				_try_place_hauler_station()
-			elif event.shift_pressed:
-				if _log_storage_ui:
-					_log_storage_ui.start_draw_mode()
-			else:
-				_try_place_lumber_camp()
+		PlacementMode.LUMBER_CAMP:
+			_try_place_lumber_camp()
+		PlacementMode.HAULER_STATION:
+			_try_place_hauler_station()
+		PlacementMode.FORESTER_LODGE:
+			_try_place_forester_lodge()
+		_:
+			pass
 
 func _try_place_tree() -> void:
 	var tile_coords := GridPlacement.mouse_tile_coords(_tilemap)
