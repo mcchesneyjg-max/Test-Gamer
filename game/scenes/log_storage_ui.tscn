@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://warehouse-ui"]
+[gd_scene load_steps=2 format=3 uid="uid://log-storage-ui"]
 
-[ext_resource type="Script" path="res://scripts/warehouse_ui.gd" id="1_ui"]
+[ext_resource type="Script" path="res://scripts/log_storage_ui.gd" id="1_ui"]
 
-[node name="WarehouseUi" type="CanvasLayer"]
+[node name="LogStorageUi" type="CanvasLayer"]
 script = ExtResource("1_ui")
 
 [node name="Panel" type="PanelContainer" parent="."]
@@ -32,7 +32,7 @@ theme_override_constants/separation = 8
 [node name="TitleLabel" type="Label" parent="Panel/Margin/VBox"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
-text = "Warehouse"
+text = "Log Storage"
 horizontal_alignment = 1
 
 [node name="StorageLabel" type="Label" parent="Panel/Margin/VBox"]

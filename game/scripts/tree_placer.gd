@@ -3,11 +3,10 @@ extends Node2D
 @onready var _tilemap: TileMap = $"../TileMap"
 @onready var _forester_ui: CanvasLayer = $"../ForesterUi"
 @onready var _lumber_camp_ui: CanvasLayer = $"../LumberCampUi"
-@onready var _warehouse_ui: CanvasLayer = $"../WarehouseUi"
+@onready var _log_storage_ui: CanvasLayer = $"../LogStorageUi"
 
 const MATURE_TREE_SCENE := preload("res://scenes/mature_tree.tscn")
 const LUMBER_CAMP_SCENE := preload("res://scenes/lumber_camp.tscn")
-const WAREHOUSE_SCENE := preload("res://scenes/warehouse_building.tscn")
 const HAULER_STATION_SCENE := preload("res://scenes/hauler_station.tscn")
 const FORESTER_LODGE_SCENE := preload("res://scenes/forester_lodge.tscn")
 
@@ -16,13 +15,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if _lumber_camp_ui and _lumber_camp_ui.handle_input(event):
 		return
-	if _warehouse_ui and _warehouse_ui.handle_input(event):
+	if _log_storage_ui and _log_storage_ui.handle_input(event):
 		return
 	if _forester_ui and _forester_ui.is_blocking_placement():
 		return
 	if _lumber_camp_ui and _lumber_camp_ui.is_blocking_placement():
 		return
-	if _warehouse_ui and _warehouse_ui.is_blocking_placement():
+	if _log_storage_ui and _log_storage_ui.is_blocking_placement():
 		return
 
 	if event is InputEventMouseButton and event.pressed:
@@ -34,7 +33,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			elif event.ctrl_pressed:
 				_try_place_hauler_station()
 			elif event.shift_pressed:
-				_try_place_warehouse()
+				if _log_storage_ui:
+					_log_storage_ui.start_draw_mode()
 			else:
 				_try_place_lumber_camp()
 
@@ -57,15 +57,6 @@ func _try_place_lumber_camp() -> void:
 	var camp := LUMBER_CAMP_SCENE.instantiate()
 	camp.position = GridPlacement.tile_to_world(_tilemap, tile_coords)
 	_tilemap.add_child(camp)
-
-func _try_place_warehouse() -> void:
-	var tile_coords := GridPlacement.mouse_tile_coords(_tilemap)
-	if not _is_valid_placement_tile(tile_coords):
-		return
-
-	var warehouse := WAREHOUSE_SCENE.instantiate()
-	warehouse.position = GridPlacement.tile_to_world(_tilemap, tile_coords)
-	_tilemap.add_child(warehouse)
 
 func _try_place_hauler_station() -> void:
 	var tile_coords := GridPlacement.mouse_tile_coords(_tilemap)
@@ -110,9 +101,6 @@ func _is_tile_occupied(tile_coords: Vector2i) -> bool:
 			return true
 	for camp in CampRegistry.get_active_camps():
 		if _tilemap.local_to_map(camp.position) == tile_coords:
-			return true
-	for warehouse in WarehouseRegistry.get_active_warehouses():
-		if _tilemap.local_to_map(warehouse.position) == tile_coords:
 			return true
 	for station in HaulerStationRegistry.get_active_stations():
 		if _tilemap.local_to_map(station.position) == tile_coords:

@@ -1,6 +1,8 @@
 extends Node
 
 const MATURE_TREE_SCENE := preload("res://scenes/mature_tree.tscn")
+const LOG_STORAGE_AREA_SCENE := preload("res://scenes/log_storage_area.tscn")
+const LogStorageAreaScript := preload("res://scripts/log_storage_area.gd")
 
 func _frame_view(world_position: Vector2, zoom_level: Vector2 = Vector2(3, 3)) -> void:
 	var player: Node2D = get_parent().get_node("TileMap/Player")
@@ -51,6 +53,15 @@ func _spawn_lodge_with_zone(tilemap: TileMap, center_coords: Vector2i, half_size
 	await get_tree().process_frame
 	lodge.assign_default_plant_zone(half_size)
 	return lodge
+
+func _spawn_log_storage(tilemap: TileMap, top_left: Vector2i, pile_slots: int = 1) -> Node2D:
+	var slot_tiles := LogStorageAreaScript.get_pile_slot_tiles()
+	var zone := Rect2i(top_left, Vector2i(slot_tiles.x * pile_slots, slot_tiles.y))
+	var area: Node2D = LOG_STORAGE_AREA_SCENE.instantiate()
+	tilemap.add_child(area)
+	area.initialize_zone(zone)
+	await get_tree().process_frame
+	return area
 
 func _capture_task2() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
@@ -147,12 +158,8 @@ func _capture_task5() -> void:
 	var tilemap: TileMap = get_parent().get_node("TileMap")
 	_frame_view(Vector2(125, 125) * 32)
 
-	var warehouse_scene := preload("res://scenes/warehouse_building.tscn")
-	var warehouse = warehouse_scene.instantiate()
-	warehouse.position = tilemap.map_to_local(Vector2i(124, 124))
-	tilemap.add_child(warehouse)
-	await get_tree().process_frame
-	warehouse.deposit_logs(12)
+	var storage = await _spawn_log_storage(tilemap, Vector2i(123, 125), 1)
+	storage.deposit_logs(12)
 
 	await get_tree().create_timer(0.5).timeout
 	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
@@ -189,10 +196,7 @@ func _capture_task7() -> void:
 	await get_tree().process_frame
 	camp.deposit_to_output(4)
 
-	var warehouse_scene := preload("res://scenes/warehouse_building.tscn")
-	var warehouse = warehouse_scene.instantiate()
-	warehouse.position = tilemap.map_to_local(Vector2i(132, 124))
-	tilemap.add_child(warehouse)
+	await _spawn_log_storage(tilemap, Vector2i(130, 125), 1)
 
 	var station_scene := preload("res://scenes/hauler_station.tscn")
 	var station = station_scene.instantiate()
@@ -228,10 +232,7 @@ func _capture_art_pass() -> void:
 	await get_tree().process_frame
 	camp.deposit_to_output(3)
 
-	var warehouse_scene := preload("res://scenes/warehouse_building.tscn")
-	var warehouse = warehouse_scene.instantiate()
-	warehouse.position = tilemap.map_to_local(Vector2i(132, 124))
-	tilemap.add_child(warehouse)
+	await _spawn_log_storage(tilemap, Vector2i(130, 125), 1)
 
 	var station_scene := preload("res://scenes/hauler_station.tscn")
 	var station = station_scene.instantiate()
@@ -267,10 +268,7 @@ func _capture_art_pass_v2() -> void:
 	await get_tree().process_frame
 	camp.deposit_to_output(3)
 
-	var warehouse_scene := preload("res://scenes/warehouse_building.tscn")
-	var warehouse = warehouse_scene.instantiate()
-	warehouse.position = tilemap.map_to_local(Vector2i(132, 124))
-	tilemap.add_child(warehouse)
+	await _spawn_log_storage(tilemap, Vector2i(130, 125), 1)
 
 	var station_scene := preload("res://scenes/hauler_station.tscn")
 	var station = station_scene.instantiate()
@@ -306,10 +304,7 @@ func _capture_art_pass_v3() -> void:
 	await get_tree().process_frame
 	camp.deposit_to_output(3)
 
-	var warehouse_scene := preload("res://scenes/warehouse_building.tscn")
-	var warehouse = warehouse_scene.instantiate()
-	warehouse.position = tilemap.map_to_local(Vector2i(132, 124))
-	tilemap.add_child(warehouse)
+	await _spawn_log_storage(tilemap, Vector2i(130, 125), 1)
 
 	var station_scene := preload("res://scenes/hauler_station.tscn")
 	var station = station_scene.instantiate()
@@ -385,10 +380,7 @@ func _capture_task10() -> void:
 	bootstrap_tree.position = tilemap.map_to_local(Vector2i(125, 124))
 	tilemap.add_child(bootstrap_tree)
 
-	var warehouse_scene := preload("res://scenes/warehouse_building.tscn")
-	var warehouse = warehouse_scene.instantiate()
-	warehouse.position = tilemap.map_to_local(Vector2i(132, 124))
-	tilemap.add_child(warehouse)
+	await _spawn_log_storage(tilemap, Vector2i(130, 125), 1)
 
 	var station_scene := preload("res://scenes/hauler_station.tscn")
 	var station = station_scene.instantiate()
@@ -407,7 +399,7 @@ func _capture_task10() -> void:
 	await get_tree().create_timer(50.0).timeout
 
 	if Warehouse.wood_logs <= 0:
-		push_error("Closed loop verification failed: warehouse has no logs after 50s")
+		push_error("Closed loop verification failed: log storage has no logs after 50s")
 
 	var output_dir := ProjectSettings.globalize_path("res://").path_join("screenshots")
 	DirAccess.make_dir_absolute(output_dir)
@@ -452,10 +444,7 @@ func _verify_hauler_pickup() -> void:
 	await get_tree().process_frame
 	camp.deposit_to_output(4)
 
-	var warehouse_scene := preload("res://scenes/warehouse_building.tscn")
-	var warehouse = warehouse_scene.instantiate()
-	warehouse.position = tilemap.map_to_local(Vector2i(132, 124))
-	tilemap.add_child(warehouse)
+	await _spawn_log_storage(tilemap, Vector2i(130, 125), 1)
 
 	var station_scene := preload("res://scenes/hauler_station.tscn")
 	var station = station_scene.instantiate()
@@ -470,7 +459,7 @@ func _verify_hauler_pickup() -> void:
 	await get_tree().create_timer(8.0).timeout
 
 	if Warehouse.wood_logs <= 0:
-		push_error("Hauler pickup verification failed: camp had 4 logs but warehouse is empty")
+		push_error("Hauler pickup verification failed: camp had 4 logs but log storage is empty")
 	if camp.get_output_log_count() >= 4:
 		push_error("Hauler pickup verification failed: camp still has %d logs" % camp.get_output_log_count())
 

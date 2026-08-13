@@ -1,6 +1,7 @@
 extends CanvasLayer
 
 const LogStorageAreaScript := preload("res://scripts/log_storage_area.gd")
+const LOG_STORAGE_AREA_SCENE := preload("res://scenes/log_storage_area.tscn")
 
 @onready var _panel: PanelContainer = $Panel
 @onready var _title_label: Label = $Panel/Margin/VBox/TitleLabel
@@ -12,7 +13,7 @@ const LogStorageAreaScript := preload("res://scripts/log_storage_area.gd")
 
 var _tilemap: TileMap
 var _zone_overlay: Node2D
-var _selected_warehouse: Node2D
+var _selected_area: Node2D
 var _draw_mode: bool = false
 var _draw_anchor: Vector2i = Vector2i(-999999, -999999)
 var _draw_current: Vector2i = Vector2i.ZERO
@@ -27,7 +28,7 @@ func handle_input(event: InputEvent) -> bool:
 	if _draw_mode:
 		return _handle_draw_input(event)
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		return _try_select_warehouse()
+		return _try_select_storage()
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		_close_panel()
 		return true
@@ -36,52 +37,53 @@ func handle_input(event: InputEvent) -> bool:
 func is_blocking_placement() -> bool:
 	return _draw_mode or _panel.visible
 
-func _try_select_warehouse() -> bool:
-	var warehouse := _warehouse_at_mouse()
-	if warehouse == null:
+func start_draw_mode() -> void:
+	_selected_area = null
+	_begin_draw_mode()
+
+func _try_select_storage() -> bool:
+	var area := _storage_at_mouse()
+	if area == null:
 		if _panel.visible:
 			_close_panel()
 		return _panel.visible
-	_open_panel(warehouse)
+	_open_panel(area)
 	return true
 
-func _open_panel(warehouse: Node2D) -> void:
-	_selected_warehouse = warehouse
+func _open_panel(area: Node2D) -> void:
+	_selected_area = area
 	_zone_overlay.clear_preview()
-	_title_label.text = "Warehouse"
+	_title_label.text = "Log Storage"
 	_refresh_panel_labels()
 	_panel.visible = true
 
 func _close_panel() -> void:
 	_panel.visible = false
 	_cancel_draw_mode()
-	_selected_warehouse = null
+	_selected_area = null
 
 func _refresh_panel_labels() -> void:
-	if _selected_warehouse == null or not is_instance_valid(_selected_warehouse):
-		return
-
-	if _selected_warehouse.has_method("has_log_storage_area") and _selected_warehouse.has_log_storage_area():
-		var area: Node2D = _selected_warehouse.get_log_storage_area()
-		var slots := LogStorageAreaScript.pile_count_for_zone(area.get_zone())
-		_storage_label.text = "Log storage: %d / %d logs (%d pile slots)" % [
-			area.get_stored_logs(),
-			area.get_capacity(),
+	if _selected_area != null and is_instance_valid(_selected_area):
+		var slots := LogStorageAreaScript.pile_count_for_zone(_selected_area.get_zone())
+		_storage_label.text = "Stored: %d / %d logs (%d pile slots)" % [
+			_selected_area.get_stored_logs(),
+			_selected_area.get_capacity(),
 			slots,
 		]
-		_status_label.text = "Haulers spawn from and deliver logs to this storage area."
-		_draw_button.text = "Redraw Log Storage Area"
+		_status_label.text = "Haulers spawn from and deliver logs here."
+		_draw_button.text = "Redraw Storage Area"
 	else:
-		_storage_label.text = "No log storage area"
+		_storage_label.text = "No log storage area yet"
 		_status_label.text = (
-			"Draw a rectangular log storage area (%d-%d pile slots wide)."
+			"Draw a storage area (%d-%d pile slots wide) or Shift+right-click on the map."
 			% [1, LogStorageAreaScript.MAX_PILE_SLOTS]
 		)
 		_draw_button.text = "Draw Log Storage Area"
 
 func _on_draw_storage_pressed() -> void:
-	if _selected_warehouse == null:
-		return
+	_begin_draw_mode()
+
+func _begin_draw_mode() -> void:
 	_draw_mode = true
 	_draw_anchor = Vector2i(-999999, -999999)
 	_panel.visible = false
@@ -100,7 +102,7 @@ func _cancel_draw_mode() -> void:
 	_draw_anchor = Vector2i(-999999, -999999)
 	_hint_label.visible = false
 	_zone_overlay.clear_preview()
-	if _selected_warehouse != null and is_instance_valid(_selected_warehouse):
+	if _selected_area != null and is_instance_valid(_selected_area):
 		_panel.visible = true
 
 func _handle_draw_input(event: InputEvent) -> bool:
@@ -127,10 +129,6 @@ func _handle_draw_input(event: InputEvent) -> bool:
 	return true
 
 func _commit_draw_zone(_end_tile: Vector2i) -> void:
-	if _selected_warehouse == null:
-		_cancel_draw_mode()
-		return
-
 	var zone := LogStorageAreaScript.snap_zone_from_tiles(_draw_anchor, _draw_current)
 	var temp_area := LogStorageAreaScript.new()
 	var error: String = temp_area.validate_zone(zone, _tilemap)
@@ -140,22 +138,51 @@ func _commit_draw_zone(_end_tile: Vector2i) -> void:
 	if not error.is_empty():
 		_cancel_draw_mode()
 		_status_label.text = error
-		_refresh_panel_labels()
-		_panel.visible = true
+		if _selected_area != null:
+			_panel.visible = true
 		return
 
-	if _selected_warehouse.has_method("assign_log_storage_zone"):
-		error = _selected_warehouse.assign_log_storage_zone(zone)
-	else:
-		error = "Warehouse cannot assign log storage."
-
+	error = _assign_storage_zone(zone)
 	_cancel_draw_mode()
 	if error.is_empty():
-		_status_label.text = "Log storage area set! Haulers will use it for drop-off."
+		_status_label.text = "Log storage set! Haulers will spawn and deliver here."
 	else:
 		_status_label.text = error
-	_refresh_panel_labels()
-	_panel.visible = true
+	if _selected_area != null and is_instance_valid(_selected_area):
+		_refresh_panel_labels()
+		_panel.visible = true
+
+func _assign_storage_zone(zone: Rect2i) -> String:
+	if _tilemap == null:
+		return "Map not ready."
+
+	if _selected_area != null and is_instance_valid(_selected_area):
+		var stored := _selected_area.get_stored_logs()
+		_selected_area.queue_free()
+		_selected_area = null
+		var area := _spawn_storage_area(zone)
+		if area == null:
+			return "Could not create log storage area."
+		area.set_stored_logs(stored)
+		_selected_area = area
+		return ""
+
+	for existing in LogStorageAreaRegistry.get_active_areas():
+		if is_instance_valid(existing):
+			existing.queue_free()
+
+	var new_area := _spawn_storage_area(zone)
+	if new_area == null:
+		return "Could not create log storage area."
+	_selected_area = new_area
+	return ""
+
+func _spawn_storage_area(zone: Rect2i) -> Node2D:
+	var area: Node2D = LOG_STORAGE_AREA_SCENE.instantiate()
+	_tilemap.add_child(area)
+	area.initialize_zone(zone)
+	HaulerStationRegistry.notify_log_storage_available()
+	return area
 
 func _update_draw_preview() -> void:
 	if _draw_anchor.x < -999999:
@@ -181,11 +208,11 @@ func _update_draw_preview() -> void:
 func _mouse_tile() -> Vector2i:
 	return GridPlacement.mouse_tile_coords(_tilemap)
 
-func _warehouse_at_mouse() -> Node2D:
+func _storage_at_mouse() -> Node2D:
 	var click_tile := _mouse_tile()
-	for warehouse in WarehouseRegistry.get_active_warehouses():
-		if _tilemap.local_to_map(warehouse.position) == click_tile:
-			return warehouse
+	for area in LogStorageAreaRegistry.get_active_areas():
+		if area.has_method("occupies_tile") and area.occupies_tile(click_tile):
+			return area
 	return null
 
 func _on_close_pressed() -> void:

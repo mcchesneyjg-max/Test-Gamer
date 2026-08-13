@@ -33,7 +33,10 @@ func get_hauler_count() -> int:
 	return hauler_count
 
 func _on_log_storage_changed(_count: int) -> void:
-	_reposition_workers_to_storage()
+	if _spawned_workers.is_empty():
+		_spawn_workers()
+	else:
+		_reposition_workers_to_storage()
 
 func _spawn_workers() -> void:
 	var tilemap := get_parent() as TileMap
@@ -41,10 +44,16 @@ func _spawn_workers() -> void:
 		_refresh_idle_hauler_markers()
 		return
 
+	var home := _find_home_storage()
+	if home == null:
+		if _idle_haulers:
+			_idle_haulers.visible = true
+		_update_hauler_label()
+		return
+
 	if _idle_haulers:
 		_idle_haulers.visible = false
 
-	var home := _find_home_storage()
 	for i in hauler_count:
 		var worker := HAULER_WORKER_SCENE.instantiate()
 		worker.setup(self, HAULER_COLORS[i % HAULER_COLORS.size()], home)
@@ -67,13 +76,7 @@ func _reposition_workers_to_storage() -> void:
 		worker.position = _get_worker_spawn_position(home, i)
 
 func _find_home_storage() -> Node2D:
-	var nearest := LogStorageAreaRegistry.get_nearest_area(position)
-	if nearest != null:
-		return nearest
-	for warehouse in WarehouseRegistry.get_active_warehouses():
-		if warehouse.has_method("has_log_storage_area") and warehouse.has_log_storage_area():
-			return warehouse.get_log_storage_area()
-	return null
+	return LogStorageAreaRegistry.get_nearest_area(position)
 
 func _get_worker_spawn_position(home: Node2D, index: int) -> Vector2:
 	if home != null and home.has_method("get_spawn_position"):
@@ -81,7 +84,10 @@ func _get_worker_spawn_position(home: Node2D, index: int) -> Vector2:
 	return position + Vector2(6 + index * 10, 38)
 
 func _update_hauler_label() -> void:
-	_hauler_label.text = "Haulers: %d" % hauler_count
+	if LogStorageAreaRegistry.get_area_count() <= 0:
+		_hauler_label.text = "Haulers: %d (needs log storage)" % hauler_count
+	else:
+		_hauler_label.text = "Haulers: %d" % hauler_count
 
 func _refresh_idle_hauler_markers() -> void:
 	if _idle_haulers == null:
