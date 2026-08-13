@@ -64,7 +64,7 @@ func _close_panel() -> void:
 
 func _refresh_panel_labels() -> void:
 	if _selected_area != null and is_instance_valid(_selected_area):
-		var slots := LogStorageAreaScript.pile_count_for_zone(_selected_area.get_zone())
+		var slots: int = LogStorageAreaScript.pile_count_for_zone(_selected_area.get_zone())
 		_storage_label.text = "Stored: %d / %d logs (%d pile slots)" % [
 			_selected_area.get_stored_logs(),
 			_selected_area.get_capacity(),
