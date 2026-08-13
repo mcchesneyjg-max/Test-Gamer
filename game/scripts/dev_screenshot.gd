@@ -55,8 +55,8 @@ func _spawn_lodge_with_zone(tilemap: TileMap, center_coords: Vector2i, half_size
 	return lodge
 
 func _spawn_log_storage(tilemap: TileMap, top_left: Vector2i, pile_slots: int = 1) -> Node2D:
-	var slot_tiles := LogStorageAreaScript.get_pile_slot_tiles()
-	var zone := Rect2i(top_left, Vector2i(slot_tiles.x * pile_slots, slot_tiles.y))
+	var zone_size: Vector2i = LogStorageAreaScript.zone_size_for_pile_count(pile_slots)
+	var zone := Rect2i(top_left, zone_size)
 	var area: Node2D = LOG_STORAGE_AREA_SCENE.instantiate()
 	tilemap.add_child(area)
 	area.initialize_zone(zone)
