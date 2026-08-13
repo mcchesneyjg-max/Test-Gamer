@@ -17,7 +17,6 @@ var _pile_slot_count: int = 1
 var _delivery_count: int = 0
 var _pile_textures: Array[Texture2D] = []
 var _pile_sprites: Array[Sprite2D] = []
-var _owner_warehouse: Node2D
 var _registered: bool = false
 
 static func get_pile_slot_tiles() -> Vector2i:
@@ -67,10 +66,9 @@ func _exit_tree() -> void:
 	if _registered:
 		LogStorageAreaRegistry.unregister_area(self)
 
-func initialize_zone(zone: Rect2i, owner_warehouse: Node2D = null) -> void:
+func initialize_zone(zone: Rect2i) -> void:
 	_zone = zone
 	_pile_slot_count = pile_count_for_zone(zone)
-	_owner_warehouse = owner_warehouse
 	_apply_zone_position()
 	_build_pile_sprites()
 	_refresh_pile_visuals()
@@ -80,9 +78,6 @@ func initialize_zone(zone: Rect2i, owner_warehouse: Node2D = null) -> void:
 
 func get_zone() -> Rect2i:
 	return _zone
-
-func get_owner_warehouse() -> Node2D:
-	return _owner_warehouse
 
 func occupies_tile(tile_coords: Vector2i) -> bool:
 	return _zone.has_point(tile_coords)
@@ -153,9 +148,6 @@ func _is_foreign_tile_blocked(tile_coords: Vector2i, tilemap: TileMap) -> bool:
 			return true
 	for camp in CampRegistry.get_active_camps():
 		if tilemap.local_to_map(camp.position) == tile_coords:
-			return true
-	for warehouse in WarehouseRegistry.get_active_warehouses():
-		if warehouse != _owner_warehouse and tilemap.local_to_map(warehouse.position) == tile_coords:
 			return true
 	for station in HaulerStationRegistry.get_active_stations():
 		if tilemap.local_to_map(station.position) == tile_coords:

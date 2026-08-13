@@ -149,17 +149,6 @@ func _find_best_destination() -> Node2D:
 			best_distance = distance
 			best = area
 
-	if best != null:
-		return best
-
-	for warehouse in WarehouseRegistry.get_active_warehouses():
-		if not warehouse.has_method("can_accept_logs") or not warehouse.can_accept_logs():
-			continue
-		var distance := position.distance_to(_get_destination_position(warehouse))
-		if distance < best_distance:
-			best_distance = distance
-			best = warehouse
-
 	return best
 
 func _pickup_cargo() -> void:

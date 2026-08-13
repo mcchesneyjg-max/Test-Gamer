@@ -341,9 +341,6 @@ func _is_tile_occupied(tile_coords: Vector2i) -> bool:
 	for camp in CampRegistry.get_active_camps():
 		if _tilemap.local_to_map(camp.position) == tile_coords:
 			return true
-	for warehouse in WarehouseRegistry.get_active_warehouses():
-		if _tilemap.local_to_map(warehouse.position) == tile_coords:
-			return true
 	for station in HaulerStationRegistry.get_active_stations():
 		if _tilemap.local_to_map(station.position) == tile_coords:
 			return true
@@ -373,9 +370,10 @@ func _is_too_close_to_building(tile_coords: Vector2i) -> bool:
 	for camp in CampRegistry.get_active_camps():
 		if _chebyshev_distance(tile_coords, _tilemap.local_to_map(camp.position)) < building_buffer_tiles:
 			return true
-	for warehouse in WarehouseRegistry.get_active_warehouses():
-		if _chebyshev_distance(tile_coords, _tilemap.local_to_map(warehouse.position)) < building_buffer_tiles:
-			return true
+	for area in LogStorageAreaRegistry.get_active_areas():
+		if area.has_method("get_zone"):
+			if _rect_chebyshev_distance(tile_coords, area.get_zone()) < building_buffer_tiles:
+				return true
 	for station in HaulerStationRegistry.get_active_stations():
 		if _chebyshev_distance(tile_coords, _tilemap.local_to_map(station.position)) < building_buffer_tiles:
 			return true
