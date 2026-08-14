@@ -5,10 +5,10 @@ signal storage_changed(current_amount: int, capacity_amount: int)
 const TILE_SIZE := 32
 const STAGES_PER_PILE := 18
 const MAX_PILE_SLOTS := 5
-const MIN_ZONE_WIDTH_TILES := 4
-const MAX_ZONE_WIDTH_TILES := 12
+const MIN_ZONE_WIDTH_TILES := 2
+const MAX_ZONE_WIDTH_TILES := 6
 const ZONE_HEIGHT_TILES := 2
-const PILE_VISUAL_OVERLAP := 16.0
+const PILE_SLOT_STEP_TILES := 1
 const LOG_PILE_ROOT := "res://assets/sprites/stacked_resources/logs"
 const LOG_PILE_PREFIXES: Array[String] = ["log_pile"]
 
@@ -22,35 +22,15 @@ var _pile_textures: Array[Texture2D] = []
 var _pile_sprites: Array[Sprite2D] = []
 var _registered: bool = false
 
-static var _metrics_loaded: bool = false
-static var _pile_width_px: float = 48.0
-static var _pile_height_px: float = 32.0
-static var _pile_step_px: float = 32.0
-
-static func _ensure_pile_metrics() -> void:
-	if _metrics_loaded:
-		return
-	_metrics_loaded = true
-	var roots: Array[String] = [LOG_PILE_ROOT]
-	var textures: Array[Texture2D] = CharacterWalk.load_png_sequence_from_candidates(
-		roots,
-		LOG_PILE_PREFIXES,
-		true
-	)
-	if not textures.is_empty():
-		_pile_width_px = float(textures[0].get_width())
-		_pile_height_px = float(textures[0].get_height())
-	_pile_step_px = maxf(_pile_width_px - PILE_VISUAL_OVERLAP, _pile_width_px * 0.35)
-
 static func zone_width_for_pile_count(pile_count: int) -> int:
 	var count: int = clampi(pile_count, 1, MAX_PILE_SLOTS)
-	return MIN_ZONE_WIDTH_TILES + (count - 1) * 2
+	return count + 1
 
 static func snap_width_tiles(raw_width_tiles: int) -> int:
 	var raw: int = clampi(maxi(raw_width_tiles, 1), 1, MAX_ZONE_WIDTH_TILES)
 	var best_width: int = MIN_ZONE_WIDTH_TILES
 	var best_distance: int = absi(raw - MIN_ZONE_WIDTH_TILES)
-	for width in range(MIN_ZONE_WIDTH_TILES + 2, MAX_ZONE_WIDTH_TILES + 1, 2):
+	for width in range(MIN_ZONE_WIDTH_TILES + 1, MAX_ZONE_WIDTH_TILES + 1):
 		var distance: int = absi(raw - width)
 		if distance < best_distance:
 			best_distance = distance
@@ -58,7 +38,7 @@ static func snap_width_tiles(raw_width_tiles: int) -> int:
 	return best_width
 
 static func pile_count_from_width(width_tiles: int) -> int:
-	return 1 + (width_tiles - MIN_ZONE_WIDTH_TILES) / 2
+	return clampi(width_tiles - 1, 1, MAX_PILE_SLOTS)
 
 static func zone_size_for_pile_count(pile_count: int) -> Vector2i:
 	var width_tiles: int = zone_width_for_pile_count(pile_count)
@@ -160,8 +140,8 @@ func validate_zone(zone: Rect2i, tilemap: TileMap) -> String:
 	var pile_count: int = pile_count_for_zone(zone)
 	if pile_count <= 0:
 		return (
-			"Storage area must fit %d-%d pile slots (%d-%d tiles wide)."
-			% [1, MAX_PILE_SLOTS, MIN_ZONE_WIDTH_TILES, MAX_ZONE_WIDTH_TILES]
+			"Storage area must fit %d-%d pile slots (2x2 up to 2x6 tiles)."
+			% [1, MAX_PILE_SLOTS]
 		)
 
 	for tile_coords in GridPlacement.footprint_tiles(zone.position, zone.size):
@@ -236,26 +216,11 @@ func _build_pile_sprites() -> void:
 		_pile_sprites.append(sprite)
 
 func _slot_sprite_position(slot_index: int) -> Vector2:
-	var pile_width: float = _pile_display_width()
-	var step: float = maxf(pile_width - PILE_VISUAL_OVERLAP, pile_width * 0.35)
-	var total_span: float = pile_width + maxf(_pile_slot_count - 1, 0) * step
-	var zone_width: float = _zone.size.x * TILE_SIZE
-	var origin_x: float = (zone_width - total_span) * 0.5
-	var x: float = origin_x + pile_width * 0.5 + slot_index * step
-	var y: float = _pile_display_height()
+	var slot_step_px: float = float(PILE_SLOT_STEP_TILES) * TILE_SIZE
+	var slot_span_px: float = float(TILE_SIZE * 2)
+	var x: float = float(slot_index) * slot_step_px + slot_span_px * 0.5
+	var y: float = float(_zone.size.y) * TILE_SIZE
 	return Vector2(x, y)
-
-func _pile_display_width() -> float:
-	if not _pile_textures.is_empty():
-		return float(_pile_textures[0].get_width())
-	var fallback: Texture2D = preload("res://assets/sprites/wood_log.png")
-	return float(fallback.get_width())
-
-func _pile_display_height() -> float:
-	if not _pile_textures.is_empty():
-		return float(_pile_textures[0].get_height())
-	var fallback: Texture2D = preload("res://assets/sprites/wood_log.png")
-	return float(fallback.get_height())
 
 func _refresh_pile_visuals() -> void:
 	for slot_index in _pile_sprites.size():

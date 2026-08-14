@@ -45,7 +45,7 @@ func _on_storage_pressed() -> void:
 	_lodge_button.button_pressed = false
 	_cancel_button.button_pressed = false
 	_storage_button.button_pressed = true
-	_hint_label.text = "Drag on the map: 4 tiles = 1 pile, 6 = 2, 8 = 3, 10 = 4, 12 = 5. Esc to cancel."
+	_hint_label.text = "Drag on the map: 2x2 = 1 pile, 2x3 = 2, 2x4 = 3, 2x5 = 4, 2x6 = 5. Esc to cancel."
 	if _log_storage_ui != null and _log_storage_ui.has_method("start_draw_mode"):
 		_log_storage_ui.start_draw_mode()
 
