@@ -75,7 +75,7 @@ func _refresh_panel_labels() -> void:
 	else:
 		_storage_label.text = "No log storage area selected"
 		_status_label.text = (
-			"Draw a storage area: 4 tiles = 1 pile, 6 = 2, 8 = 3, 10 = 4, 12 = 5 piles."
+			"Draw a storage area: 2x2 = 1 pile, 2x3 = 2, 2x4 = 3, 2x5 = 4, 2x6 = 5 piles."
 		)
 		_draw_button.text = "Draw Log Storage Area"
 
@@ -87,7 +87,7 @@ func _begin_draw_mode() -> void:
 	_draw_anchor = Vector2i(-999999, -999999)
 	_panel.visible = false
 	_hint_label.text = (
-		"Draw log storage horizontally: 4 tiles = 1 pile, 6 = 2, 8 = 3, 10 = 4, 12 = 5. Esc to cancel."
+		"Draw log storage horizontally: 2x2 = 1 pile, 2x3 = 2, 2x4 = 3, 2x5 = 4, 2x6 = 5. Esc to cancel."
 	)
 	_hint_label.visible = true
 
@@ -192,7 +192,7 @@ func _update_draw_preview() -> void:
 
 	if is_valid:
 		_hint_label.text = (
-			"Release to set storage (%d pile slot%s, %d tiles wide, capacity %d). Esc to cancel."
+			"Release to set storage (%d pile slot%s, 2x%d, capacity %d). Esc to cancel."
 			% [
 				pile_count,
 				"s" if pile_count != 1 else "",
