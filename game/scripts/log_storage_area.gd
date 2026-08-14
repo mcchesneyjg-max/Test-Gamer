@@ -77,7 +77,6 @@ static func snap_zone_from_tiles(anchor: Vector2i, current: Vector2i) -> Rect2i:
 
 func _ready() -> void:
 	_load_pile_textures()
-	YSortDepth.apply_to_entity(self)
 
 func _exit_tree() -> void:
 	if _registered:
@@ -89,6 +88,7 @@ func initialize_zone(zone: Rect2i) -> void:
 	_apply_zone_position()
 	_build_pile_sprites()
 	_refresh_pile_visuals()
+	_refresh_sort_depth()
 	if not _registered:
 		LogStorageAreaRegistry.register_area(self)
 		_registered = true
@@ -128,8 +128,7 @@ func set_stored_logs(amount: int) -> void:
 
 func get_delivery_position() -> Vector2:
 	var center_x: float = _zone.size.x * TILE_SIZE * 0.5
-	var south_y: float = _zone.size.y * TILE_SIZE + 14.0
-	return position + Vector2(center_x, south_y)
+	return position + Vector2(center_x, 14.0)
 
 func get_spawn_position(index: int) -> Vector2:
 	var delivery: Vector2 = get_delivery_position()
@@ -181,7 +180,8 @@ func _apply_zone_position() -> void:
 	if _tilemap == null:
 		return
 	var top_left := _tilemap.map_to_local(_zone.position) - Vector2(TILE_SIZE, TILE_SIZE) * 0.5
-	position = top_left
+	var zone_size_px := Vector2(_zone.size) * TILE_SIZE
+	position = top_left + Vector2(0.0, zone_size_px.y)
 
 func _load_pile_textures() -> void:
 	if not _pile_textures.is_empty():
@@ -219,8 +219,7 @@ func _slot_sprite_position(slot_index: int) -> Vector2:
 	var slot_step_px: float = float(PILE_SLOT_STEP_TILES) * TILE_SIZE
 	var slot_span_px: float = float(TILE_SIZE * 2)
 	var x: float = float(slot_index) * slot_step_px + slot_span_px * 0.5
-	var y: float = float(_zone.size.y) * TILE_SIZE
-	return Vector2(x, y)
+	return Vector2(x, 0.0)
 
 func _refresh_pile_visuals() -> void:
 	for slot_index in _pile_sprites.size():
@@ -238,6 +237,16 @@ func _refresh_pile_visuals() -> void:
 		sprite.texture = texture
 		sprite.visible = true
 		sprite.offset = Vector2(-texture.get_width() * 0.5, -texture.get_height())
+
+	_refresh_sort_depth()
+
+func _refresh_sort_depth() -> void:
+	var textures: Array[Texture2D] = []
+	for texture in _pile_textures:
+		if texture != null:
+			textures.append(texture)
+	set_meta("_y_sort_extra_textures", textures)
+	YSortDepth.apply_to_entity(self, true)
 
 func _stage_for_slot(slot_index: int) -> int:
 	var slot_start := slot_index * STAGES_PER_PILE
