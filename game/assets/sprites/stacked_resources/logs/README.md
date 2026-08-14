@@ -13,6 +13,14 @@ Each frame shows the pile filling up:
 
 ## Layout
 
-Each pile slot uses a footprint derived from the `log_pile_*` sprite size and overlap spacing (not a fixed 3×2 tile grid). Storage areas snap horizontally to 1–5 pile slots.
+Each pile slot uses a fixed zone footprint on the tile grid:
+
+- 1 pile — 4 tiles wide
+- 2 piles — 6 tiles wide
+- 3 piles — 8 tiles wide
+- 4 piles — 10 tiles wide
+- 5 piles — 12 tiles wide
+
+Drag horizontally when placing; the outline snaps to the nearest valid width.
 
 If sprites are missing, the game falls back to `wood_log.png` for pile visuals.

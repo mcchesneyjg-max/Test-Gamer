@@ -87,12 +87,7 @@ func _begin_draw_mode() -> void:
 	_draw_anchor = Vector2i(-999999, -999999)
 	_panel.visible = false
 	_hint_label.text = (
-		"Draw log storage: drag %d-%d tiles wide for 1-%d pile slots. Esc to cancel."
-		% [
-			LogStorageAreaScript.MIN_ZONE_WIDTH_TILES,
-			LogStorageAreaScript.MAX_ZONE_WIDTH_TILES,
-			LogStorageAreaScript.MAX_PILE_SLOTS,
-		]
+		"Draw log storage horizontally: 4 tiles = 1 pile, 6 = 2, 8 = 3, 10 = 4, 12 = 5. Esc to cancel."
 	)
 	_hint_label.visible = true
 
@@ -127,7 +122,8 @@ func _handle_draw_input(event: InputEvent) -> bool:
 
 	return true
 
-func _commit_draw_zone(_end_tile: Vector2i) -> void:
+func _commit_draw_zone(end_tile: Vector2i) -> void:
+	_draw_current = end_tile
 	var zone := LogStorageAreaScript.snap_zone_from_tiles(_draw_anchor, _draw_current)
 	var temp_area := LogStorageAreaScript.new()
 	var error: String = temp_area.validate_zone(zone, _tilemap)
