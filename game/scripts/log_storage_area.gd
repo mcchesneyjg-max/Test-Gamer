@@ -7,6 +7,7 @@ const STAGES_PER_PILE := 18
 const MAX_PILE_SLOTS := 5
 const MIN_ZONE_WIDTH_TILES := 4
 const MAX_ZONE_WIDTH_TILES := 12
+const ZONE_HEIGHT_TILES := 2
 const PILE_VISUAL_OVERLAP := 16.0
 const LOG_PILE_ROOT := "res://assets/sprites/stacked_resources/logs"
 const LOG_PILE_PREFIXES: Array[String] = ["log_pile"]
@@ -45,22 +46,26 @@ static func zone_width_for_pile_count(pile_count: int) -> int:
 	var count: int = clampi(pile_count, 1, MAX_PILE_SLOTS)
 	return MIN_ZONE_WIDTH_TILES + (count - 1) * 2
 
-static func zone_size_for_pile_count(pile_count: int) -> Vector2i:
-	_ensure_pile_metrics()
-	var width_tiles: int = zone_width_for_pile_count(pile_count)
-	var height_tiles: int = maxi(1, ceili(_pile_height_px / float(TILE_SIZE)))
-	return Vector2i(width_tiles, height_tiles)
-
-static func pile_count_from_drag_width(raw_width_tiles: int) -> int:
-	var best_count: int = 1
-	var best_distance: int = 999999
-	for pile_count in range(1, MAX_PILE_SLOTS + 1):
-		var zone_width: int = zone_width_for_pile_count(pile_count)
-		var distance: int = absi(raw_width_tiles - zone_width)
+static func snap_width_tiles(raw_width_tiles: int) -> int:
+	var raw: int = clampi(maxi(raw_width_tiles, 1), 1, MAX_ZONE_WIDTH_TILES)
+	var best_width: int = MIN_ZONE_WIDTH_TILES
+	var best_distance: int = absi(raw - MIN_ZONE_WIDTH_TILES)
+	for width in range(MIN_ZONE_WIDTH_TILES + 2, MAX_ZONE_WIDTH_TILES + 1, 2):
+		var distance: int = absi(raw - width)
 		if distance < best_distance:
 			best_distance = distance
-			best_count = pile_count
-	return best_count
+			best_width = width
+	return best_width
+
+static func pile_count_from_width(width_tiles: int) -> int:
+	return 1 + (width_tiles - MIN_ZONE_WIDTH_TILES) / 2
+
+static func zone_size_for_pile_count(pile_count: int) -> Vector2i:
+	var width_tiles: int = zone_width_for_pile_count(pile_count)
+	return Vector2i(width_tiles, ZONE_HEIGHT_TILES)
+
+static func pile_count_from_drag_width(raw_width_tiles: int) -> int:
+	return pile_count_from_width(snap_width_tiles(raw_width_tiles))
 
 static func get_pile_slot_tiles() -> Vector2i:
 	return zone_size_for_pile_count(1)
@@ -72,17 +77,14 @@ static func get_max_zone_size() -> Vector2i:
 	return zone_size_for_pile_count(MAX_PILE_SLOTS)
 
 static func pile_count_for_zone(zone: Rect2i) -> int:
-	_ensure_pile_metrics()
-	var expected_height: int = zone_size_for_pile_count(1).y
-	if zone.size.y != expected_height:
+	if zone.size.y != ZONE_HEIGHT_TILES:
 		return 0
-	var pile_count: int = pile_count_from_drag_width(zone.size.x)
-	if zone.size != zone_size_for_pile_count(pile_count):
-		return 0
-	return pile_count
+	for pile_count in range(1, MAX_PILE_SLOTS + 1):
+		if zone.size == zone_size_for_pile_count(pile_count):
+			return pile_count
+	return 0
 
 static func snap_zone_from_tiles(anchor: Vector2i, current: Vector2i) -> Rect2i:
-	_ensure_pile_metrics()
 	var raw_width_tiles: int = absi(current.x - anchor.x) + 1
 	var pile_count: int = pile_count_from_drag_width(raw_width_tiles)
 	var zone_size: Vector2i = zone_size_for_pile_count(pile_count)
@@ -91,11 +93,7 @@ static func snap_zone_from_tiles(anchor: Vector2i, current: Vector2i) -> Rect2i:
 	if current.x < anchor.x:
 		left_x = anchor.x - zone_size.x + 1
 
-	var top_y: int = anchor.y
-	if current.y < anchor.y:
-		top_y = anchor.y - zone_size.y + 1
-
-	return Rect2i(left_x, top_y, zone_size.x, zone_size.y)
+	return Rect2i(left_x, anchor.y, zone_size.x, zone_size.y)
 
 func _ready() -> void:
 	_load_pile_textures()
